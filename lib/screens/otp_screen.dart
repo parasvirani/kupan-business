@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:kupan_business/screens/personal_info.dart';
 import 'package:otp_text_field/otp_text_field.dart';
 import 'package:otp_text_field/style.dart';
 import 'package:get/get.dart';
@@ -112,6 +113,7 @@ class _OtpScreenState extends State<OtpScreen> {
             ),
              SizedBox(height: size(40)),
             CommonButton(onPressed: (){
+              Get.toNamed(AppRoutes.personalinfo);
               // Get.toNamed(AppRoutes.locations);
             }, text: 'Otp Verify'),
           ],
