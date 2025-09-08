@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:kupan_business/screens/login_screen.dart';
 import '../screens/details_screen.dart';
 import '../screens/otp_screen.dart';
+import '../screens/personal_info.dart';
 import '../screens/splash_screen.dart';
 import 'appRoutesStrings.dart';
 
@@ -26,6 +27,12 @@ class AppPage {
       preventDuplicates: true,
       name: AppRoutes.otp,
       page: () => const OtpScreen(),
+      binding: null,
+    ),
+    GetPage(
+      preventDuplicates: true,
+      name: AppRoutes.personalinfo,
+      page: () =>  UserDetailsScreen(),
       binding: null,
     ),
     GetPage(

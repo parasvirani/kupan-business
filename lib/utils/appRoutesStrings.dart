@@ -10,6 +10,7 @@ abstract class AppRoutes {
   static const notification = RoutesPath.notification;
   static const offerDetails = RoutesPath.offerDetails;
   static const details = RoutesPath.details;
+  static const personalinfo = RoutesPath.personalinfo;
 }
 
 abstract class RoutesPath {
@@ -23,4 +24,5 @@ abstract class RoutesPath {
   static const notification = "/notification";
   static const offerDetails = "/offerDetails";
   static const details = "/details";
+  static const personalinfo = "/personalinfo";
 }

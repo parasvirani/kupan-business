@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-
 import '../common_view/common_button.dart';
 import '../common_view/common_text.dart';
 import '../common_view/common_textfield.dart';
