@@ -1,13 +1,13 @@
 class UserLoginResponse {
   final String message;
-  final String otp;
+  final bool success;
 
-  UserLoginResponse({required this.message, required this.otp});
+  UserLoginResponse({required this.message, required this.success});
 
   factory UserLoginResponse.fromJson(Map<String, dynamic> json) {
     return UserLoginResponse(
       message: json['message'] ?? '',
-      otp: json['otp'] ?? '',
+      success: json['success'] ?? '',
     );
   }
 }

@@ -32,4 +32,5 @@ class ImageConst {
   static String banner03 = "assets/images/banner03.png";
   static String profile_image = "assets/images/profile_image.png";
   static String ic_edit = "assets/images/ic_edit.svg";
+  static String ic_back = "assets/images/ic_back.svg";
 }
