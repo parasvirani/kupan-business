@@ -33,4 +33,12 @@ class ImageConst {
   static String profile_image = "assets/images/profile_image.png";
   static String ic_edit = "assets/images/ic_edit.svg";
   static String ic_back = "assets/images/ic_back.svg";
+  static String person_outline = "assets/images/person_outline.svg";
+  static String phone_outlined = "assets/images/phone_outlined.svg";
+  static String email_outlined = "assets/images/email_outlined.svg";
+  static String business_outlined = "assets/images/business_outlined.svg";
+  static String icUpload = "assets/images/ic-upload.svg";
+  static String icDown = "assets/images/ic_down.svg";
+  static String icTime = "assets/images/ic-time.svg";
+  static String icDate = "assets/images/ic-date.svg";
 }

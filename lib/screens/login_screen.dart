@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontSize: size(24),
                               color: ColorConst.dark,
                               fontWeight: FontWeight.w700,
-                              fontFamily: 'Urbanist')),
+                              fontFamily: 'Inter')),
                       TextSpan(
                           text: 'kupan.',
                           style: TextStyle(

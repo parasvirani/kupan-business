@@ -67,14 +67,14 @@ class _OtpScreenState extends State<OtpScreen> {
                             fontSize: size(16),
                             color: ColorConst.dark,
                             fontWeight: FontWeight.w500,
-                            fontFamily: 'Urbanist')),
+                            fontFamily: 'Inter')),
                     TextSpan(
                         text: '+91 ${args['mobile_number']}',
                         style: TextStyle(
                             fontSize: size(16),
                             color: ColorConst.dark,
                             fontWeight: FontWeight.w700,
-                            fontFamily: 'Urbanist')),
+                            fontFamily: 'Inter')),
                   ],
                 ),
               ),
@@ -94,7 +94,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 style: TextStyle(fontSize: size(16),
                     color: ColorConst.dark,
                     fontWeight: FontWeight.w500,
-                    fontFamily: 'Urbanist'),
+                    fontFamily: 'Inter'),
                 textFieldAlignment: MainAxisAlignment.center,
                 fieldStyle: FieldStyle.box, // Or box
                 onChanged: (value) {

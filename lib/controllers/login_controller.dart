@@ -65,11 +65,9 @@ class LoginController extends GetxController {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         otpResponse.value = VerifyOtpRes.fromJson(data);
-        print("OTP: ${otpResponse.value!.success}");
-        // print("OTP: ${otpResponse.value!.message}");
         if (otpResponse.value!.success!) {
           box.write(StringConst.TOKEN, otpResponse.value?.data?.token);
-          Get.toNamed(AppRoutes.details);
+          Get.toNamed(AppRoutes.details, arguments: {"mobile_number": mobileNumber});
         } else {
           errorOtpMessage.value = otpResponse.value!.message!;
         }

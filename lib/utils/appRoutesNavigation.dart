@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:kupan_business/screens/login_screen.dart';
-import '../screens/details_screen.dart';
+import '../screens/details/details_screen.dart';
 import '../screens/otp_screen.dart';
 import '../screens/personal_info.dart';
 import '../screens/splash_screen.dart';

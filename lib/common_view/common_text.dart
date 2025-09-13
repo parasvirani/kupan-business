@@ -27,7 +27,7 @@ class CommonText extends StatelessWidget {
       text,
       style: TextStyle(
         color: color ?? ColorConst.white,
-        fontFamily: fontFamily ?? "Urbanist",
+        fontFamily: fontFamily ?? "Inter",
         fontWeight: fontWeight ?? FontWeight.w500,
         fontSize: fontSize ?? size(14),
       ),
