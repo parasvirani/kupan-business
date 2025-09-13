@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:kupan_business/screens/login_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/details/details_screen.dart';
 import '../screens/otp_screen.dart';
 import '../screens/personal_info.dart';
@@ -41,5 +42,12 @@ class AppPage {
       page: () => const DetailsScreen(),
       binding: null,
     ),
+    GetPage(
+      preventDuplicates: true,
+      name: AppRoutes.dashboard,
+      page: () => const DashboardScreen(),
+      binding: null,
+    ),
+
   ];
 }

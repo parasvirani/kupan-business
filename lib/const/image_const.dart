@@ -41,4 +41,5 @@ class ImageConst {
   static String icDown = "assets/images/ic_down.svg";
   static String icTime = "assets/images/ic-time.svg";
   static String icDate = "assets/images/ic-date.svg";
+  static String addCouple = "assets/images/add-couple.svg";
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 import '../common_view/common_text.dart';
 import '../const/color_const.dart';
 import '../const/image_const.dart';
+import '../const/string_const.dart';
 import '../utils/appRoutesStrings.dart';
 import '../utils/utils.dart';
 
@@ -16,6 +18,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
 
+  final box = GetStorage();
+
   @override
   void initState() {
     // TODO: implement initState
@@ -25,7 +29,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
   getData() async {
     await Future.delayed(Duration(seconds: 3));
-    Get.offNamed(AppRoutes.login);
+    String? token = box.read(StringConst.TOKEN);
+    if (token?.isNotEmpty ?? false) {
+      Get.offNamed(AppRoutes.dashboard);
+    } else {
+      Get.offNamed(AppRoutes.login);
+    }
+
+
   }
 
   @override

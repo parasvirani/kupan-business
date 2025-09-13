@@ -1,4 +1,4 @@
-
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:country_state_city/country_state_city.dart' as country;
@@ -6,17 +6,34 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:http/http.dart' as http;
+import 'package:kupan_business/const/string_const.dart';
 import '../models/Days.dart';
+import '../models/user_update_res.dart';
+import '../models/verify_otp_res.dart';
+import '../services/api_service.dart';
+import '../utils/appRoutesStrings.dart';
 
 class DetailsController extends GetxController {
+  final ApiService _apiService = ApiService();
 
+  final box = GetStorage();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController businessController = TextEditingController();
+
+  RxDouble lat = 0.0.obs;
+  RxDouble long = 0.0.obs;
+
+  var isLoading = false.obs;
+  var userUpdateRes = Rxn<UserUpdateRes>();
+  var errorMessage = ''.obs;
+
   File? imageFile;
+  String? selectedBusinessType;
 
   RxList<country.State> states = <country.State>[].obs;
   RxList<country.City> cities = <country.City>[].obs;
@@ -53,6 +70,7 @@ class DetailsController extends GetxController {
     Days(day: "Friday"),
     Days(day: "Saturday"),
   ].obs;
+  RxString errorMessageDaySelection = "".obs;
 
   @override
   void onInit() {
@@ -61,7 +79,70 @@ class DetailsController extends GetxController {
     getState();
   }
 
-  daySelector(int index){
+  getStarted() async {
+    isLoading.value = true;
+    errorMessage.value = '';
+
+    try {
+      List<String> days = daysList
+          .where((element) => element.isSelected)
+          .map((element) => element.day ?? "")
+          .where((day) => day.isNotEmpty)
+          .toList();
+
+      Map<String, dynamic> map = {
+        "profilePic": imageFile?.path ?? "",
+        "name": nameController.text,
+        "contact": phoneController.text,
+        "email": emailController.text,
+        "businessName": businessController.text,
+        "businessType": selectedBusinessType?.toLowerCase(),
+        "outletImages": images?.map((element) => element.path,).toList() ?? [],
+        "outletName": outletNameController.text,
+        "address": addressLine1Controller.text,
+        "address2": addressLine2Controller.text,
+        "landmark": landmarkController.text,
+        "state": selectedState?.name,
+        "city": selectedCity?.name,
+        "pincode": zipCodeController.text,
+        "outletDay": days,
+        "outletTime":
+            "${startTime!.format(Get.context!)} - ${endTime!.format(Get.context!)}",
+        "role": "vendor",
+        "lat": lat.value,
+        "long": long.value,
+      };
+
+      http.Response response = await _apiService.updateUser(map);
+
+      // print("User add successfully ${response.body}");
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        userUpdateRes.value = UserUpdateRes.fromJson(data);
+
+        if (userUpdateRes.value!.success!) {
+
+          box.write(StringConst.USER_ID, userUpdateRes.value?.data?.id);
+          box.write(StringConst.USER_NAME, userUpdateRes.value?.data?.name);
+
+          Get.toNamed(AppRoutes.dashboard);
+        } else {
+          errorMessage.value = userUpdateRes.value!.message!;
+        }
+      } else {
+        final error = jsonDecode(response.body);
+        errorMessage.value = error['message'] ?? 'Login failed';
+      }
+    } catch (e) {
+      print("Login::$e");
+      errorMessage.value = "Error: ${e.toString()}";
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  daySelector(int index) {
     daysList[index].isSelected = !daysList[index].isSelected;
     update();
   }
@@ -75,7 +156,6 @@ class DetailsController extends GetxController {
     var city = await country.getStateCities("IN", stateCode);
     cities(city);
   }
-
 
   updateState(country.State state) {
     selectedState = state;
@@ -92,9 +172,10 @@ class DetailsController extends GetxController {
 
   updateStateByName(String stateName, {String? cityName}) async {
     // Find the state by name
-    var stateList = await country.getStatesOfCountry('IN'); // change 'IN' as needed
+    var stateList =
+        await country.getStatesOfCountry('IN'); // change 'IN' as needed
     country.State state = stateList.firstWhere(
-          (s) => s.name.toLowerCase() == stateName.toLowerCase(),
+      (s) => s.name.toLowerCase() == stateName.toLowerCase(),
       orElse: () => throw Exception("State not found"),
     );
 
@@ -102,11 +183,12 @@ class DetailsController extends GetxController {
     selectedCity = null;
 
     // Load cities for this state
-    var cityList = await country.getStateCities(state.countryCode, state.isoCode);
+    var cityList =
+        await country.getStateCities(state.countryCode, state.isoCode);
 
     if (cityName != null) {
       final city = cityList.firstWhere(
-            (c) => c.name.toLowerCase() == cityName.toLowerCase(),
+        (c) => c.name.toLowerCase() == cityName.toLowerCase(),
         orElse: () => throw Exception("City not found"),
       );
       selectedCity = city;
@@ -146,19 +228,12 @@ class DetailsController extends GetxController {
       position.latitude,
       position.longitude,
     );
+
+    lat(position.latitude);
+    long(position.longitude);
+
     Placemark place = placemarks[0];
 
-    //             String address = """
-    // Address Line 1: ${place.street}
-    // Landmark: ${place.subLocality}
-    // City: ${place.locality}
-    // State: ${place.administrativeArea}
-    // Zip Code: ${place.postalCode}
-    // Country: ${place.country}
-    // """;
-    //             print("=====address=====");
-    //             print(address);
-    // print("=====address=====");
     addressLine1Controller.text = place.street ?? "";
     landmarkController.text = place.subLocality ?? "";
     zipCodeController.text = place.postalCode ?? "";
@@ -171,6 +246,8 @@ class DetailsController extends GetxController {
       latitude,
       longitude,
     );
+    lat(latitude);
+    long(longitude);
     Placemark place = placemarks[0];
 
     //             String address = """
@@ -197,7 +274,8 @@ class DetailsController extends GetxController {
         position.latitude,
         position.longitude,
       );
-
+      lat(position.latitude);
+      long(position.longitude);
       Placemark place = placemarks[0];
 
       print("Address Line 1: ${place.street}");

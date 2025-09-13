@@ -32,7 +32,7 @@ class _OutletInfoState extends State<OutletInfo> {
   DetailsController controller = Get.put(DetailsController());
 
   final _fromKey = GlobalKey<FormState>();
-  String? selectedBusinessType;
+
   File? _imageFile;
   final List<String> businessTypes = [
     'Restaurant',
@@ -61,20 +61,20 @@ class _OutletInfoState extends State<OutletInfo> {
       controller.cityErrorMessage("");
     }
 
-    if (controller.startDay == null) {
-      controller.startDateErrorMessage("Please select start date");
-      isValid = false;
-    } else {
-      controller.startDateErrorMessage("");
-    }
+    // if (controller.startDay == null) {
+    //   controller.startDateErrorMessage("Please select start date");
+    //   isValid = false;
+    // } else {
+    //   controller.startDateErrorMessage("");
+    // }
 
-    if (controller.endDay == null) {
-      controller.endDateErrorMessage("Please select end date");
-      isValid = false;
-    } else {
-      controller.endDateErrorMessage("");
-      controller.endDateErrorMessage("");
-    }
+    // if (controller.endDay == null) {
+    //   controller.endDateErrorMessage("Please select end date");
+    //   isValid = false;
+    // } else {
+    //   controller.endDateErrorMessage("");
+    //   controller.endDateErrorMessage("");
+    // }
 
     if (controller.startTime == null) {
       controller.startTimeErrorMessage("Please select start time");
@@ -96,6 +96,15 @@ class _OutletInfoState extends State<OutletInfo> {
     } else {
       controller.errorMessageOutletImages("");
     }
+
+    bool isAnySelected = controller.daysList.any((data) => data.isSelected);
+    if (!isAnySelected) {
+      controller.errorMessageDaySelection("Please select at least one day");
+      isValid = false;
+    } else {
+      controller.errorMessageDaySelection("");
+    }
+
 
     return isValid;
   }
@@ -225,7 +234,7 @@ class _OutletInfoState extends State<OutletInfo> {
                   ),
                   SizedBox(height: size(12)),
                   CommonDropdown(
-                    value: selectedBusinessType,
+                    value: controller.selectedBusinessType,
                     hintText: 'Select Business Type',
                     prefixIcon: Padding(
                       padding: EdgeInsets.symmetric(horizontal: size(10)),
@@ -239,9 +248,7 @@ class _OutletInfoState extends State<OutletInfo> {
                       return null;
                     },
                     onChanged: (value) {
-                      setState(() {
-                        selectedBusinessType = value;
-                      });
+                        controller.selectedBusinessType = value;
                     },
                   ),
                   SizedBox(height: size(12)),
@@ -521,6 +528,14 @@ class _OutletInfoState extends State<OutletInfo> {
                           )),
                     ),
                   ),
+                  Visibility(
+                    visible: controller
+                        .errorMessageDaySelection.value.isNotEmpty,
+                    child: CommonText(
+                      text: controller.errorMessageDaySelection.value,
+                      color: Colors.red,
+                    ),
+                  ),
                   SizedBox(height: size(12)),
                   Row(
                     children: [
@@ -578,16 +593,26 @@ class _OutletInfoState extends State<OutletInfo> {
                       ),
                     ],
                   ),
+                  if (controller.errorMessage.isNotEmpty) ...[
+                    SizedBox(height: size(5)),
+                    Padding(
+                      padding:
+                      EdgeInsets.symmetric(horizontal: size(10)),
+                      child: CommonText(
+                        text: controller.errorMessage.value,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
                   SizedBox(height: size(12)),
                   SizedBox(
                     width: Get.width,
                     child: CommonButton(
+                      isLoading: controller.isLoading.value,
                         onPressed: () {
                           if (validateAll()) {
-                            print("Continue");
+                            controller.getStarted();
                           }
-                          // controller.login(_phoneController.text.trim(), "customer");
-                          // Get.toNamed(AppRoutes.otp);
                         },
                         text: 'Get Started'),
                   ),
