@@ -16,7 +16,24 @@ class CommonTextfield extends StatelessWidget {
   Function(String value)? onChanged;
   final String? Function(String?)? validator;
   bool isNumber = false;
-  CommonTextfield({super.key, required this.controller, required this.hintText, this.prefixIcon, this.keyboardType, this.readOnly, this.onTap,this.validator, this.isNumber = false, this.suffixIcon, this.onChanged});
+  int minLines;
+  int maxLines;
+
+  CommonTextfield({
+    super.key,
+    required this.controller,
+    required this.hintText,
+    this.prefixIcon,
+    this.keyboardType,
+    this.readOnly,
+    this.onTap,
+    this.validator,
+    this.isNumber = false,
+    this.suffixIcon,
+    this.onChanged,
+    this.minLines = 1,
+    this.maxLines = 1,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,30 +41,37 @@ class CommonTextfield extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType ?? TextInputType.none,
       readOnly: readOnly ?? false,
-      onTap: onTap ?? (){},
+      onTap: onTap ?? () {},
       onChanged: onChanged ?? (value) {},
       validator: validator,
+      minLines: minLines,
+      maxLines: maxLines,
       inputFormatters: isNumber
           ? [
-        FilteringTextInputFormatter.digitsOnly, // only digits
-        LengthLimitingTextInputFormatter(10), // max 10 digits
-      ]
+              FilteringTextInputFormatter.digitsOnly, // only digits
+              LengthLimitingTextInputFormatter(10), // max 10 digits
+            ]
           : [],
-      style: TextStyle(fontSize: size(16),
+      style: TextStyle(
+          fontSize: size(16),
           color: ColorConst.dark,
           fontWeight: FontWeight.w500,
           fontFamily: 'Inter'),
       decoration: InputDecoration(
         prefixIcon: prefixIcon,
-        contentPadding: EdgeInsets.symmetric(horizontal: size(10),),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: size(10),
+          vertical: size(5),
+        ),
         errorStyle: TextStyle(
           color: Colors.red,
           fontFamily: "Inter",
           fontWeight: FontWeight.w500,
           fontSize: size(14),
         ),
-        prefixText: isNumber ? "+91 ": '',
-        prefixStyle: TextStyle(fontSize: size(16),
+        prefixText: isNumber ? "+91 " : '',
+        prefixStyle: TextStyle(
+            fontSize: size(16),
             color: ColorConst.dark,
             fontWeight: FontWeight.w500,
             fontFamily: 'Inter'),
@@ -61,26 +85,23 @@ class CommonTextfield extends StatelessWidget {
         ),
         suffixIcon: suffixIcon,
         hintText: hintText,
-        hintStyle: TextStyle(fontSize: size(16),
+        hintStyle: TextStyle(
+            fontSize: size(16),
             color: ColorConst.dark,
             fontWeight: FontWeight.w500,
             fontFamily: 'Inter'),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(size(8)),
-          borderSide: BorderSide(color: Colors.red)
-        ),
+            borderRadius: BorderRadius.circular(size(8)),
+            borderSide: BorderSide(color: Colors.red)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(size(8)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(size(8)),
-          borderSide: BorderSide(color: ColorConst.border)
-        ),
+            borderRadius: BorderRadius.circular(size(8)),
+            borderSide: BorderSide(color: ColorConst.border)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(size(8)),
-            borderSide: BorderSide(color: ColorConst.primary)
-        ),
-
+            borderSide: BorderSide(color: ColorConst.primary)),
       ),
     );
   }

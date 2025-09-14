@@ -42,4 +42,16 @@ class ApiService {
 
     return await http.put(url, headers: headers, body: body);
   }
+
+  Future<http.Response> getUser() async {
+
+
+    String userId = box.read(StringConst.USER_ID);
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/users/$userId");
+    final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
+
+    return await http.get(url, headers: headers);
+  }
 }

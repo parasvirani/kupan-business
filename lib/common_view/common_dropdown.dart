@@ -75,10 +75,14 @@ class _CommonDropdownState extends State<CommonDropdown> {
       items: widget.items.map((String item) {
         return DropdownMenuItem<String>(
           value: item,
-          child: Text(item),
+          child: Text(capitalize(item)),
         );
       }).toList(),
       onChanged: widget.onChanged,
     );
+  }
+  String capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
   }
 }

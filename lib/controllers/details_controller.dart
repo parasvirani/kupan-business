@@ -9,7 +9,9 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:kupan_business/const/string_const.dart';
+import 'package:kupan_business/controllers/dashboard_controller.dart';
 import '../models/Days.dart';
 import '../models/user_update_res.dart';
 import '../models/verify_otp_res.dart';
@@ -54,6 +56,7 @@ class DetailsController extends GetxController {
   RxString endDateErrorMessage = "".obs;
   RxString startTimeErrorMessage = "".obs;
   RxString endTimeErrorMessage = "".obs;
+  DashboardController dashboardController = Get.put(DashboardController());
 
   TextEditingController addressLine1Controller = TextEditingController();
   TextEditingController addressLine2Controller = TextEditingController();
@@ -70,6 +73,7 @@ class DetailsController extends GetxController {
     Days(day: "Friday"),
     Days(day: "Saturday"),
   ].obs;
+
   RxString errorMessageDaySelection = "".obs;
 
   @override
@@ -79,7 +83,19 @@ class DetailsController extends GetxController {
     getState();
   }
 
-  getStarted() async {
+  TimeOfDay parseTime(String timeString) {
+    // Clean up hidden Unicode spaces
+    timeString = timeString.replaceAll('\u202F', ' ').trim();
+
+    // Split into parts
+    final format = DateFormat("h:mm a");
+    final dateTime = format.parse(timeString);
+
+    return TimeOfDay.fromDateTime(dateTime);
+  }
+
+
+  getStarted(bool isEdit) async {
     isLoading.value = true;
     errorMessage.value = '';
 
@@ -90,6 +106,7 @@ class DetailsController extends GetxController {
           .where((day) => day.isNotEmpty)
           .toList();
 
+      print("User add successfully ${selectedState?.name}");
       Map<String, dynamic> map = {
         "profilePic": imageFile?.path ?? "",
         "name": nameController.text,
@@ -115,7 +132,7 @@ class DetailsController extends GetxController {
 
       http.Response response = await _apiService.updateUser(map);
 
-      // print("User add successfully ${response.body}");
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
@@ -125,8 +142,13 @@ class DetailsController extends GetxController {
 
           box.write(StringConst.USER_ID, userUpdateRes.value?.data?.id);
           box.write(StringConst.USER_NAME, userUpdateRes.value?.data?.name);
+          if (isEdit) {
+            dashboardController.getUser();
+            Get.back();
+          } else {
+            Get.offAllNamed(AppRoutes.dashboard);
+          }
 
-          Get.toNamed(AppRoutes.dashboard);
         } else {
           errorMessage.value = userUpdateRes.value!.message!;
         }

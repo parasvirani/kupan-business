@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:get/get.dart';
 import 'package:kupan_business/screens/dashboard/add_kupan_view.dart';
 import 'package:kupan_business/screens/dashboard/profile_view.dart';
 
 import '../../const/color_const.dart';
 import '../../const/image_const.dart';
+import '../../controllers/dashboard_controller.dart';
 import '../../utils/utils.dart';
 import 'home_view.dart';
 
@@ -17,6 +19,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int currentIndex = 0;
+  DashboardController dashboardController = Get.put(DashboardController());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

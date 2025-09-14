@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kupan_business/screens/details/components/personal_info.dart';
+import '../../controllers/dashboard_controller.dart';
 import 'components/outlet_info.dart';
 
 class DetailsScreen extends StatefulWidget {
@@ -13,12 +14,19 @@ class DetailsScreen extends StatefulWidget {
 class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProviderStateMixin {
 
   late TabController _tabController;
+
   var args = Get.arguments;
+  DashboardController? dashboardController;
 
 
   @override
   void initState() {
     super.initState();
+
+    if (args['isEdit']) {
+      dashboardController = Get.put(DashboardController());
+    }
+
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -62,7 +70,7 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
           Container(
             margin: EdgeInsets.symmetric(horizontal: 20),
             child: IgnorePointer(
-              ignoring: true,
+              ignoring: args['isEdit'] ? false : true,
               child: TabBar(
                 controller: _tabController,
                 labelColor: Color(0xFFFF4500),
@@ -90,10 +98,10 @@ class _DetailsScreenState extends State<DetailsScreen> with SingleTickerProvider
               physics: NeverScrollableScrollPhysics(),
               controller: _tabController,
               children: [
-                PersonalInfo(mobileNumber : args['mobile_number'], onTap:() {
+                PersonalInfo(isEdit : args['isEdit'], mobileNumber : args['mobile_number'], onTap:() {
                   _tabController.animateTo(1);
                 },),
-                OutletInfo(),
+                OutletInfo(isEdit : args['isEdit']),
               ],
             ),
           ),

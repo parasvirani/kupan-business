@@ -71,9 +71,9 @@ class LoginController extends GetxController {
           box.write(StringConst.USER_NAME, otpResponse.value?.data?.user?.name);
 
           if (otpResponse.value?.data?.user?.name != null) {
-            Get.toNamed(AppRoutes.dashboard);
+            Get.offAllNamed(AppRoutes.dashboard);
           } else {
-            Get.toNamed(AppRoutes.details, arguments: {"mobile_number": mobileNumber});
+            Get.offAllNamed(AppRoutes.details, arguments: {"isEdit":false, "mobile_number": mobileNumber});
           }
 
         } else {

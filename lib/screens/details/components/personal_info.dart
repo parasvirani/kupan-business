@@ -8,6 +8,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kupan_business/common_view/common_text.dart';
 import 'package:kupan_business/const/image_const.dart';
+import 'package:kupan_business/controllers/dashboard_controller.dart';
 import 'package:kupan_business/controllers/details_controller.dart';
 
 import '../../../common_view/common_button.dart';
@@ -16,16 +17,17 @@ import '../../../utils/utils.dart';
 
 class PersonalInfo extends StatefulWidget {
   String? mobileNumber;
+  bool isEdit;
   Function()? onTap;
 
-  PersonalInfo({super.key, this.mobileNumber, this.onTap});
+  PersonalInfo({super.key, this.mobileNumber, this.onTap, this.isEdit =false});
 
   @override
   State<PersonalInfo> createState() => _PersonalInfoState();
 }
 
 class _PersonalInfoState extends State<PersonalInfo> {
-
+  DashboardController dashboardController = Get.put(DashboardController());
   DetailsController detailsController = Get.put(DetailsController());
 
   final _fromKey = GlobalKey<FormState>();
@@ -35,7 +37,42 @@ class _PersonalInfoState extends State<PersonalInfo> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    detailsController.phoneController.text = widget.mobileNumber ?? "";
+    // print("Dashboard Controller : ${widget.dashboardController != null}");
+    getDetails();
+  }
+
+  getDetails () {
+    if (widget.isEdit) {
+      // print("Dashboard Controller : ${dashboardController.userUpdateRes.value?.data?.contact ?? ""}");
+      detailsController.nameController.text = dashboardController.userUpdateRes.value?.data?.name ?? "";
+      detailsController.phoneController.text = (dashboardController.userUpdateRes.value?.data?.contact ?? "").replaceFirst("+91", "");
+      detailsController.emailController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.email ?? "";
+      detailsController.businessController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessName ?? "";
+
+      detailsController.outletNameController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletName ?? "";
+      detailsController.selectedBusinessType = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessType ?? "";
+      detailsController.addressLine1Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address ?? "";
+      detailsController.addressLine2Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address2 ?? "";
+      detailsController.landmarkController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.landmark ?? "";
+      detailsController.updateStateByName(dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.state ?? "", cityName: dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.city ?? "");
+      detailsController.zipCodeController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.pincode ?? "";
+      final apiDays = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletDay ?? [];
+
+      for (var day in detailsController.daysList) {
+        day.isSelected = apiDays.contains(day.day);
+      }
+      detailsController.daysList.refresh();
+
+      String apiTime = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletTime ?? "9 AM - 9 PM";
+      final parts = apiTime.split('-');
+
+      if (parts.length == 2) {
+        detailsController.startTime = detailsController.parseTime(parts[0].trim());
+        detailsController.endTime = detailsController.parseTime(parts[1].trim());
+      }
+    } else {
+      detailsController.phoneController.text = widget.mobileNumber ?? "";
+    }
   }
 
   @override
@@ -195,10 +232,14 @@ class _PersonalInfoState extends State<PersonalInfo> {
                     child: CommonButton(
                         onPressed: () {
                           if (_fromKey.currentState!.validate()) {
-                            widget.onTap!();
+                            if (widget.isEdit) {
+                              detailsController.getStarted(widget.isEdit);
+                            } else {
+                              widget.onTap!();
+                            }
                           }
                         },
-                        text: 'Continue'),
+                        text: widget.isEdit ? "Update" : 'Continue'),
                   ),
 
                   SizedBox(height: 20),

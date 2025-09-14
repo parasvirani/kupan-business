@@ -19,10 +19,12 @@ import '../../../common_view/common_button.dart';
 import '../../../common_view/common_dropdown.dart';
 import '../../../common_view/common_textfield.dart';
 import '../../../common_view/state_sheet.dart';
+import '../../../controllers/dashboard_controller.dart';
 import 'address_search_bottom_sheet.dart';
 
 class OutletInfo extends StatefulWidget {
-  const OutletInfo({super.key});
+  bool isEdit;
+  OutletInfo({super.key, this.isEdit = false});
 
   @override
   State<OutletInfo> createState() => _OutletInfoState();
@@ -30,17 +32,14 @@ class OutletInfo extends StatefulWidget {
 
 class _OutletInfoState extends State<OutletInfo> {
   DetailsController controller = Get.put(DetailsController());
-
+  DashboardController dashboardController = Get.put(DashboardController());
   final _fromKey = GlobalKey<FormState>();
 
   File? _imageFile;
   final List<String> businessTypes = [
-    'Restaurant',
-    'Cafe',
-    'Retail Store',
-    'Grocery Store',
-    'Service Center',
-    'Other'
+    'restaurant',
+    'cafe',
+    'hotel'
   ];
 
   bool validateAll() {
@@ -110,6 +109,39 @@ class _OutletInfoState extends State<OutletInfo> {
   }
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getDetails();
+  }
+
+  getDetails() {
+    if (widget.isEdit) {
+      controller.outletNameController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletName ?? "";
+      controller.selectedBusinessType = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessType ?? "";
+      controller.addressLine1Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address ?? "";
+      controller.addressLine2Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address2 ?? "";
+      controller.landmarkController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.landmark ?? "";
+      controller.updateStateByName(dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.state ?? "", cityName: dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.city ?? "");
+      controller.zipCodeController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.pincode ?? "";
+      final apiDays = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletDay ?? [];
+
+      for (var day in controller.daysList) {
+        day.isSelected = apiDays.contains(day.day);
+      }
+      controller.daysList.refresh();
+
+      String apiTime = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletTime ?? "9 AM - 9 PM";
+      final parts = apiTime.split('-');
+
+      if (parts.length == 2) {
+        controller.startTime = controller.parseTime(parts[0].trim());
+        controller.endTime = controller.parseTime(parts[1].trim());
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GetBuilder<DetailsController>(
       builder: (controller) {
@@ -121,7 +153,7 @@ class _OutletInfoState extends State<OutletInfo> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
+                  SizedBox(height: size(20)),
                   Container(
                     width: double.infinity,
                     height: 150,
@@ -180,7 +212,7 @@ class _OutletInfoState extends State<OutletInfo> {
                             ],
                           ),
                   ),
-                  const SizedBox(height: 5),
+                  SizedBox(height: size(5)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -611,10 +643,10 @@ class _OutletInfoState extends State<OutletInfo> {
                       isLoading: controller.isLoading.value,
                         onPressed: () {
                           if (validateAll()) {
-                            controller.getStarted();
+                            controller.getStarted(widget.isEdit);
                           }
                         },
-                        text: 'Get Started'),
+                        text: widget.isEdit ? "Update" : 'Get Started'),
                   ),
                 ],
               ),
