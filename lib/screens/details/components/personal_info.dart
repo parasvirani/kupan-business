@@ -37,8 +37,9 @@ class _PersonalInfoState extends State<PersonalInfo> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    // print("Dashboard Controller : ${widget.dashboardController != null}");
-    getDetails();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getDetails();
+    });
   }
 
   getDetails () {
