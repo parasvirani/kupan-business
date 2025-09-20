@@ -29,8 +29,23 @@ class _AddKupanViewState extends State<AddKupanView> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   DashboardController dashboardController = Get.find();
-
+  final _fromKey = GlobalKey<FormState>();
   File? _imageFile;
+
+  bool validateAll() {
+    bool isValid = _fromKey.currentState!.validate();
+
+    bool isAnySelected = dashboardController.daysList.any((data) => data.isSelected);
+    if (!isAnySelected) {
+      dashboardController.errorMessageDaySelection("Please select at least one day");
+      isValid = false;
+    } else {
+      dashboardController.errorMessageDaySelection("");
+    }
+
+
+    return isValid;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,165 +95,188 @@ class _AddKupanViewState extends State<AddKupanView> {
         child: Padding(
           padding: EdgeInsets.all(size(20)),
           child: Obx(
-            ()=> Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: size(20)),
-                Container(
-                  width: double.infinity,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: ColorConst.primary.withOpacity(0.03),
-                    border: Border.all(
-                      color: ColorConst.primary.withOpacity(0.5),
-                      style: BorderStyle.solid,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: dashboardController.images?.isNotEmpty ?? false
-                      ? PageView.builder(
-                    itemCount: dashboardController.images?.length,
-                    itemBuilder: (context, index) => ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Stack(
-                        children: [
-                          Image.file(
-                            File(dashboardController.images?[index].path ?? ""),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: 150,
-                          ),
-                          Positioned(
-                            right: size(10),
-                            top: size(10),
-                            child: InkWell(
-                              onTap: () {
-                                dashboardController.images?.removeAt(index);
-                              },
-                              child: Container(
-                                  padding: EdgeInsets.all(size(5)),
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius:
-                                      BorderRadius.circular(8)),
-                                  child: Icon(Icons.close)),
-                            ),
-                          ),
-                        ],
+            ()=> Form(
+              key: _fromKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: size(20)),
+                  Container(
+                    width: double.infinity,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: ColorConst.primary.withOpacity(0.03),
+                      border: Border.all(
+                        color: ColorConst.primary.withOpacity(0.5),
+                        style: BorderStyle.solid,
                       ),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  )
-                      : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    child: dashboardController.images?.isNotEmpty ?? false
+                        ? PageView.builder(
+                      itemCount: dashboardController.images?.length,
+                      itemBuilder: (context, index) => ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Stack(
+                          children: [
+                            Image.file(
+                              File(dashboardController.images?[index].path ?? ""),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: 150,
+                            ),
+                            Positioned(
+                              right: size(10),
+                              top: size(10),
+                              child: InkWell(
+                                onTap: () {
+                                  dashboardController.images?.removeAt(index);
+                                },
+                                child: Container(
+                                    padding: EdgeInsets.all(size(5)),
+                                    decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius:
+                                        BorderRadius.circular(8)),
+                                    child: Icon(Icons.close)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                        : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset(ImageConst.icUpload),
+                        const SizedBox(height: 8),
+                        CommonText(
+                          text: 'Upload Image',
+                          fontSize: size(14),
+                          color: ColorConst.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: size(5)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      SvgPicture.asset(ImageConst.icUpload),
-                      const SizedBox(height: 8),
-                      CommonText(
-                        text: 'Upload Image',
-                        fontSize: size(14),
-                        color: ColorConst.primary,
-                        fontWeight: FontWeight.w600,
+                      Visibility(
+                        visible: dashboardController
+                            .errorMessageOutletImages.value.isNotEmpty,
+                        child: CommonText(
+                          text: dashboardController.errorMessageOutletImages.value,
+                          color: Colors.red,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: dashboardController.images!.length < 4
+                            ? () {
+                          _showPickerOptions();
+                        }
+                            : null,
+                        child: CommonText(
+                          text: "Add Image ${dashboardController.images?.length}/4",
+                          color: dashboardController.images!.length < 4
+                              ? ColorConst.primary
+                              : ColorConst.grey,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                SizedBox(height: size(5)),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Visibility(
-                      visible: dashboardController
-                          .errorMessageOutletImages.value.isNotEmpty,
-                      child: CommonText(
-                        text: dashboardController.errorMessageOutletImages.value,
-                        color: Colors.red,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: dashboardController.images!.length < 4
-                          ? () {
-                        _showPickerOptions();
+                  SizedBox(height: size(20)),
+                  CommonTextfield(
+                    controller: dashboardController.titleController,
+                    hintText: 'Title',
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Please enter title.";
+                      } else if (value.length < 2) {
+                        return "Title must be at least 2 characters long.";
                       }
-                          : null,
-                      child: CommonText(
-                        text: "Add Image ${dashboardController.images?.length}/4",
-                        color: dashboardController.images!.length < 4
-                            ? ColorConst.primary
-                            : ColorConst.grey,
+                      // Allow letters, numbers, spaces, and & . -
+                      String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
+                      RegExp regex = RegExp(pattern);
+                      if (!regex.hasMatch(value)) {
+                        return "Outlet name can only contain letters, numbers, spaces, &, ., and -.";
+                      }
+                      return null; // input is valid
+                    },
+                    keyboardType: TextInputType.name,
+                  ),
+                  SizedBox(height: size(20)),
+                  CommonText(text: "Valid on", color: Colors.black,),
+                  SizedBox(height: size(5)),
+                  Obx(
+                      ()=> Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(size(10)),
+                        border: Border.all(color: ColorConst.border, width: 1)
+                      ),
+                      padding: EdgeInsets.all(size(10)),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            childAspectRatio: 2,
+                            crossAxisSpacing: size(10),
+                            mainAxisSpacing: size(10)
+                        ),
+                        itemCount: dashboardController.daysList.length,
+                        itemBuilder: (context, index) => InkWell(
+                          onTap: () {
+                            dashboardController.daySelector(index);
+                          },
+                          child: Container(
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(size(8)),
+                                  border:
+                                  Border.all(color: ColorConst.border, width: dashboardController.daysList[index].isSelected ? 0 : 1),
+                                  color: dashboardController.daysList[index].isSelected ? ColorConst.primary : Colors.white),
+                              child: CommonText(
+                                text: dashboardController.daysList[index].day ?? "",
+                                color: dashboardController.daysList[index].isSelected ? Colors.white : Colors.black,
+                                fontSize: size(12),
+                              )),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-                SizedBox(height: size(20)),
-                CommonTextfield(
-                  controller: dashboardController.titleController,
-                  hintText: 'Title',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Please enter title.";
-                    } else if (value.length < 2) {
-                      return "Title must be at least 2 characters long.";
-                    }
-                    // Allow letters, numbers, spaces, and & . -
-                    String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
-                    RegExp regex = RegExp(pattern);
-                    if (!regex.hasMatch(value)) {
-                      return "Outlet name can only contain letters, numbers, spaces, &, ., and -.";
-                    }
-                    return null; // input is valid
-                  },
-                  keyboardType: TextInputType.name,
-                ),
-                SizedBox(height: size(20)),
-                CommonTextfield(
-                  controller: dashboardController.titleController,
-                  hintText: 'Location',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Please enter location.";
-                    } else if (value.length < 2) {
-                      return "Location must be at least 2 characters long.";
-                    }
-                    // Allow letters, numbers, spaces, and & . -
-                    String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
-                    RegExp regex = RegExp(pattern);
-                    if (!regex.hasMatch(value)) {
-                      return "Outlet name can only contain letters, numbers, spaces, &, ., and -.";
-                    }
-                    return null; // input is valid
-                  },
-                  keyboardType: TextInputType.name,
-                ),
-                SizedBox(height: size(20)),
-                CommonTextfield(
-                  controller: dashboardController.titleController,
-                  hintText: 'Term & Conditions',
-                  minLines: 5,
-                  maxLines: 5,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Please enter Term & Conditions.";
-                    } else if (value.length < 2) {
-                      return "Term & Conditions must be at least 2 characters long.";
-                    }
-                    // Allow letters, numbers, spaces, and & . -
-                    String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
-                    RegExp regex = RegExp(pattern);
-                    if (!regex.hasMatch(value)) {
-                      return "Outlet name can only contain letters, numbers, spaces, &, ., and -.";
-                    }
-                    return null; // input is valid
-                  },
-                  keyboardType: TextInputType.name,
-                ),
-                SizedBox(height: size(20)),
-                SizedBox(
-                  width: Get.width,
-                  child: CommonButton(onPressed: () {
-
-                  }, text: "Save Kupan"),
-                )
-              ],
+                  ),
+                  Visibility(
+                    visible: dashboardController
+                        .errorMessageDaySelection.value.isNotEmpty,
+                    child: CommonText(
+                      text: dashboardController.errorMessageDaySelection.value,
+                      color: Colors.red,
+                    ),
+                  ),
+                  SizedBox(height: size(20)),
+                  Visibility(
+                    visible: dashboardController
+                        .errorMessageCreateKupan.value.isNotEmpty,
+                    child: CommonText(
+                      text: dashboardController.errorMessageCreateKupan.value,
+                      color: Colors.red,
+                    ),
+                  ),
+                  Obx(
+                    ()=> SizedBox(
+                      width: Get.width,
+                      child: CommonButton(
+                        isLoading: dashboardController.isLoadingCreateKupan.value,
+                          onPressed: () {
+                        if (validateAll()) {
+                          dashboardController.createKupan();
+                        }
+                      }, text: "Save Kupan"),
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
         ),

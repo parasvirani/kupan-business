@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -24,7 +23,6 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   DashboardController dashboardController = Get.find();
@@ -80,7 +78,8 @@ class _HomeViewState extends State<HomeView> {
         leading: IconButton(
             onPressed: () {
               _scaffoldKey.currentState?.openDrawer();
-            }, icon: SvgPicture.asset(ImageConst.ic_menu)),
+            },
+            icon: SvgPicture.asset(ImageConst.ic_menu)),
         centerTitle: true,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -91,7 +90,7 @@ class _HomeViewState extends State<HomeView> {
               color: ColorConst.grey,
             ),
             Obx(
-              ()=> CommonText(
+              () => CommonText(
                 isLoading: dashboardController.isLoading.value,
                 text: dashboardController.currentAddress.value,
                 fontSize: size(16),
@@ -111,9 +110,11 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
       drawer: Drawer(
-        child: MainDrawer(onTap: () {
-          _scaffoldKey.currentState?.closeDrawer();
-        },),
+        child: MainDrawer(
+          onTap: () {
+            _scaffoldKey.currentState?.closeDrawer();
+          },
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -124,7 +125,7 @@ class _HomeViewState extends State<HomeView> {
               CommonTextfield(
                 hintText: 'Search for "restaurant"',
                 readOnly: true,
-                onTap: (){
+                onTap: () {
                   Get.toNamed(AppRoutes.search);
                 },
                 prefixIcon: Padding(
@@ -134,15 +135,46 @@ class _HomeViewState extends State<HomeView> {
                 controller: TextEditingController(),
               ),
               SizedBox(height: size(16)),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                itemCount: deals.length,
-                itemBuilder: (context, index) {
-                  return RestaurantCard(deal: deals[index]);
-                },
-                separatorBuilder: (context, index) => SizedBox(height: size(16),),
+              Obx(
+                () => dashboardController.isLoadingGetKupan.value
+                    ? Shimmer.fromColors(
+                        baseColor: Colors.grey.shade300,
+                        highlightColor: Colors.grey.shade100,
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: deals.length,
+                          itemBuilder: (context, index) {
+                            return Container();
+                          },
+                          separatorBuilder: (context, index) => SizedBox(
+                            height: size(16),
+                          ),
+                        ),
+                      )
+                    : dashboardController.errorMessageGetKupan.value.isNotEmpty
+                        ? Container(
+                  height: Get.width,
+                  alignment: Alignment.center,
+                  child: CommonText(
+                    text: dashboardController.errorMessageGetKupan.value,
+                    color: Colors.red,
+                    fontSize: size(14),
+                  ),
+                )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: dashboardController.kupanList.length,
+                            itemBuilder: (context, index) {
+                              return RestaurantCard(deal: dashboardController.kupanList[index]);
+                            },
+                            separatorBuilder: (context, index) => SizedBox(
+                              height: size(16),
+                            ),
+                          ),
               ),
             ],
           ),
@@ -150,8 +182,4 @@ class _HomeViewState extends State<HomeView> {
       ),
     );
   }
-
 }
-
-
-

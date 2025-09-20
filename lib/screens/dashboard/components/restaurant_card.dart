@@ -5,10 +5,11 @@ import 'package:kupan_business/const/color_const.dart';
 import 'package:kupan_business/const/image_const.dart';
 import 'package:kupan_business/utils/utils.dart';
 
-import '../../../models/restaurant_deal.dart';
+import '../../../models/kupans_list_res.dart';
+
 
 class RestaurantCard extends StatelessWidget {
-  final RestaurantDeal deal;
+  final KupanData deal;
 
   const RestaurantCard({Key? key, required this.deal}) : super(key: key);
 
@@ -40,7 +41,7 @@ class RestaurantCard extends StatelessWidget {
                 bottomLeft: Radius.circular(8),
               ),
               child: Image.asset(
-                deal.image,
+                "",
                 width: size(150),
                 height: size(100),
               ),
@@ -56,21 +57,21 @@ class RestaurantCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CommonText(
-                    text : deal.title,
+                    text : deal.vendorId ?? "",
                     fontSize: size(12),
                     color: ColorConst.textGrey,
                     fontWeight: FontWeight.w500,
                   ),
                   SizedBox(height: size(8)),
                   CommonText(
-                    text : deal.offer,
+                    text : deal.vendorId ?? "",
                     fontSize: size(14),
                     color: ColorConst.black,
                     fontWeight: FontWeight.w600,
                   ),
                   SizedBox(height: size(8)),
                   CommonText(
-                    text : deal.subtitle,
+                    text : deal.vendorId ?? "",
                     fontSize: size(12),
                     color: ColorConst.textGrey,
                     fontWeight: FontWeight.w400,

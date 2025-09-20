@@ -54,4 +54,27 @@ class ApiService {
 
     return await http.get(url, headers: headers);
   }
+
+  Future<http.Response> createKupan(Map<String, dynamic> map) async {
+
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/kupan/create");
+    final headers = {"Content-Type":"application/json","Authorization": "Bearer $token"};
+    final body = jsonEncode(map);
+    return await http.post(url, headers: headers, body: body);
+  }
+
+  Future<http.Response> getKupan() async {
+
+    String userId = box.read(StringConst.USER_ID);
+    String token = box.read(StringConst.TOKEN);
+
+    print("ASDF:::${userId}");
+
+    final url = Uri.parse("$baseUrl/kupan/vendor/$userId");
+    final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
+
+    return await http.get(url, headers: headers);
+  }
 }
