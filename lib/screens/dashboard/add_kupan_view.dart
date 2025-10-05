@@ -190,17 +190,12 @@ class _AddKupanViewState extends State<AddKupanView> {
                   CommonTextfield(
                     controller: dashboardController.titleController,
                     hintText: 'Title',
+                    maxLines: 5,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Please enter title.";
                       } else if (value.length < 2) {
                         return "Title must be at least 2 characters long.";
-                      }
-                      // Allow letters, numbers, spaces, and & . -
-                      String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
-                      RegExp regex = RegExp(pattern);
-                      if (!regex.hasMatch(value)) {
-                        return "Outlet name can only contain letters, numbers, spaces, &, ., and -.";
                       }
                       return null; // input is valid
                     },

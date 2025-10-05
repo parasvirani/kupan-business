@@ -35,6 +35,7 @@ class KupansListRes {
 
 class KupanData {
   final String? id;
+  final String? title;
   final List<String>? kupanImages;
   final List<String>? kupanDays;
   final String? vendorId;
@@ -44,6 +45,7 @@ class KupanData {
 
   KupanData({
     this.id,
+    this.title,
     this.kupanImages,
     this.kupanDays,
     this.vendorId,
@@ -55,6 +57,7 @@ class KupanData {
   factory KupanData.fromJson(Map<String, dynamic> json) {
     return KupanData(
       id: json['_id'],
+      title: json['title'],
       kupanImages: json['kupanImages'] != null
           ? List<String>.from(json['kupanImages'])
           : [],

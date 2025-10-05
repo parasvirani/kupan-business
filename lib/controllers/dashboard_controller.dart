@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:kupan_business/const/string_const.dart';
 import 'package:kupan_business/utils/appRoutesStrings.dart';
 import '../models/Days.dart';
@@ -133,59 +134,109 @@ class DashboardController extends GetxController {
     daysList.refresh();
   }
 
-  createKupan() async {
+  final String uploadUrl = "https://kupan-backend-production-0a1c.up.railway.app/api/v1/uploads";
+  final String token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YmYxNGUyMmQ5ZmM4ZmM3YjZlZWFhMiIsImlhdCI6MTc1OTY4Mzk1NCwiZXhwIjoxNzYwMjg4NzU0fQ.NVozy8rQeAoQ5TftN-ASB0E01Bsm6v7aAGF3FrOwveA";
+
+  Future<void> createKupan() async {
     isLoadingCreateKupan.value = true;
     errorMessageCreateKupan.value = '';
 
     try {
+      // ✅ Step 1: Prepare selected days
       List<String> days = daysList
           .where((element) => element.isSelected)
           .map((element) => element.day ?? "")
           .where((day) => day.isNotEmpty)
           .toList();
 
-      List<String> images = ["ASd.png", "asdf.jpg"];
+      // ✅ Step 2: Upload multiple images & collect URLs
+      List<File> localImages = images!.value; // <-- your selected image files
+      List<String> uploadedUrls = [];
 
+      for (var file in localImages) {
+        String? url = await uploadImage(file);
+        if (url != null) {
+          uploadedUrls.add(url);
+        }
+      }
+
+      print("✅ Uploaded URLs: $uploadedUrls");
+
+      // ✅ Step 3: Create Kupan payload
       Map<String, dynamic> map = {
-        "kupanImages": images,
+        "kupanImages": uploadedUrls,
         "title": titleController.text,
-        "kupanDays": days
+        "kupanDays": days,
       };
 
-      print("ASDF:::${jsonEncode(map)}");
+      print("📦 Payload: ${jsonEncode(map)}");
 
-
+      // ✅ Step 4: Call createKupan API
       http.Response response = await _apiService.createKupan(map);
-
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         createKupanRes.value = CreateKupanRes.fromJson(data);
 
         if (createKupanRes.value!.success!) {
           getKupan();
           currentIndex(0);
           titleController.clear();
-          daysList.forEach((element) {
-            element.isSelected = false;
-          });
+          images!.clear();
+          daysList.forEach((element) => element.isSelected = false);
           daysList.refresh();
         } else {
-
           errorMessageCreateKupan.value = createKupanRes.value!.message!;
         }
       } else {
         final error = jsonDecode(response.body);
-        print("MAP:::${error['message']}");
-        errorMessageCreateKupan.value = error['message'] ?? 'Login failed';
+        errorMessageCreateKupan.value = error['message'] ?? 'Failed to create kupan';
       }
     } catch (e) {
-      print("Login::$e");
+      print("❌ Error: $e");
       errorMessageCreateKupan.value = "Error: ${e.toString()}";
     } finally {
       isLoadingCreateKupan.value = false;
     }
+  }
+
+  Future<String?> uploadImage(File imageFile) async {
+    try {
+      if (!await imageFile.exists()) {
+        print("⚠️ File not found: ${imageFile.path}");
+        return null;
+      }
+
+      var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
+      request.headers['Authorization'] = token;
+
+      // detect file type
+      String ext = imageFile.path.split('.').last.toLowerCase();
+      String mainType = (ext == 'mp4' || ext == 'mov') ? 'video' : 'image';
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'files',
+        imageFile.path,
+        contentType: MediaType(mainType, ext),
+      ));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['data'] != null && data['data'].isNotEmpty) {
+          return data['data'][0];
+        } else if (data['data'] != null) {
+          return data['data'];
+        }
+      } else {
+        print("❌ Upload failed: ${response.body}");
+      }
+    } catch (e) {
+      print("⚠️ Upload error: $e");
+    }
+    return null;
   }
 
   Future getKupan() async {
@@ -204,6 +255,7 @@ class DashboardController extends GetxController {
 
         if (kupansListRes.value!.success!) {
           // print("Success user get");
+          kupanList.clear();
           kupanList.addAll(kupansListRes.value?.data ?? []);
           kupanList.refresh();
         } else {
