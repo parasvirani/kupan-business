@@ -103,7 +103,8 @@ class _PersonalInfoState extends State<PersonalInfo> {
                             shape: BoxShape.circle,
                           ),
                           child: detailsController.imageFile != null ? ClipOval(
-                              child: Image.file(File(detailsController.imageFile!.path))) : Icon(
+                              child: Image.file(File(detailsController.imageFile!.path))) : (dashboardController.userUpdateRes.value?.data?.profilePic ?? "").isNotEmpty ? ClipOval(
+                              child: Image.network(dashboardController.userUpdateRes.value?.data?.profilePic ?? "")) :  Icon(
                             Icons.person,
                             size: 60,
                             color: Colors.white.withOpacity(0.8),
@@ -228,19 +229,22 @@ class _PersonalInfoState extends State<PersonalInfo> {
                   SizedBox(height: 16),
 
                   // Continue Button
-                  Container(
-                    width: Get.width,
-                    child: CommonButton(
-                        onPressed: () {
-                          if (_fromKey.currentState!.validate()) {
-                            if (widget.isEdit) {
-                              detailsController.getStarted(widget.isEdit);
-                            } else {
-                              widget.onTap!();
+                  Obx(
+                    ()=> Container(
+                      width: Get.width,
+                      child: CommonButton(
+                        isLoading: detailsController.isLoading.value,
+                          onPressed: () {
+                            if (_fromKey.currentState!.validate()) {
+                              if (widget.isEdit) {
+                                detailsController.getStarted(widget.isEdit);
+                              } else {
+                                widget.onTap!();
+                              }
                             }
-                          }
-                        },
-                        text: widget.isEdit ? "Update" : 'Continue'),
+                          },
+                          text: widget.isEdit ? "Update" : 'Continue'),
+                    ),
                   ),
 
                   SizedBox(height: 20),

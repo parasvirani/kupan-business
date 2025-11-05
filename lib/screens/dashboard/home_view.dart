@@ -155,21 +155,23 @@ class _HomeViewState extends State<HomeView> {
                       )
                     : dashboardController.errorMessageGetKupan.value.isNotEmpty
                         ? Container(
-                  height: Get.width,
-                  alignment: Alignment.center,
-                  child: CommonText(
-                    text: dashboardController.errorMessageGetKupan.value,
-                    color: Colors.red,
-                    fontSize: size(14),
-                  ),
-                )
+                            height: Get.width,
+                            alignment: Alignment.center,
+                            child: CommonText(
+                              text: dashboardController
+                                  .errorMessageGetKupan.value,
+                              color: Colors.red,
+                              fontSize: size(14),
+                            ),
+                          )
                         : ListView.separated(
                             shrinkWrap: true,
                             physics: NeverScrollableScrollPhysics(),
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             itemCount: dashboardController.kupanList.length,
                             itemBuilder: (context, index) {
-                              return RestaurantCard(deal: dashboardController.kupanList[index]);
+                              return RestaurantCard(
+                                  deal: dashboardController.kupanList[index]);
                             },
                             separatorBuilder: (context, index) => SizedBox(
                               height: size(16),

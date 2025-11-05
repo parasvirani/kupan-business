@@ -105,10 +105,12 @@ class DetailsController extends GetxController {
           .map((element) => element.day ?? "")
           .where((day) => day.isNotEmpty)
           .toList();
+      print("User add successfully ${imageFile?.path}");
+      String? profilePic = await dashboardController.uploadImage(imageFile!);
+      print("User add successfully ${profilePic}");
 
-      print("User add successfully ${selectedState?.name}");
       Map<String, dynamic> map = {
-        "profilePic": imageFile?.path ?? "",
+        "profilePic": profilePic ?? "",
         "name": nameController.text,
         "contact": phoneController.text,
         "email": emailController.text,

@@ -73,14 +73,14 @@ class _ProfileViewState extends State<ProfileView> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
+              Container(
                   width: size(80),
                   height: size(80),
                   decoration: BoxDecoration(
                     color: Color(0xFF7FB3D3),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: (dashboardController.userUpdateRes.value?.data?.profilePic ?? "").isNotEmpty ? ClipOval(child: Image.network(dashboardController.userUpdateRes.value?.data?.profilePic ?? "")) : Icon(
                     Icons.person,
                     size: 60,
                     color: Colors.white.withOpacity(0.8),

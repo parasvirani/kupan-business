@@ -134,9 +134,6 @@ class DashboardController extends GetxController {
     daysList.refresh();
   }
 
-  final String uploadUrl = "https://kupan-backend-production-0a1c.up.railway.app/api/v1/uploads";
-  final String token = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YmYxNGUyMmQ5ZmM4ZmM3YjZlZWFhMiIsImlhdCI6MTc1OTY4Mzk1NCwiZXhwIjoxNzYwMjg4NzU0fQ.NVozy8rQeAoQ5TftN-ASB0E01Bsm6v7aAGF3FrOwveA";
-
   Future<void> createKupan() async {
     isLoadingCreateKupan.value = true;
     errorMessageCreateKupan.value = '';
@@ -207,22 +204,8 @@ class DashboardController extends GetxController {
         return null;
       }
 
-      var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
-      request.headers['Authorization'] = token;
 
-      // detect file type
-      String ext = imageFile.path.split('.').last.toLowerCase();
-      String mainType = (ext == 'mp4' || ext == 'mov') ? 'video' : 'image';
-
-      request.files.add(await http.MultipartFile.fromPath(
-        'files',
-        imageFile.path,
-        contentType: MediaType(mainType, ext),
-      ));
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
+      http.Response response = await _apiService.uploadImage(imageFile: imageFile);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['data'] != null && data['data'].isNotEmpty) {
