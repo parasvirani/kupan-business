@@ -82,7 +82,6 @@ class ApiService {
 
   Future<http.Response> uploadImage({required File imageFile}) async {
 
-    String userId = box.read(StringConst.USER_ID);
     String token = box.read(StringConst.TOKEN);
 
     var request = http.MultipartRequest('POST', Uri.parse("${baseUrl}/uploads"));
@@ -101,5 +100,24 @@ class ApiService {
     var streamedResponse = await request.send();
     var response = await http.Response.fromStream(streamedResponse);
     return response;
+  }
+
+  Future<http.Response> getBusinessOutlets() async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/users/business");
+    final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
+
+    return await http.get(url, headers: headers);
+  }
+
+  Future<http.Response> addBusiness(Map<String, dynamic> map) async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/users/business");
+    final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
+    final body = jsonEncode(map);
+
+    return await http.post(url, headers: headers, body: body);
   }
 }

@@ -194,9 +194,9 @@ class _StateSheetState extends State<StateSheet> with TickerProviderStateMixin {
                             );
                           },
                           child: GestureDetector(
-                            onTap: () {
+                            onTap: () async {
                               // Handle state selection
-                              detailsController.updateState(state);
+                              await detailsController.updateState(state);
                               Get.back();
                               //Navigator.pop(context, state);
                             },

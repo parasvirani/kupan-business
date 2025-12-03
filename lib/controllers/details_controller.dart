@@ -17,6 +17,7 @@ import '../models/user_update_res.dart';
 import '../models/verify_otp_res.dart';
 import '../services/api_service.dart';
 import '../utils/appRoutesStrings.dart';
+import 'my_outlets_controller.dart';
 
 class DetailsController extends GetxController {
   final ApiService _apiService = ApiService();
@@ -24,8 +25,6 @@ class DetailsController extends GetxController {
   final box = GetStorage();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController businessController = TextEditingController();
 
   RxDouble lat = 0.0.obs;
   RxDouble long = 0.0.obs;
@@ -45,6 +44,8 @@ class DetailsController extends GetxController {
   DateTime? endDay;
   TimeOfDay? startTime;
   TimeOfDay? endTime;
+  TimeOfDay? openTime;
+  TimeOfDay? closeTime;
 
   final ImagePicker _picker = ImagePicker();
   RxList<File>? images = <File>[].obs;
@@ -61,6 +62,8 @@ class DetailsController extends GetxController {
   TextEditingController addressLine1Controller = TextEditingController();
   TextEditingController addressLine2Controller = TextEditingController();
   TextEditingController outletNameController = TextEditingController();
+  TextEditingController businessController = TextEditingController();
+  TextEditingController outletContactController = TextEditingController();
   TextEditingController landmarkController = TextEditingController();
   TextEditingController zipCodeController = TextEditingController();
 
@@ -100,11 +103,6 @@ class DetailsController extends GetxController {
     errorMessage.value = '';
 
     try {
-      List<String> days = daysList
-          .where((element) => element.isSelected)
-          .map((element) => element.day ?? "")
-          .where((day) => day.isNotEmpty)
-          .toList();
       print("User add successfully ${imageFile?.path}");
 
       String? profilePic;
@@ -116,10 +114,10 @@ class DetailsController extends GetxController {
       Map<String, dynamic> map = {
         "profilePic": profilePic ?? "",
         "name": nameController.text,
-        "contact": phoneController.text,
-        "email": emailController.text,
+        "contact": "+91${phoneController.text}",
         "businessName": businessController.text,
         "businessType": selectedBusinessType?.toLowerCase(),
+        "outletContact": outletContactController.text,
         "outletImages": images?.map((element) => element.path,).toList() ?? [],
         "outletName": outletNameController.text,
         "address": addressLine1Controller.text,
@@ -128,9 +126,8 @@ class DetailsController extends GetxController {
         "state": selectedState?.name,
         "city": selectedCity?.name,
         "pincode": zipCodeController.text,
-        "outletDay": days,
-        "outletTime":
-            "${startTime!.format(Get.context!)} - ${endTime!.format(Get.context!)}",
+        "outletOpenTime": openTime != null ? openTime!.format(Get.context!) : "",
+        "outletCloseTime": closeTime != null ? closeTime!.format(Get.context!) : "",
         "role": "vendor",
         "lat": lat.value,
         "long": long.value,
@@ -170,6 +167,58 @@ class DetailsController extends GetxController {
     }
   }
 
+  submitPersonalInfo() async {
+    isLoading.value = true;
+    errorMessage.value = '';
+
+    try {
+      // Validate that phone number is not empty
+      if (phoneController.text.isEmpty) {
+        errorMessage.value = "Phone number is required";
+        isLoading.value = false;
+        return;
+      }
+
+      Map<String, dynamic> map = {
+        "name": nameController.text,
+        "contact": "+91${phoneController.text}",
+        "role": "vendor",
+      };
+
+      http.Response response = await _apiService.updateUser(map);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        userUpdateRes.value = UserUpdateRes.fromJson(data);
+
+        if (userUpdateRes.value?.success ?? false) {
+          box.write(StringConst.USER_ID, userUpdateRes.value?.data?.id ?? "");
+          box.write(StringConst.USER_NAME, userUpdateRes.value?.data?.name ?? "");
+          Get.offAllNamed(AppRoutes.dashboard);
+        } else {
+          errorMessage.value = userUpdateRes.value?.message ?? 'Update failed';
+        }
+      } else {
+        try {
+          final error = jsonDecode(response.body);
+          errorMessage.value = error['message'] ?? 'Update failed';
+        } catch (e) {
+          errorMessage.value = 'Update failed: ${response.statusCode}';
+        }
+      }
+    } catch (e) {
+      print("PersonalInfo::$e");
+      errorMessage.value = "Error: ${e.toString()}";
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<http.Response> updateUserApi(Map<String, dynamic> map) async {
+    return await _apiService.updateUser(map);
+  }
+
   daySelector(int index) {
     daysList[index].isSelected = !daysList[index].isSelected;
     update();
@@ -185,10 +234,10 @@ class DetailsController extends GetxController {
     cities(city);
   }
 
-  updateState(country.State state) {
+  updateState(country.State state) async {
     selectedState = state;
     selectedCity = null;
-    getCities(state.isoCode);
+    await getCities(state.isoCode);
     update();
   }
 
@@ -315,5 +364,111 @@ class DetailsController extends GetxController {
     } catch (e) {
       print(e);
     }
+  }
+
+  var isLoadingOutlet = false.obs;
+  var errorMessageOutlet = ''.obs;
+
+  Future<void> submitOutlet() async {
+    isLoadingOutlet.value = true;
+    errorMessageOutlet.value = '';
+
+    try {
+      // Upload images and get URLs
+      List<String> uploadedImageUrls = [];
+
+      if (images != null && images!.isNotEmpty) {
+        for (var imageFile in images!) {
+          String? url = await dashboardController.uploadImage(imageFile);
+          if (url != null) {
+            uploadedImageUrls.add(url);
+          }
+        }
+      }
+
+      // Prepare the outlet data
+      Map<String, dynamic> outletData = {
+        "businessName": businessController.text,
+        "businessType": selectedBusinessType,
+        "outletName": outletNameController.text,
+        "outletTime": "${openTime?.format(Get.context!)} - ${closeTime?.format(Get.context!)}",
+        "outletImages": uploadedImageUrls,
+        "outletNumber": outletContactController.text,
+        "email": box.read("userEmail") ?? "", // You may need to adjust this
+        "location": {
+          "lat": lat.value,
+          "long": long.value,
+          "address": addressLine1Controller.text,
+          "city": selectedCity?.name ?? "",
+          "state": selectedState?.name ?? "",
+          "pincode": zipCodeController.text,
+        }
+      };
+
+      print("Submitting outlet data: $outletData");
+
+      // Call the API
+      http.Response response = await _apiService.addBusiness(outletData);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print("Response: $data");
+
+        if (data['success'] ?? false) {
+          print("Outlet added successfully!");
+
+          // Clear the form
+          clearOutletForm();
+
+          // Show success message
+          // Get.snackbar('Success', 'Outlet added successfully!');
+          Get.back();
+          // Refresh the outlets list in MyOutletsController immediately
+          try {
+            await MyOutletsController.refreshOutlets();
+            print("Outlets refreshed");
+          } catch (e) {
+            print("Error refreshing outlets: $e");
+          }
+
+
+        } else {
+          errorMessageOutlet.value = data['message'] ?? 'Failed to add outlet';
+          Get.snackbar('Error', errorMessageOutlet.value);
+        }
+      } else {
+        try {
+          final error = jsonDecode(response.body);
+          errorMessageOutlet.value = error['message'] ?? 'Failed to add outlet';
+        } catch (e) {
+          errorMessageOutlet.value = 'HTTP Error: ${response.statusCode}';
+        }
+        Get.snackbar('Error', errorMessageOutlet.value);
+      }
+    } catch (e) {
+      print("Error submitting outlet: $e");
+      errorMessageOutlet.value = "Error: ${e.toString()}";
+      Get.snackbar('Error', errorMessageOutlet.value);
+    } finally {
+      isLoadingOutlet.value = false;
+    }
+  }
+
+  void clearOutletForm() {
+    businessController.clear();
+    outletNameController.clear();
+    outletContactController.clear();
+    addressLine1Controller.clear();
+    addressLine2Controller.clear();
+    landmarkController.clear();
+    zipCodeController.clear();
+    selectedState = null;
+    selectedCity = null;
+    openTime = null;
+    closeTime = null;
+    selectedBusinessType = null;
+    images?.clear();
+    lat.value = 0.0;
+    long.value = 0.0;
   }
 }

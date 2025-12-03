@@ -7,14 +7,11 @@ import 'package:get/get.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kupan_business/common_view/city_sheet.dart';
-import 'package:kupan_business/common_view/common_date_picker.dart';
 import 'package:kupan_business/common_view/common_text.dart';
-import 'package:kupan_business/common_view/common_time_picker.dart';
 import 'package:kupan_business/const/color_const.dart';
 import 'package:kupan_business/const/image_const.dart';
 import 'package:kupan_business/controllers/details_controller.dart';
 import 'package:kupan_business/utils/utils.dart';
-import 'package:country_state_city/country_state_city.dart' as country;
 import '../../../common_view/common_button.dart';
 import '../../../common_view/common_dropdown.dart';
 import '../../../common_view/common_textfield.dart';
@@ -60,35 +57,6 @@ class _OutletInfoState extends State<OutletInfo> {
       controller.cityErrorMessage("");
     }
 
-    // if (controller.startDay == null) {
-    //   controller.startDateErrorMessage("Please select start date");
-    //   isValid = false;
-    // } else {
-    //   controller.startDateErrorMessage("");
-    // }
-
-    // if (controller.endDay == null) {
-    //   controller.endDateErrorMessage("Please select end date");
-    //   isValid = false;
-    // } else {
-    //   controller.endDateErrorMessage("");
-    //   controller.endDateErrorMessage("");
-    // }
-
-    if (controller.startTime == null) {
-      controller.startTimeErrorMessage("Please select start time");
-      isValid = false;
-    } else {
-      controller.startTimeErrorMessage("");
-    }
-
-    if (controller.endTime == null) {
-      controller.endTimeErrorMessage("Please select end time");
-      isValid = false;
-    } else {
-      controller.endTimeErrorMessage("");
-    }
-
     if (controller.images?.isEmpty ?? true) {
       controller.errorMessageOutletImages("Please select image");
       isValid = false;
@@ -96,14 +64,19 @@ class _OutletInfoState extends State<OutletInfo> {
       controller.errorMessageOutletImages("");
     }
 
-    bool isAnySelected = controller.daysList.any((data) => data.isSelected);
-    if (!isAnySelected) {
-      controller.errorMessageDaySelection("Please select at least one day");
+    if (controller.openTime == null) {
+      controller.startTimeErrorMessage("Please select open time");
       isValid = false;
     } else {
-      controller.errorMessageDaySelection("");
+      controller.startTimeErrorMessage("");
     }
 
+    if (controller.closeTime == null) {
+      controller.endTimeErrorMessage("Please select close time");
+      isValid = false;
+    } else {
+      controller.endTimeErrorMessage("");
+    }
 
     return isValid;
   }
@@ -117,6 +90,8 @@ class _OutletInfoState extends State<OutletInfo> {
 
   getDetails() {
     if (widget.isEdit) {
+      controller.businessController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessName ?? "";
+      controller.outletContactController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletContact ?? "";
       controller.outletNameController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletName ?? "";
       controller.selectedBusinessType = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessType ?? "";
       controller.addressLine1Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address ?? "";
@@ -137,6 +112,17 @@ class _OutletInfoState extends State<OutletInfo> {
       if (parts.length == 2) {
         controller.startTime = controller.parseTime(parts[0].trim());
         controller.endTime = controller.parseTime(parts[1].trim());
+      }
+
+      // Initialize open and close time
+      String? openTimeStr = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletOpenTime;
+      String? closeTimeStr = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletCloseTime;
+
+      if (openTimeStr != null && openTimeStr.isNotEmpty) {
+        controller.openTime = controller.parseTime(openTimeStr);
+      }
+      if (closeTimeStr != null && closeTimeStr.isNotEmpty) {
+        controller.closeTime = controller.parseTime(closeTimeStr);
       }
     }
   }
@@ -241,6 +227,52 @@ class _OutletInfoState extends State<OutletInfo> {
                   ),
 
                   const SizedBox(height: 20),
+                  CommonTextfield(
+                    controller: controller.businessController,
+                    hintText: 'Business Name',
+                    prefixIcon: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: size(10)),
+                      child: SvgPicture.asset(ImageConst.business_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Please enter business name.";
+                      } else if (value.length < 2) {
+                        return "Business name must be at least 2 characters long.";
+                      }
+                      // Allow letters, numbers, spaces, and & . -
+                      String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
+                      RegExp regex = RegExp(pattern);
+                      if (!regex.hasMatch(value)) {
+                        return "Business name can only contain letters, numbers, spaces, &, ., and -.";
+                      }
+                      return null; // input is valid
+                    },
+                    keyboardType: TextInputType.name,
+                  ),
+                  SizedBox(height: size(12)),
+                  CommonTextfield(
+                    controller: controller.outletContactController,
+                    hintText: 'Outlet Contact Number',
+                    prefixIcon: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: size(10)),
+                      child: SvgPicture.asset(ImageConst.phone_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Please enter outlet contact number.";
+                      }
+                      // Indian mobile number validation (10 digits)
+                      String pattern = r'^[6-9]\d{9}$';
+                      RegExp regex = RegExp(pattern);
+                      if (!regex.hasMatch(value)) {
+                        return "Please enter a valid Indian mobile number.";
+                      }
+                      return null; // input is valid
+                    },
+                    keyboardType: TextInputType.phone,
+                  ),
+                  SizedBox(height: size(12)),
                   CommonTextfield(
                     controller: controller.outletNameController,
                     hintText: 'Outlet Name',
@@ -465,108 +497,14 @@ class _OutletInfoState extends State<OutletInfo> {
                   Row(
                     children: [
                       SvgPicture.asset(ImageConst.icTime),
-                      SizedBox(
-                        width: size(6),
-                      ),
+                      SizedBox(width: size(6)),
                       CommonText(
-                        text: "OUTLET OPEN",
+                        text: "OUTLET TIMING",
                         color: ColorConst.grey,
                         fontWeight: FontWeight.w500,
                         fontSize: size(12),
                       )
                     ],
-                  ),
-                  SizedBox(height: size(12)),
-                  // Row(
-                  //   children: [
-                  //     Expanded(
-                  //       child: Column(
-                  //         crossAxisAlignment: CrossAxisAlignment.start,
-                  //         children: [
-                  //           CommonDatePicker(
-                  //             value: controller.startDay,
-                  //             hintText: 'Start Date',
-                  //             isError:
-                  //                 controller.startDateErrorMessage.isNotEmpty,
-                  //             onTap: () => _selectDate(context, true),
-                  //           ),
-                  //           if (controller
-                  //               .startDateErrorMessage.isNotEmpty) ...[
-                  //             SizedBox(height: size(5)),
-                  //             Padding(
-                  //               padding:
-                  //                   EdgeInsets.symmetric(horizontal: size(10)),
-                  //               child: CommonText(
-                  //                 text: controller.startDateErrorMessage.value,
-                  //                 color: Colors.red,
-                  //               ),
-                  //             ),
-                  //           ],
-                  //         ],
-                  //       ),
-                  //     ),
-                  //     SizedBox(width: size(12)),
-                  //     Expanded(
-                  //       child: Column(
-                  //         crossAxisAlignment: CrossAxisAlignment.start,
-                  //         children: [
-                  //           CommonDatePicker(
-                  //             value: controller.endDay,
-                  //             hintText: 'End Date',
-                  //             isError:
-                  //                 controller.endDateErrorMessage.isNotEmpty,
-                  //             onTap: () => _selectDate(context, false),
-                  //           ),
-                  //           if (controller.endDateErrorMessage.isNotEmpty) ...[
-                  //             SizedBox(height: size(5)),
-                  //             Padding(
-                  //               padding:
-                  //                   EdgeInsets.symmetric(horizontal: size(10)),
-                  //               child: CommonText(
-                  //                 text: controller.startDateErrorMessage.value,
-                  //                 color: Colors.red,
-                  //               ),
-                  //             ),
-                  //           ],
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      childAspectRatio: 2,
-                      crossAxisSpacing: size(10),
-                      mainAxisSpacing: size(10)
-                    ),
-                    itemCount: controller.daysList.length,
-                    itemBuilder: (context, index) => InkWell(
-                      onTap: () {
-                        controller.daySelector(index);
-                      },
-                      child: Container(
-                        alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(size(8)),
-                              border:
-                                  Border.all(color: ColorConst.border, width: controller.daysList[index].isSelected ? 0 : 1),
-                              color: controller.daysList[index].isSelected ? ColorConst.primary : Colors.white),
-                          child: CommonText(
-                            text: controller.daysList[index].day ?? "",
-                            color: controller.daysList[index].isSelected ? Colors.white : Colors.black,
-                          )),
-                    ),
-                  ),
-                  Visibility(
-                    visible: controller
-                        .errorMessageDaySelection.value.isNotEmpty,
-                    child: CommonText(
-                      text: controller.errorMessageDaySelection.value,
-                      color: Colors.red,
-                    ),
                   ),
                   SizedBox(height: size(12)),
                   Row(
@@ -575,19 +513,35 @@ class _OutletInfoState extends State<OutletInfo> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CommonTimePicker(
-                              value: controller.startTime,
-                              hintText: 'Start Time',
-                              isError:
-                                  controller.startTimeErrorMessage.isNotEmpty,
-                              onTap: () => _selectTime(context, true),
+                            GestureDetector(
+                              onTap: () => _selectOpenTime(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: ColorConst.border),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      controller.openTime != null
+                                          ? controller.openTime!.format(context)
+                                          : 'Open Time',
+                                      style: TextStyle(
+                                        fontSize: size(16),
+                                        color: controller.openTime != null ? Colors.black : Colors.grey,
+                                      ),
+                                    ),
+                                    SvgPicture.asset(ImageConst.icTime),
+                                  ],
+                                ),
+                              ),
                             ),
-                            if (controller
-                                .startTimeErrorMessage.isNotEmpty) ...[
+                            if (controller.startTimeErrorMessage.isNotEmpty) ...[
                               SizedBox(height: size(5)),
                               Padding(
-                                padding:
-                                    EdgeInsets.symmetric(horizontal: size(10)),
+                                padding: EdgeInsets.symmetric(horizontal: size(10)),
                                 child: CommonText(
                                   text: controller.startTimeErrorMessage.value,
                                   color: Colors.red,
@@ -602,18 +556,35 @@ class _OutletInfoState extends State<OutletInfo> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CommonTimePicker(
-                              value: controller.endTime,
-                              hintText: 'End Time',
-                              isError:
-                                  controller.endTimeErrorMessage.isNotEmpty,
-                              onTap: () => _selectTime(context, false),
+                            GestureDetector(
+                              onTap: () => _selectCloseTime(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: ColorConst.border),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      controller.closeTime != null
+                                          ? controller.closeTime!.format(context)
+                                          : 'Close Time',
+                                      style: TextStyle(
+                                        fontSize: size(16),
+                                        color: controller.closeTime != null ? Colors.black : Colors.grey,
+                                      ),
+                                    ),
+                                    SvgPicture.asset(ImageConst.icTime),
+                                  ],
+                                ),
+                              ),
                             ),
                             if (controller.endTimeErrorMessage.isNotEmpty) ...[
                               SizedBox(height: size(5)),
                               Padding(
-                                padding:
-                                    EdgeInsets.symmetric(horizontal: size(10)),
+                                padding: EdgeInsets.symmetric(horizontal: size(10)),
                                 child: CommonText(
                                   text: controller.endTimeErrorMessage.value,
                                   color: Colors.red,
@@ -625,25 +596,14 @@ class _OutletInfoState extends State<OutletInfo> {
                       ),
                     ],
                   ),
-                  if (controller.errorMessage.isNotEmpty) ...[
-                    SizedBox(height: size(5)),
-                    Padding(
-                      padding:
-                      EdgeInsets.symmetric(horizontal: size(10)),
-                      child: CommonText(
-                        text: controller.errorMessage.value,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                  SizedBox(height: size(12)),
+                  SizedBox(height: size(20)),
                   SizedBox(
                     width: Get.width,
                     child: CommonButton(
-                      isLoading: controller.isLoading.value,
+                      isLoading: false,
                         onPressed: () {
                           if (validateAll()) {
-                            controller.getStarted(widget.isEdit);
+                            Get.back();
                           }
                         },
                         text: widget.isEdit ? "Update" : 'Get Started'),
@@ -720,124 +680,6 @@ class _OutletInfoState extends State<OutletInfo> {
     }
   }
 
-  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
-    DateTime? picked;
-    final DateTime now = DateTime.now();
-    final DateTime minDate = DateTime(now.year, now.month, now.day);
-    final DateTime initialDate = isStartDate && controller.startDay != null
-        ? controller.startDay!
-        : (!isStartDate && controller.endDay != null
-            ? controller.endDay!
-            : minDate);
-
-    await showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) => Container(
-        height: 300,
-        color: Colors.white,
-        child: Column(
-          children: [
-            Container(
-              height: 50,
-              color: Colors.grey[100],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CupertinoButton(
-                    child: const Text('Cancel'),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  CupertinoButton(
-                    child: const Text('Done'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      if (picked != null) {
-                        // setState(() {
-                        if (isStartDate) {
-                          controller.startDay = picked;
-                        } else {
-                          controller.endDay = picked;
-                        }
-                        // });
-                      }
-                      controller.update();
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.date,
-                initialDateTime: initialDate,
-                minimumDate: minDate,
-                maximumDate: minDate.add(const Duration(days: 365)),
-                onDateTimeChanged: (DateTime value) {
-                  picked = value;
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _selectTime(BuildContext context, bool isStartTime) async {
-    DateTime? picked;
-
-    await showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) => Container(
-        height: 300,
-        color: Colors.white,
-        child: Column(
-          children: [
-            Container(
-              height: 50,
-              color: Colors.grey[100],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CupertinoButton(
-                    child: const Text('Cancel'),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  CupertinoButton(
-                    child: const Text('Done'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      if (picked != null) {
-                        // setState(() {
-                        TimeOfDay timeOfDay = TimeOfDay.fromDateTime(picked!);
-                        if (isStartTime) {
-                          controller.startTime = timeOfDay;
-                        } else {
-                          controller.endTime = timeOfDay;
-                        }
-                        controller.update();
-                        // });
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                initialDateTime: DateTime.now(),
-                use24hFormat: false,
-                onDateTimeChanged: (DateTime value) {
-                  picked = value;
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _showAddressSearch() {
     showModalBottomSheet(
@@ -850,6 +692,116 @@ class _OutletInfoState extends State<OutletInfo> {
             controller.addressLine1Controller.text = address;
           });
         },
+      ),
+    );
+  }
+
+  Future<void> _selectOpenTime(BuildContext context) async {
+    DateTime? picked;
+    final now = DateTime.now();
+    final initialTime = DateTime(now.year, now.month, now.day,
+      controller.openTime?.hour ?? 9,
+      controller.openTime?.minute ?? 0);
+
+    await showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) => Container(
+        height: 300,
+        color: Colors.white,
+        child: Column(
+          children: [
+            Container(
+              height: 50,
+              color: Colors.grey[100],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CupertinoButton(
+                    child: const Text('Cancel'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  CupertinoButton(
+                    child: const Text('Done'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      if (picked != null) {
+                        setState(() {
+                          controller.openTime = TimeOfDay.fromDateTime(picked!);
+                          controller.startTimeErrorMessage("");
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.time,
+                initialDateTime: initialTime,
+                use24hFormat: false,
+                onDateTimeChanged: (DateTime value) {
+                  picked = value;
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectCloseTime(BuildContext context) async {
+    DateTime? picked;
+    final now = DateTime.now();
+    final initialTime = DateTime(now.year, now.month, now.day,
+      controller.closeTime?.hour ?? 21,
+      controller.closeTime?.minute ?? 0);
+
+    await showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) => Container(
+        height: 300,
+        color: Colors.white,
+        child: Column(
+          children: [
+            Container(
+              height: 50,
+              color: Colors.grey[100],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CupertinoButton(
+                    child: const Text('Cancel'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  CupertinoButton(
+                    child: const Text('Done'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      if (picked != null) {
+                        setState(() {
+                          controller.closeTime = TimeOfDay.fromDateTime(picked!);
+                          controller.endTimeErrorMessage("");
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.time,
+                initialDateTime: initialTime,
+                use24hFormat: false,
+                onDateTimeChanged: (DateTime value) {
+                  picked = value;
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:kupan_business/common_view/common_text.dart';
 import 'package:kupan_business/const/image_const.dart';
 import 'package:kupan_business/controllers/dashboard_controller.dart';
 import 'package:kupan_business/controllers/details_controller.dart';
+import 'package:kupan_business/models/user_update_res.dart';
 
 import '../../../common_view/common_button.dart';
 import '../../../common_view/common_textfield.dart';
@@ -47,8 +49,6 @@ class _PersonalInfoState extends State<PersonalInfo> {
       // print("Dashboard Controller : ${dashboardController.userUpdateRes.value?.data?.contact ?? ""}");
       detailsController.nameController.text = dashboardController.userUpdateRes.value?.data?.name ?? "";
       detailsController.phoneController.text = (dashboardController.userUpdateRes.value?.data?.contact ?? "").replaceFirst("+91", "");
-      detailsController.emailController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.email ?? "";
-      detailsController.businessController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessName ?? "";
 
       detailsController.outletNameController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletName ?? "";
       detailsController.selectedBusinessType = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessType ?? "";
@@ -175,58 +175,6 @@ class _PersonalInfoState extends State<PersonalInfo> {
 
                   SizedBox(height: 16),
 
-                  CommonTextfield(
-                    controller: detailsController.emailController,
-                    hintText: 'Add Email',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please enter your email.";
-                      }
-                      // Basic email pattern
-                      String pattern =
-                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$';
-                      RegExp regex = RegExp(pattern);
-                      if (!regex.hasMatch(value)) {
-                        return "Please enter a valid email address.";
-                      }
-                      return null; // input is valid
-                    },
-                    prefixIcon: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: size(10)),
-                      child: SvgPicture.asset(ImageConst.email_outlined),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-
-
-                  SizedBox(height: 16),
-
-                  CommonTextfield(
-                    controller: detailsController.businessController,
-                    hintText: 'Business Name',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please enter your business name.";
-                      } else if (value.length < 2) {
-                        return "Business name must be at least 2 characters long.";
-                      }
-                      // Allow letters, numbers, spaces, and & . -
-                      String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
-                      RegExp regex = RegExp(pattern);
-                      if (!regex.hasMatch(value)) {
-                        return "Business name can only contain letters, numbers, spaces, &, ., and -.";
-                      }
-                      return null; // input is valid
-                    },
-                    prefixIcon: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: size(10)),
-                      child: SvgPicture.asset(ImageConst.business_outlined),
-                    ),
-                    keyboardType: TextInputType.name,
-                  ),
-
-
-                  SizedBox(height: 16),
 
                   // Continue Button
                   Obx(
@@ -239,7 +187,7 @@ class _PersonalInfoState extends State<PersonalInfo> {
                               if (widget.isEdit) {
                                 detailsController.getStarted(widget.isEdit);
                               } else {
-                                widget.onTap!();
+                                _submitPersonalInfoAndNavigate();
                               }
                             }
                           },
@@ -255,6 +203,55 @@ class _PersonalInfoState extends State<PersonalInfo> {
         ),
       ),
     );
+  }
+
+  _submitPersonalInfoAndNavigate() async {
+    detailsController.isLoading.value = true;
+    detailsController.errorMessage.value = '';
+
+    try {
+      // Validate that phone number is not empty
+      if (detailsController.phoneController.text.isEmpty) {
+        detailsController.errorMessage.value = "Phone number is required";
+        detailsController.isLoading.value = false;
+        return;
+      }
+
+      Map<String, dynamic> map = {
+        "name": detailsController.nameController.text,
+        "contact": "+91${detailsController.phoneController.text}",
+        "role": "vendor",
+      };
+
+      var response = await detailsController.updateUserApi(map);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        var userUpdateRes = detailsController.userUpdateRes;
+        userUpdateRes.value = UserUpdateRes.fromJson(data);
+
+        if (userUpdateRes.value?.success ?? false) {
+          // Navigate to outlet tab after successful API call
+          if (widget.onTap != null) {
+            widget.onTap!();
+          }
+        } else {
+          detailsController.errorMessage.value = userUpdateRes.value?.message ?? 'Update failed';
+        }
+      } else {
+        try {
+          final error = jsonDecode(response.body);
+          detailsController.errorMessage.value = error['message'] ?? 'Update failed';
+        } catch (e) {
+          detailsController.errorMessage.value = 'Update failed: ${response.statusCode}';
+        }
+      }
+    } catch (e) {
+      print("PersonalInfo::$e");
+      detailsController.errorMessage.value = "Error: ${e.toString()}";
+    } finally {
+      detailsController.isLoading.value = false;
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {

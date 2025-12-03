@@ -35,6 +35,14 @@ class _AddKupanViewState extends State<AddKupanView> {
   bool validateAll() {
     bool isValid = _fromKey.currentState!.validate();
 
+    // Validate outlet selection
+    if (dashboardController.selectedOutletId.value.isEmpty) {
+      dashboardController.errorMessageOutletSelection("Please select an outlet");
+      isValid = false;
+    } else {
+      dashboardController.errorMessageOutletSelection("");
+    }
+
     bool isAnySelected = dashboardController.daysList.any((data) => data.isSelected);
     if (!isAnySelected) {
       dashboardController.errorMessageDaySelection("Please select at least one day");
@@ -100,6 +108,53 @@ class _AddKupanViewState extends State<AddKupanView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  SizedBox(height: size(20)),
+                  CommonText(text: "Select Outlet", color: Colors.black,),
+                  SizedBox(height: size(5)),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: size(15)),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: ColorConst.border, width: 1),
+                      borderRadius: BorderRadius.circular(size(10)),
+                    ),
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      underline: SizedBox(),
+                      value: dashboardController.selectedOutletId.value.isEmpty
+                          ? null
+                          : dashboardController.selectedOutletId.value,
+                      hint: CommonText(
+                        text: 'Choose an outlet',
+                        color: ColorConst.grey,
+                      ),
+                      items: dashboardController.outletsList.map((outlet) {
+                        return DropdownMenuItem(
+                          value: outlet.id ?? "",
+                          child: CommonText(
+                            text: outlet.outletName ?? "No outlet",
+                            color: Colors.black,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          dashboardController.selectedOutletId.value = value;
+                          final selectedOutlet = dashboardController.outletsList
+                              .firstWhere((outlet) => outlet.id == value);
+                          dashboardController.selectedOutletName.value = selectedOutlet.outletName ?? "";
+                          dashboardController.errorMessageOutletSelection.value = "";
+                        }
+                      },
+                    ),
+                  ),
+                  Visibility(
+                    visible: dashboardController.errorMessageOutletSelection.value.isNotEmpty,
+                    child: CommonText(
+                      text: dashboardController.errorMessageOutletSelection.value,
+                      color: Colors.red,
+                    ),
+                  ),
                   SizedBox(height: size(20)),
                   Container(
                     width: double.infinity,

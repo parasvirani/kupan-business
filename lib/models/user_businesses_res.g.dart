@@ -1,22 +1,22 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'user_update_res.dart';
+part of 'user_businesses_res.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-UserUpdateRes _$UserUpdateResFromJson(Map<String, dynamic> json) =>
-    UserUpdateRes(
+UserBusinessesRes _$UserBusinessesResFromJson(Map<String, dynamic> json) =>
+    UserBusinessesRes(
       success: json['success'] as bool?,
       message: json['message'] as String?,
       statusCode: (json['statusCode'] as num?)?.toInt(),
       data: json['data'] == null
           ? null
-          : UserUpdateData.fromJson(json['data'] as Map<String, dynamic>),
+          : UserBusinessData.fromJson(json['data'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$UserUpdateResToJson(UserUpdateRes instance) =>
+Map<String, dynamic> _$UserBusinessesResToJson(UserBusinessesRes instance) =>
     <String, dynamic>{
       'success': instance.success,
       'message': instance.message,
@@ -24,43 +24,39 @@ Map<String, dynamic> _$UserUpdateResToJson(UserUpdateRes instance) =>
       'data': instance.data,
     };
 
-UserUpdateData _$UserUpdateDataFromJson(Map<String, dynamic> json) =>
-    UserUpdateData(
-      sellerInfo: json['sellerInfo'] == null
-          ? null
-          : UserUpdateSellerInfo.fromJson(
-              json['sellerInfo'] as Map<String, dynamic>),
+UserBusinessData _$UserBusinessDataFromJson(Map<String, dynamic> json) =>
+    UserBusinessData(
       id: json['_id'] as String?,
-      name: json['name'] as String?,
       contact: json['contact'] as String?,
       role: json['role'] as String?,
       profilePic: json['profilePic'] as String?,
+      name: json['name'] as String?,
+      sellerBusinesses: (json['sellerBusinesses'] as List<dynamic>?)
+          ?.map((e) => SellerBusiness.fromJson(e as Map<String, dynamic>))
+          .toList(),
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
     );
 
-Map<String, dynamic> _$UserUpdateDataToJson(UserUpdateData instance) =>
+Map<String, dynamic> _$UserBusinessDataToJson(UserBusinessData instance) =>
     <String, dynamic>{
-      'sellerInfo': instance.sellerInfo,
       '_id': instance.id,
-      'name': instance.name,
       'contact': instance.contact,
       'role': instance.role,
       'profilePic': instance.profilePic,
+      'name': instance.name,
+      'sellerBusinesses': instance.sellerBusinesses,
       'createdAt': instance.createdAt,
       'updatedAt': instance.updatedAt,
     };
 
-UserUpdateSellerInfo _$UserUpdateSellerInfoFromJson(
-        Map<String, dynamic> json) =>
-    UserUpdateSellerInfo(
+SellerBusiness _$SellerBusinessFromJson(Map<String, dynamic> json) =>
+    SellerBusiness(
+      id: json['_id'] as String?,
       email: json['email'] as String?,
       businessName: json['businessName'] as String?,
       businessType: json['businessType'] as String?,
       outletName: json['outletName'] as String?,
-      outletContact: json['outletContact'] as String?,
-      outletOpenTime: json['outletOpenTime'] as String?,
-      outletCloseTime: json['outletCloseTime'] as String?,
       outletDay: (json['outletDay'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
@@ -68,41 +64,37 @@ UserUpdateSellerInfo _$UserUpdateSellerInfoFromJson(
       outletImages: (json['outletImages'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      outletNumber: json['outletNumber'] as String?,
       location: json['location'] == null
           ? null
-          : UserUpdateLocation.fromJson(
-              json['location'] as Map<String, dynamic>),
+          : BusinessLocation.fromJson(json['location'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$UserUpdateSellerInfoToJson(
-        UserUpdateSellerInfo instance) =>
+Map<String, dynamic> _$SellerBusinessToJson(SellerBusiness instance) =>
     <String, dynamic>{
+      '_id': instance.id,
       'email': instance.email,
       'businessName': instance.businessName,
       'businessType': instance.businessType,
       'outletName': instance.outletName,
-      'outletContact': instance.outletContact,
-      'outletOpenTime': instance.outletOpenTime,
-      'outletCloseTime': instance.outletCloseTime,
       'outletDay': instance.outletDay,
       'outletTime': instance.outletTime,
       'outletImages': instance.outletImages,
+      'outletNumber': instance.outletNumber,
       'location': instance.location,
     };
 
-UserUpdateLocation _$UserUpdateLocationFromJson(Map<String, dynamic> json) =>
-    UserUpdateLocation(
+BusinessLocation _$BusinessLocationFromJson(Map<String, dynamic> json) =>
+    BusinessLocation(
       lat: (json['lat'] as num?)?.toDouble(),
       long: (json['long'] as num?)?.toDouble(),
       city: json['city'] as String?,
       pincode: json['pincode'] as String?,
       state: json['state'] as String?,
       address: json['address'] as String?,
-      address2: json['address2'] as String?,
-      landmark: json['landmark'] as String?,
     );
 
-Map<String, dynamic> _$UserUpdateLocationToJson(UserUpdateLocation instance) =>
+Map<String, dynamic> _$BusinessLocationToJson(BusinessLocation instance) =>
     <String, dynamic>{
       'lat': instance.lat,
       'long': instance.long,
@@ -110,6 +102,4 @@ Map<String, dynamic> _$UserUpdateLocationToJson(UserUpdateLocation instance) =>
       'pincode': instance.pincode,
       'state': instance.state,
       'address': instance.address,
-      'address2': instance.address2,
-      'landmark': instance.landmark,
     };

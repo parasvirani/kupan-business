@@ -81,7 +81,7 @@ class _CitySheetState extends State<CitySheet> with TickerProviderStateMixin {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 CommonText(
-                  text: 'Select State',
+                  text: 'Select City',
                   color: Colors.black,
                   fontSize: size(18),
                   fontWeight: FontWeight.w600,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../common_view/common_textfield.dart';
+import '../controllers/details_controller.dart';
 import '../utils/utils.dart';
 
 class UserDetailsScreen extends StatefulWidget {
@@ -9,17 +11,11 @@ class UserDetailsScreen extends StatefulWidget {
 }
 
 class _UserDetailsScreenState extends State<UserDetailsScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _businessController = TextEditingController();
+  final DetailsController detailsController = Get.put(DetailsController());
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _emailController.dispose();
-    _businessController.dispose();
     super.dispose();
   }
 
@@ -46,195 +42,203 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Tab Section
-            Container(
-              margin: EdgeInsets.only(bottom: 30),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              // Tab Section
+              Container(
+                margin: EdgeInsets.only(bottom: 30),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.deepOrange,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Personal Info',
+                        style: TextStyle(
                           color: Colors.deepOrange,
-                          width: 2,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                    child: Text(
-                      'Personal Info',
+                    SizedBox(width: 40),
+                    Text(
+                      'Outlet Info',
                       style: TextStyle(
-                        color: Colors.deepOrange,
+                        color: Colors.grey[400],
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                  SizedBox(width: 40),
-                  Text(
-                    'Outlet Info',
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // Profile Avatar Section
-            Container(
-              margin: EdgeInsets.only(bottom: 40),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.blue[300],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 32,
-                      height: 32,
+              // Profile Avatar Section
+              Container(
+                margin: EdgeInsets.only(bottom: 40),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.deepOrange,
+                        color: Colors.blue[300],
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
                       ),
                       child: Icon(
-                        Icons.edit,
-                        size: 16,
+                        Icons.person,
+                        size: 50,
                         color: Colors.white,
                       ),
                     ),
-                  ),
-                ],
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: Icon(
+                          Icons.edit,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            CommonTextfield(
-              controller: _nameController,
-              hintText: 'Enter Your Name',
-              prefixIcon: Padding(
-                padding: EdgeInsets.symmetric(horizontal: size(10)),
-                child: Icon(Icons.person_outline),
-              ),
-              keyboardType: TextInputType.name,
-            ),
-
-            // Form Fields
-            // _buildInputField(
-            //   controller: _nameController,
-            //   hintText: 'Enter Your Name',
-            //   icon: Icons.person_outline,
-            // ),
-            SizedBox(height: 16),
-            CommonTextfield(
-              controller: _phoneController,
-              hintText: 'Enter Your Mobile Name',
-              prefixIcon: Padding(
-                padding: EdgeInsets.symmetric(horizontal: size(10)),
-                child: Icon(Icons.phone_outlined),
-              ),
-              keyboardType: TextInputType.phone,
-            ),
-
-            // _buildInputField(
-            //   controller: _phoneController,
-            //   hintText: 'Phone Number',
-            //   icon: Icons.phone_outlined,
-            // ),
-            SizedBox(height: 16),
-
-            _buildInputField(
-              controller: _emailController,
-              hintText: 'Add Email',
-              icon: Icons.email_outlined,
-            ),
-            SizedBox(height: 16),
-
-            _buildInputField(
-              controller: _businessController,
-              hintText: 'Business Name',
-              icon: Icons.business_outlined,
-            ),
-
-            SizedBox(height: 60),
-
-            // Continue Button
-            Container(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Handle continue action
-                  print('Name: ${_nameController.text}');
-                  print('Phone: ${_phoneController.text}');
-                  print('Email: ${_emailController.text}');
-                  print('Business: ${_businessController.text}');
+              CommonTextfield(
+                controller: detailsController.nameController,
+                hintText: 'Enter Your Name',
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter your name.";
+                  } else if (value.length < 2) {
+                    return "Name must be at least 2 characters long.";
+                  }
+                  return null;
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepOrange,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 0,
+                prefixIcon: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: size(10)),
+                  child: Icon(Icons.person_outline),
                 ),
-                child: Text(
-                  'Continue',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                keyboardType: TextInputType.name,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String hintText,
-    required IconData icon,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            color: Colors.grey[500],
-            fontSize: 16,
+              SizedBox(height: 16),
+              CommonTextfield(
+                controller: detailsController.phoneController,
+                hintText: 'Enter Your Mobile Number',
+                prefixIcon: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: size(10)),
+                  child: Icon(Icons.phone_outlined),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+
+              SizedBox(height: 60),
+
+              // Error Message
+              Obx(
+                () => detailsController.errorMessage.isNotEmpty
+                    ? Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.red, width: 1),
+                          ),
+                          child: Text(
+                            detailsController.errorMessage.value,
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      )
+                    : SizedBox.shrink(),
+              ),
+
+                  // Continue Button
+                  Obx(
+                    () => Container(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: detailsController.isLoading.value
+                            ? null
+                            : () {
+                                if (_formKey.currentState!.validate()) {
+                                  detailsController.submitPersonalInfo();
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepOrange,
+                          disabledBackgroundColor: Colors.deepOrange.withOpacity(0.6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: detailsController.isLoading.value
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    'Processing...',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                'Continue',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+            ],
           ),
-          prefixIcon: Icon(
-            icon,
-            color: Colors.grey[600],
-            size: 20,
-          ),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );

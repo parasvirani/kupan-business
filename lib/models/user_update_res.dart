@@ -49,6 +49,9 @@ class UserUpdateSellerInfo {
   String? businessName;
   String? businessType;
   String? outletName;
+  String? outletContact;
+  String? outletOpenTime;
+  String? outletCloseTime;
   List<String>? outletDay;
   String? outletTime;
   List<String>? outletImages;
@@ -59,6 +62,9 @@ class UserUpdateSellerInfo {
       this.businessName,
       this.businessType,
       this.outletName,
+      this.outletContact,
+      this.outletOpenTime,
+      this.outletCloseTime,
       this.outletDay,
       this.outletTime,
       this.outletImages,

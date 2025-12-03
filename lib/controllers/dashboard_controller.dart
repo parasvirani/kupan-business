@@ -10,6 +10,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:kupan_business/const/string_const.dart';
 import 'package:kupan_business/utils/appRoutesStrings.dart';
 import '../models/Days.dart';
+import '../models/business_outlets_res.dart';
 import '../models/create_kupan_res.dart' hide KupanData;
 import '../models/kupans_list_res.dart';
 import '../models/user_update_res.dart';
@@ -49,12 +50,24 @@ class DashboardController extends GetxController {
   ].obs;
   RxString errorMessageDaySelection = "".obs;
 
+  // Outlet selection properties
+  RxString selectedOutletId = "".obs;
+  RxString selectedOutletName = "".obs;
+  RxString errorMessageOutletSelection = "".obs;
+
+  // Business outlets properties
+  var isLoadingOutlets = false.obs;
+  var errorMessageOutlets = ''.obs;
+  var businessOutletsRes = Rxn<BusinessOutletsRes>();
+  RxList<OutletData> outletsList = <OutletData>[].obs;
+
   @override
   void onInit() {
     // TODO: implement onInit
     super.onInit();
     getUser();
     getKupan();
+    getBusinessOutlets();
   }
 
   Future getUser() async {
@@ -254,6 +267,42 @@ class DashboardController extends GetxController {
       errorMessageGetKupan.value = "Error: ${e.toString()}";
     } finally {
       isLoadingGetKupan(false);
+    }
+  }
+
+  Future<void> getBusinessOutlets() async {
+    isLoadingOutlets(true);
+    errorMessageOutlets.value = '';
+
+    try {
+      http.Response response = await _apiService.getBusinessOutlets();
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        businessOutletsRes.value = BusinessOutletsRes.fromJson(data);
+
+        if (businessOutletsRes.value!.success!) {
+          outletsList.clear();
+          outletsList.addAll(businessOutletsRes.value?.data ?? []);
+          outletsList.refresh();
+
+          // Auto-select the first outlet if available
+          if (outletsList.isNotEmpty) {
+            selectedOutletId.value = outletsList[0].id ?? "";
+            selectedOutletName.value = outletsList[0].outletName ?? "";
+          }
+        } else {
+          errorMessageOutlets.value = businessOutletsRes.value!.message!;
+        }
+      } else {
+        final error = jsonDecode(response.body);
+        errorMessageOutlets.value = error['message'] ?? 'Failed to fetch outlets';
+      }
+    } catch (e) {
+      print("Error fetching outlets::$e");
+      errorMessageOutlets.value = "Error: ${e.toString()}";
+    } finally {
+      isLoadingOutlets(false);
     }
   }
 }

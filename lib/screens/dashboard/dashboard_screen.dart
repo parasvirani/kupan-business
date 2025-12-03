@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:kupan_business/screens/dashboard/add_kupan_view.dart';
+import 'package:kupan_business/screens/dashboard/add_outlet_screen.dart';
 import 'package:kupan_business/screens/dashboard/profile_view.dart';
 
 import '../../const/color_const.dart';
@@ -9,6 +10,7 @@ import '../../const/image_const.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../utils/utils.dart';
 import 'home_view.dart';
+import 'my_outlets_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -31,10 +33,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             HomeView(),
             AddKupanView(),
+            MyOutletsScreen(),
             ProfileView(),
           ],
         ),
       ),
+
       bottomNavigationBar: Obx(
         ()=> BottomNavigationBar(
           backgroundColor: ColorConst.white,
@@ -50,9 +54,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               color: ColorConst.primary,
               fontWeight: FontWeight.w600,
               fontFamily: 'Urbanist'),
-          selectedItemColor: ColorConst.primary, // Default selected color (might be overridden by label style)
-          unselectedItemColor: ColorConst.grey, // Default unselected color (might be overridden by label style)
-          currentIndex: dashboardController.currentIndex.value, // Make sure currentIndex is bound here
+          selectedItemColor: ColorConst.primary,
+          unselectedItemColor: ColorConst.grey,
+          currentIndex: dashboardController.currentIndex.value,
           onTap: (value) {
             print('Tapped index: $value');
             dashboardController.currentIndex(value);
@@ -67,16 +71,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             BottomNavigationBarItem(
               icon: SvgPicture.asset(
-                ImageConst.addCouple,
+                ImageConst.addKupan,
                 color: dashboardController.currentIndex.value == 1 ? ColorConst.primary : ColorConst.grey,
               ),
               label: 'Add Kupan',
             ),
             BottomNavigationBarItem(
               icon: SvgPicture.asset(
-                    ImageConst.ic_profile,
-                    color: dashboardController.currentIndex.value == 3 ? ColorConst.primary : ColorConst.grey,
-                  ),
+                ImageConst.myOutlets,
+                color: dashboardController.currentIndex.value == 2 ? ColorConst.primary : ColorConst.grey,
+              ),
+              label: 'My Outlets',
+            ),
+            BottomNavigationBarItem(
+              icon: SvgPicture.asset(
+                ImageConst.ic_profile,
+                color: dashboardController.currentIndex.value == 3 ? ColorConst.primary : ColorConst.grey,
+              ),
               label: 'Profile',
             ),
           ],
