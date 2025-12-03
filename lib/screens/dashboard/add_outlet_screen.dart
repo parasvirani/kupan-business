@@ -11,16 +11,25 @@ import 'package:kupan_business/common_view/common_text.dart';
 import 'package:kupan_business/const/color_const.dart';
 import 'package:kupan_business/const/image_const.dart';
 import 'package:kupan_business/controllers/details_controller.dart';
+import 'package:kupan_business/models/user_businesses_res.dart';
 import 'package:kupan_business/utils/utils.dart';
 import '../../common_view/common_button.dart';
 import '../../common_view/common_dropdown.dart';
 import '../../common_view/common_textfield.dart';
 import '../../common_view/state_sheet.dart';
 import '../../controllers/dashboard_controller.dart';
+import '../../controllers/my_outlets_controller.dart';
 import '../details/components/address_search_bottom_sheet.dart';
 
 class AddOutletScreen extends StatefulWidget {
-  const AddOutletScreen({super.key});
+  final bool isEditMode;
+  final SellerBusiness? outletData;
+
+  const AddOutletScreen({
+    super.key,
+    this.isEditMode = false,
+    this.outletData,
+  });
 
   @override
   State<AddOutletScreen> createState() => _AddOutletScreenState();
@@ -30,6 +39,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
   DetailsController controller = Get.put(DetailsController());
   DashboardController dashboardController = Get.put(DashboardController());
   final _fromKey = GlobalKey<FormState>();
+  List<String> existingImageUrls = []; // Store existing image URLs for edit mode
 
   final List<String> businessTypes = [
     'restaurant',
@@ -55,7 +65,10 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       controller.cityErrorMessage("");
     }
 
-    if (controller.images?.isEmpty ?? true) {
+    // For edit mode, allow if there are existing images or new images
+    // For add mode, require at least one image
+    final totalImages = (controller.images?.length ?? 0) + existingImageUrls.length;
+    if (totalImages == 0) {
       controller.errorMessageOutletImages("Please select image");
       isValid = false;
     } else {
@@ -85,20 +98,126 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     getDetails();
   }
 
-  getDetails() {
-    // Initialize empty controllers for new outlet
-    controller.businessController.clear();
-    controller.outletContactController.clear();
-    controller.outletNameController.clear();
-    controller.addressLine1Controller.clear();
-    controller.addressLine2Controller.clear();
-    controller.landmarkController.clear();
-    controller.zipCodeController.clear();
-    controller.selectedState = null;
-    controller.selectedCity = null;
-    controller.openTime = null;
-    controller.closeTime = null;
-    controller.images?.clear();
+  getDetails() async {
+    if (widget.isEditMode && widget.outletData != null) {
+      // Populate form with existing outlet data
+      final outlet = widget.outletData!;
+      controller.businessController.text = outlet.businessName ?? '';
+      controller.outletContactController.text = outlet.outletNumber ?? '';
+      controller.outletNameController.text = outlet.outletName ?? '';
+      controller.addressLine1Controller.text = outlet.location?.address ?? '';
+      controller.landmarkController.text = outlet.location?.address ?? '';
+      controller.zipCodeController.text = outlet.location?.pincode ?? '';
+      controller.selectedBusinessType = outlet.businessType;
+      
+      // Store existing image URLs
+      existingImageUrls = outlet.outletImages ?? [];
+      
+      // Populate state and city
+      if (outlet.location?.state != null && outlet.location?.city != null) {
+        try {
+          await controller.updateStateByName(
+            outlet.location!.state!,
+            cityName: outlet.location!.city,
+          );
+          // Trigger UI rebuild after state/city are set
+          if (mounted) {
+            setState(() {});
+          }
+        } catch (e) {
+          print("Error setting state/city: $e");
+        }
+      }
+      
+      // Parse time from outletTime (format: "9AM-9PM" or "9:00 AM - 9:00 PM")
+      if (outlet.outletTime != null && outlet.outletTime!.isNotEmpty) {
+        final times = outlet.outletTime!.split('-');
+        if (times.length == 2) {
+          try {
+            controller.openTime = _parseTimeString(times[0].trim());
+            controller.closeTime = _parseTimeString(times[1].trim());
+            // Trigger UI rebuild after time is set
+            if (mounted) {
+              setState(() {});
+            }
+          } catch (e) {
+            print("Error parsing time: $e");
+          }
+        }
+      }
+      
+      // Clear local images - user will need to re-upload if they want to change images
+      controller.images?.clear();
+    } else {
+      // Initialize empty controllers for new outlet
+      controller.businessController.clear();
+      controller.outletContactController.clear();
+      controller.outletNameController.clear();
+      controller.addressLine1Controller.clear();
+      controller.addressLine2Controller.clear();
+      controller.landmarkController.clear();
+      controller.zipCodeController.clear();
+      controller.selectedState = null;
+      controller.selectedCity = null;
+      controller.openTime = null;
+      controller.closeTime = null;
+      controller.images?.clear();
+      existingImageUrls.clear();
+    }
+  }
+
+  TimeOfDay _parseTimeString(String timeStr) {
+    // Handle formats like "9AM", "9:00 AM", "21", "21:00"
+    timeStr = timeStr.trim().toUpperCase();
+    
+    int hour = 0;
+    int minute = 0;
+    
+    if (timeStr.contains(':')) {
+      final parts = timeStr.split(':');
+      hour = int.parse(parts[0]);
+      final minutePart = parts[1].replaceAll(RegExp(r'[^\d]'), '');
+      minute = int.parse(minutePart);
+    } else {
+      final hourPart = timeStr.replaceAll(RegExp(r'[^\d]'), '');
+      hour = int.parse(hourPart);
+    }
+    
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  Map<String, dynamic> _buildOutletData() {
+    final openTimeStr = controller.openTime != null
+        ? '${controller.openTime!.hour}:${controller.openTime!.minute.toString().padLeft(2, '0')}'
+        : '';
+    final closeTimeStr = controller.closeTime != null
+        ? '${controller.closeTime!.hour}:${controller.closeTime!.minute.toString().padLeft(2, '0')}'
+        : '';
+    
+    // Use existing location data if available, otherwise use current location or defaults
+    final lat = widget.outletData?.location?.lat ?? 0.0;
+    final long = widget.outletData?.location?.long ?? 0.0;
+    
+    // Combine existing images (that weren't removed) with new uploaded images
+    List<String> finalImages = List.from(existingImageUrls);
+    
+    return {
+      'businessName': controller.businessController.text,
+      'businessType': controller.selectedBusinessType,
+      'outletName': controller.outletNameController.text,
+      'outletTime': '$openTimeStr-$closeTimeStr',
+      'outletImages': finalImages,
+      'outletNumber': controller.outletContactController.text,
+      'email': widget.outletData?.email ?? '',
+      'location': {
+        'lat': lat,
+        'long': long,
+        'address': controller.addressLine1Controller.text,
+        'city': controller.selectedCity?.name ?? '',
+        'state': controller.selectedState?.name ?? '',
+        'pincode': controller.zipCodeController.text,
+      }
+    };
   }
 
   @override
@@ -113,7 +232,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Add Outlet',
+          widget.isEditMode ? 'Edit Outlet' : 'Add Outlet',
           style: TextStyle(
             color: Colors.black,
             fontSize: 20,
@@ -141,39 +260,62 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
                     ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: controller.images?.isNotEmpty ?? false
+                  child: (controller.images?.isNotEmpty ?? false) || existingImageUrls.isNotEmpty
                       ? PageView.builder(
-                          itemCount: controller.images?.length,
-                          itemBuilder: (context, index) => ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Stack(
-                              children: [
-                                Image.file(
-                                  File(controller.images?[index].path ?? ""),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: 150,
-                                ),
-                                Positioned(
-                                  right: size(10),
-                                  top: size(10),
-                                  child: InkWell(
-                                    onTap: () {
-                                      controller.images?.removeAt(index);
-                                      controller.update();
-                                    },
-                                    child: Container(
-                                        padding: EdgeInsets.all(size(5)),
-                                        decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(8)),
-                                        child: Icon(Icons.close)),
+                          itemCount: (controller.images?.length ?? 0) + existingImageUrls.length,
+                          itemBuilder: (context, index) {
+                            final isLocalImage = index < (controller.images?.length ?? 0);
+                            
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Stack(
+                                children: [
+                                  isLocalImage
+                                      ? Image.file(
+                                          File(controller.images?[index].path ?? ""),
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: 150,
+                                        )
+                                      : Image.network(
+                                          existingImageUrls[index - (controller.images?.length ?? 0)],
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: 150,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Container(
+                                              color: Colors.grey[300],
+                                              child: Icon(Icons.broken_image),
+                                            );
+                                          },
+                                        ),
+                                  Positioned(
+                                    right: size(10),
+                                    top: size(10),
+                                    child: InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          if (isLocalImage) {
+                                            controller.images?.removeAt(index);
+                                          } else {
+                                            existingImageUrls.removeAt(index - (controller.images?.length ?? 0));
+                                          }
+                                        });
+                                        controller.update();
+                                      },
+                                      child: Container(
+                                          padding: EdgeInsets.all(size(5)),
+                                          decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(8)),
+                                          child: Icon(Icons.close)),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
+                                ],
+                              ),
+                            );
+                          },
                         )
                       : GestureDetector(
                           onTap: () {
@@ -207,14 +349,14 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: controller.images!.length < 4
+                      onPressed: ((controller.images?.length ?? 0) + existingImageUrls.length) < 4
                           ? () {
                               _showImagesPickerOptions();
                             }
                           : null,
                       child: CommonText(
-                        text: "Add Image ${controller.images?.length}/4",
-                        color: controller.images!.length < 4
+                        text: "Add Image ${(controller.images?.length ?? 0) + existingImageUrls.length}/4",
+                        color: ((controller.images?.length ?? 0) + existingImageUrls.length) < 4
                             ? ColorConst.primary
                             : ColorConst.grey,
                       ),
@@ -601,12 +743,16 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
                   child: Obx(
                     () => CommonButton(
                       isLoading: controller.isLoadingOutlet.value,
-                      onPressed: () {
+                      onPressed: () async {
                         if (validateAll()) {
-                          controller.submitOutlet();
+                          if (widget.isEditMode && widget.outletData != null) {
+                            await _handleEditOutlet();
+                          } else {
+                            controller.submitOutlet();
+                          }
                         }
                       },
-                      text: 'Add Outlet',
+                      text: widget.isEditMode ? 'Edit Outlet' : 'Add Outlet',
                     ),
                   ),
                 ),
@@ -758,6 +904,46 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleEditOutlet() async {
+    try {
+      controller.isLoadingOutlet.value = true;
+      
+      // Upload new images if any
+      List<String> newImageUrls = [];
+      if (controller.images != null && controller.images!.isNotEmpty) {
+        for (var imageFile in controller.images!) {
+          String? url = await dashboardController.uploadImage(imageFile);
+          if (url != null) {
+            newImageUrls.add(url);
+          }
+        }
+      }
+      
+      // Combine existing images with newly uploaded images
+      List<String> finalImages = List.from(existingImageUrls);
+      finalImages.addAll(newImageUrls);
+      
+      // Build outlet data with final images
+      Map<String, dynamic> outletData = _buildOutletData();
+      outletData['outletImages'] = finalImages;
+      
+      // Call update API
+      final myOutletsController = Get.find<MyOutletsController>();
+      await myOutletsController.updateBusiness(
+        widget.outletData!.id ?? '',
+        outletData,
+      );
+      
+      // Go back after successful update
+      Get.back();
+    } catch (e) {
+      print("Error updating outlet: $e");
+      Get.snackbar('Error', 'Error updating outlet: ${e.toString()}');
+    } finally {
+      controller.isLoadingOutlet.value = false;
+    }
   }
 
   Future<void> _selectCloseTime(BuildContext context) async {

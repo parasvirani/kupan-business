@@ -150,120 +150,122 @@ class _CitySheetState extends State<CitySheet> with TickerProviderStateMixin {
 
           // States List
           Expanded(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: filteredStates.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: size(48),
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(height: size(12)),
-                          CommonText(
-                            text: 'No City found',
-                            color: Colors.grey[600]!,
-                            fontSize: size(16),
-                          ),
-                          SizedBox(height: size(4)),
-                          CommonText(
-                            text: 'Try searching with different keywords',
-                            color: Colors.grey[500]!,
-                            fontSize: size(12),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: EdgeInsets.symmetric(horizontal: size(16)),
-                      itemBuilder: (context, index) {
-                        final city = filteredStates[index];
-                        return TweenAnimationBuilder<double>(
-                          duration: Duration(milliseconds: 300 + (index * 50)),
-                          tween: Tween(begin: 0.0, end: 1.0),
-                          builder: (context, value, child) {
-                            return Transform.translate(
-                              offset: Offset(0, 20 * (1 - value)),
-                              child: Opacity(
-                                opacity: value,
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: GestureDetector(
-                            onTap: () {
-                              // Handle state selection
-                              detailsController.updateCity(city);
-                              Get.back();
-                              //Navigator.pop(context, state);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(size(16)),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.grey[200]!,
-                                  width: 1,
+            child: Obx(() {
+              return FadeTransition(
+                opacity: _fadeAnimation,
+                child: filteredStates.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off,
+                              size: size(48),
+                              color: Colors.grey[400],
+                            ),
+                            SizedBox(height: size(12)),
+                            CommonText(
+                              text: 'No City found',
+                              color: Colors.grey[600]!,
+                              fontSize: size(16),
+                            ),
+                            SizedBox(height: size(4)),
+                            CommonText(
+                              text: 'Try searching with different keywords',
+                              color: Colors.grey[500]!,
+                              fontSize: size(12),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: EdgeInsets.symmetric(horizontal: size(16)),
+                        itemBuilder: (context, index) {
+                          final city = filteredStates[index];
+                          return TweenAnimationBuilder<double>(
+                            duration: Duration(milliseconds: 300 + (index * 50)),
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            builder: (context, value, child) {
+                              return Transform.translate(
+                                offset: Offset(0, 20 * (1 - value)),
+                                child: Opacity(
+                                  opacity: value,
+                                  child: child,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                              );
+                            },
+                            child: GestureDetector(
+                              onTap: () {
+                                // Handle state selection
+                                detailsController.updateCity(city);
+                                Get.back();
+                                //Navigator.pop(context, state);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(size(16)),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey[200]!,
+                                    width: 1,
                                   ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  // State Icon
-                                  Container(
-                                    width: size(40),
-                                    height: size(40),
-                                    decoration: BoxDecoration(
-                                      color: ColorConst.primary.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.04),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    child: Icon(
-                                      Icons.location_on_outlined,
-                                      color: ColorConst.primary,
-                                      size: size(20),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    // State Icon
+                                    Container(
+                                      width: size(40),
+                                      height: size(40),
+                                      decoration: BoxDecoration(
+                                        color: ColorConst.primary.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        Icons.location_on_outlined,
+                                        color: ColorConst.primary,
+                                        size: size(20),
+                                      ),
                                     ),
-                                  ),
 
-                                  SizedBox(width: size(12)),
+                                    SizedBox(width: size(12)),
 
-                                  // State Name
-                                  Expanded(
-                                    child: CommonText(
-                                      text: city.name,
-                                      color: Colors.black,
-                                      fontSize: size(15),
-                                      fontWeight: FontWeight.w500,
+                                    // State Name
+                                    Expanded(
+                                      child: CommonText(
+                                        text: city.name,
+                                        color: Colors.black,
+                                        fontSize: size(15),
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
-                                  ),
 
-                                  // Arrow Icon
-                                  Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: Colors.grey[400],
-                                    size: size(14),
-                                  ),
-                                ],
+                                    // Arrow Icon
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.grey[400],
+                                      size: size(14),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
-                      separatorBuilder: (context, index) => SizedBox(
-                        height: size(12),
+                          );
+                        },
+                        separatorBuilder: (context, index) => SizedBox(
+                          height: size(12),
+                        ),
+                        itemCount: filteredStates.length,
                       ),
-                      itemCount: filteredStates.length,
-                    ),
-            ),
+              );
+            }),
           ),
 
           // Bottom Safe Area

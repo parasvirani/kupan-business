@@ -262,6 +262,9 @@ class DetailsController extends GetxController {
     // Load cities for this state
     var cityList =
         await country.getStateCities(state.countryCode, state.isoCode);
+    
+    // Update the cities RxList so the UI can observe changes
+    cities(cityList);
 
     if (cityName != null) {
       final city = cityList.firstWhere(

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../const/color_const.dart';
 import '../../controllers/my_outlets_controller.dart';
+import '../../models/user_businesses_res.dart';
 import '../../utils/utils.dart';
 import 'add_outlet_screen.dart';
 
@@ -14,6 +16,163 @@ class MyOutletsScreen extends StatefulWidget {
 
 class _MyOutletsScreenState extends State<MyOutletsScreen> {
   final MyOutletsController controller = Get.put(MyOutletsController());
+
+  void _navigateToEditOutlet(SellerBusiness outlet) {
+    Get.to(
+      () => AddOutletScreen(
+        isEditMode: true,
+        outletData: outlet,
+      ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, String businessId, String outletName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Obx(() {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              padding: EdgeInsets.all(size(24)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: controller.isDeleting.value
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(
+                          color: ColorConst.primary,
+                          strokeWidth: 3,
+                        ),
+                        SizedBox(height: size(20)),
+                        Text(
+                          'Deleting outlet...',
+                          style: TextStyle(
+                            fontSize: size(16),
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Warning Icon
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.warning_rounded,
+                            color: Colors.red,
+                            size: size(32),
+                          ),
+                        ),
+                        SizedBox(height: size(20)),
+                        // Title
+                        Text(
+                          'Delete Outlet?',
+                          style: TextStyle(
+                            fontSize: size(18),
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(height: size(12)),
+                        // Message
+                        Text(
+                          'Are you sure you want to delete "$outletName"?',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: size(14),
+                            fontWeight: FontWeight.w400,
+                            color: ColorConst.grey,
+                            height: 1.5,
+                          ),
+                        ),
+                        SizedBox(height: size(8)),
+                        Text(
+                          'This action cannot be undone.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: size(12),
+                            fontWeight: FontWeight.w400,
+                            color: Colors.red.withOpacity(0.7),
+                          ),
+                        ),
+                        SizedBox(height: size(24)),
+                        // Buttons
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[200],
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(vertical: size(12)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    fontSize: size(14),
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: size(12)),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  print("Delete button pressed for ID: $businessId");
+                                  controller.deleteBusiness(businessId);
+                                  Navigator.of(context).pop();
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  elevation: 0,
+                                  padding: EdgeInsets.symmetric(vertical: size(12)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                    fontSize: size(14),
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+            ),
+          );
+        });
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +204,112 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(
-            child: CircularProgressIndicator(
-              color: ColorConst.primary,
-            ),
+          return ListView.builder(
+            padding: EdgeInsets.all(size(16)),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return Container(
+                margin: EdgeInsets.only(bottom: size(12)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.grey[200]!,
+                    width: 1,
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(size(12)),
+                  child: Row(
+                    children: [
+                      // Shimmer Image
+                      Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 90,
+                            height: 90,
+                            color: Colors.grey[300],
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: size(12)),
+                      // Shimmer Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                height: 14,
+                                width: 150,
+                                color: Colors.grey[300],
+                              ),
+                            ),
+                            SizedBox(height: size(8)),
+                            Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                height: 12,
+                                width: 100,
+                                color: Colors.grey[300],
+                              ),
+                            ),
+                            SizedBox(height: size(8)),
+                            Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                height: 11,
+                                width: 120,
+                                color: Colors.grey[300],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: size(8)),
+                      // Shimmer Action Icons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: size(8)),
+                          Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         }
 
@@ -282,7 +543,7 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              // Edit functionality
+                              _navigateToEditOutlet(outlet);
                             },
                             child: Container(
                               padding: EdgeInsets.all(size(6)),
@@ -294,6 +555,24 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
                                 Icons.edit,
                                 size: size(18),
                                 color: ColorConst.primary,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: size(8)),
+                          GestureDetector(
+                            onTap: () {
+                              _showDeleteConfirmationDialog(context, outlet.id ?? '', outlet.outletName ?? 'Outlet');
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(size(6)),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(
+                                Icons.delete,
+                                size: size(18),
+                                color: Colors.red,
                               ),
                             ),
                           ),

@@ -1,6 +1,9 @@
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+
 import '../models/user_businesses_res.dart';
 import '../services/api_service.dart';
 
@@ -8,6 +11,7 @@ class MyOutletsController extends GetxController {
   final ApiService _apiService = ApiService();
 
   var isLoading = false.obs;
+  var isDeleting = false.obs;
   var errorMessage = ''.obs;
   var userBusinessesRes = Rxn<UserBusinessesRes>();
   RxList<SellerBusiness> outletsList = <SellerBusiness>[].obs;
@@ -101,6 +105,152 @@ class MyOutletsController extends GetxController {
       errorMessage.value = "Error: ${e.toString()}";
     } finally {
       isLoading(false);
+    }
+  }
+
+  Future<void> deleteBusiness(String businessId) async {
+    isDeleting(true);
+    try {
+      print("Attempting to delete business with ID: $businessId");
+      http.Response response = await _apiService.deleteBusiness(businessId);
+      print("Delete Response Status: ${response.statusCode}");
+      print("Delete Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        bool success = data['success'] as bool? ?? false;
+
+        if (success) {
+          // Remove the business from the list
+          print("Removing outlet with ID: $businessId from list");
+          outletsList.removeWhere((outlet) => outlet.id == businessId);
+          outletsList.refresh();
+          Get.snackbar(
+            'Success',
+            'Outlet deleted successfully',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color.fromARGB(255, 76, 175, 80),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+          print("Business deleted successfully");
+        } else {
+          String message = data['message'] ?? 'Failed to delete outlet';
+          Get.snackbar(
+            'Error',
+            message,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      } else {
+        try {
+          final error = jsonDecode(response.body);
+          String message = error['message'] ?? 'Failed to delete outlet';
+          Get.snackbar(
+            'Error',
+            message,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        } catch (e) {
+          Get.snackbar(
+            'Error',
+            'HTTP Error: ${response.statusCode}',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error deleting business: $e");
+      Get.snackbar(
+        'Error',
+        'Error: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+    } finally {
+      isDeleting(false);
+    }
+  }
+
+  Future<void> updateBusiness(String businessId, Map<String, dynamic> businessData) async {
+    try {
+      print("Attempting to update business with ID: $businessId");
+      http.Response response = await _apiService.updateBusiness(businessId, businessData);
+      print("Update Response Status: ${response.statusCode}");
+      print("Update Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        bool success = data['success'] as bool? ?? false;
+
+        if (success) {
+          // Refresh the outlets list to get updated data
+          await getOutlets();
+          // Get.snackbar(
+          //   'Success',
+          //   'Outlet updated successfully',
+          //   snackPosition: SnackPosition.BOTTOM,
+          //   backgroundColor: const Color.fromARGB(255, 76, 175, 80),
+          //   colorText: Colors.white,
+          //   duration: const Duration(seconds: 2),
+          // );
+          Get.back();
+          print("Business updated successfully");
+        } else {
+          String message = data['message'] ?? 'Failed to update outlet';
+          Get.snackbar(
+            'Error',
+            message,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      } else {
+        try {
+          final error = jsonDecode(response.body);
+          String message = error['message'] ?? 'Failed to update outlet';
+          Get.snackbar(
+            'Error',
+            message,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        } catch (e) {
+          Get.snackbar(
+            'Error',
+            'HTTP Error: ${response.statusCode}',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        }
+      }
+    } catch (e) {
+      print("Error updating business: $e");
+      Get.snackbar(
+        'Error',
+        'Error: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
     }
   }
 

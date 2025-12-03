@@ -120,4 +120,23 @@ class ApiService {
 
     return await http.post(url, headers: headers, body: body);
   }
+
+  Future<http.Response> deleteBusiness(String businessId) async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/users/business/$businessId");
+    final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
+
+    return await http.delete(url, headers: headers);
+  }
+
+  Future<http.Response> updateBusiness(String businessId, Map<String, dynamic> map) async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/users/business/$businessId");
+    final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
+    final body = jsonEncode(map);
+
+    return await http.put(url, headers: headers, body: body);
+  }
 }
