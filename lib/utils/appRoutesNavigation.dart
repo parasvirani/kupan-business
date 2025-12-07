@@ -1,5 +1,9 @@
 import 'package:get/get.dart';
+import 'package:kupan_business/screens/dashboard/outlet_details_screen.dart';
 import 'package:kupan_business/screens/login_screen.dart';
+
+import '../screens/dashboard/add_kupan_view.dart';
+import '../screens/dashboard/add_outlet_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/dashboard/my_outlets_screen.dart';
 import '../screens/details/details_screen.dart';
@@ -53,6 +57,24 @@ class AppPage {
       preventDuplicates: true,
       name: AppRoutes.myOutlets,
       page: () => const MyOutletsScreen(),
+      binding: null,
+    ),
+    GetPage(
+      preventDuplicates: true,
+      name: AppRoutes.addOutlet,
+      page: () => const AddOutletScreen(),
+      binding: null,
+    ),
+    GetPage(
+      preventDuplicates: true,
+      name: AppRoutes.addKupan,
+      page: () => const AddKupanView(),
+      binding: null,
+    ),
+    GetPage(
+      preventDuplicates: true,
+      name: AppRoutes.outletDetails,
+      page: () => const OutletDetailsScreen(),
       binding: null,
     ),
 

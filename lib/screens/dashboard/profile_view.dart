@@ -111,86 +111,13 @@ class _ProfileViewState extends State<ProfileView> {
                       Obx(
                         () => CommonText(
                           isLoading: dashboardController.isLoading.value,
-                          text: dashboardController.currentAddress.value,
+                          text: dashboardController
+                                  .userUpdateRes.value?.data?.contact ??
+                              "",
                           color: ColorConst.textGrey,
                           fontSize: size(14),
                           maxLines: 1,
                           fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(
-                        height: size(4),
-                      ),
-                      Obx(
-                        ()=> Row(
-                          children: [
-                            dashboardController.isLoading.value
-                                ? Shimmer.fromColors(
-                                    baseColor: Colors.grey.shade300,
-                                    highlightColor: Colors.grey.shade100,
-                                    child: Container(
-                                      padding: EdgeInsets.all(size(4)),
-                                      decoration: BoxDecoration(
-                                          color: ColorConst.primary,
-                                          borderRadius:
-                                              BorderRadius.circular(size(4))),
-                                      child: Row(
-                                        children: [
-                                          SvgPicture.asset(
-                                              ImageConst.icRestaurant),
-                                          SizedBox(
-                                            width: size(4),
-                                          ),
-                                          CommonText(
-                                            isLoading: dashboardController
-                                                .isLoading.value,
-                                            text: dashboardController
-                                                    .userUpdateRes
-                                                    .value
-                                                    ?.data
-                                                    ?.sellerInfo
-                                                    ?.businessType
-                                                    ?.toUpperCase() ??
-                                                "",
-                                            color: ColorConst.white,
-                                            fontSize: size(10),
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    padding: EdgeInsets.all(size(4)),
-                                    decoration: BoxDecoration(
-                                        color: ColorConst.primary,
-                                        borderRadius:
-                                            BorderRadius.circular(size(4))),
-                                    child: Row(
-                                      children: [
-                                        SvgPicture.asset(ImageConst.icRestaurant),
-                                        SizedBox(
-                                          width: size(4),
-                                        ),
-                                        CommonText(
-                                          isLoading:
-                                              dashboardController.isLoading.value,
-                                          text: dashboardController
-                                                  .userUpdateRes
-                                                  .value
-                                                  ?.data
-                                                  ?.sellerInfo
-                                                  ?.businessType
-                                                  ?.toUpperCase() ??
-                                              "",
-                                          color: ColorConst.white,
-                                          fontSize: size(10),
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                          ],
                         ),
                       ),
                     ],

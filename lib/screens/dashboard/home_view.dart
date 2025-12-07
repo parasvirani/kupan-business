@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -13,7 +12,9 @@ import '../../const/image_const.dart';
 import '../../models/restaurant_deal.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
-import 'components/restaurant_card.dart';
+import 'components/action_button.dart';
+import 'components/recent_coupon_card.dart';
+import 'components/stats_card.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -122,38 +123,79 @@ class _HomeViewState extends State<HomeView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CommonTextfield(
-                hintText: 'Search for "restaurant"',
-                readOnly: true,
-                onTap: () {
-                  Get.toNamed(AppRoutes.search);
-                },
-                prefixIcon: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: size(10)),
-                  child: SvgPicture.asset(ImageConst.ic_search),
-                ),
-                controller: TextEditingController(),
+
+              // Statistics Section
+              Row(
+                children: [
+                  Expanded(
+                    child: StatsCard(
+                      count: dashboardController.outletsList.length.toString(),
+                      label: 'Total Outlets',
+                      backgroundColor1: Color(0xFFFFFFFF),
+                      backgroundColor2: Color(0xFFFFF4E8),
+                    ),
+                  ),
+                  SizedBox(width: size(12)),
+                  Expanded(
+                    child: StatsCard(
+                      count: dashboardController.kupanList.length.toString(),
+                      label: 'Total Coupons',
+                      backgroundColor1: Color(0xFFFFFFFF),
+                      backgroundColor2: Color(0xFFEAEEFF),
+                    ),
+                  ),
+                  SizedBox(width: size(12)),
+                  Expanded(
+                    child: StatsCard(
+                      count: '24',
+                      label: 'Today Redemption',
+                      backgroundColor1: Color(0xFFFFFFFF),
+                      backgroundColor2: Color(0xFFFFEAF9),
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: size(16)),
+              SizedBox(height: size(20)),
+
+              // Recent Coupons Section
+              CommonText(
+                text: 'Recent Coupons',
+                fontSize: size(16),
+                color: ColorConst.dark,
+                fontWeight: FontWeight.w600,
+              ),
+              SizedBox(height: size(12)),
+
+              // Recent Coupons Grid
               Obx(
                 () => dashboardController.isLoadingGetKupan.value
                     ? Shimmer.fromColors(
                         baseColor: Colors.grey.shade300,
                         highlightColor: Colors.grey.shade100,
-                        child: ListView.separated(
+                        child: GridView.builder(
                           shrinkWrap: true,
                           physics: NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: deals.length,
-                          itemBuilder: (context, index) {
-                            return Container();
-                          },
-                          separatorBuilder: (context, index) => SizedBox(
-                            height: size(16),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: size(12),
+                            mainAxisSpacing: size(12),
+                            childAspectRatio: 0.75,
                           ),
+                          itemCount: 4,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius:
+                                    BorderRadius.circular(size(8)),
+                              ),
+                            );
+                          },
                         ),
                       )
-                    : dashboardController.errorMessageGetKupan.value.isNotEmpty
+                    : dashboardController
+                            .errorMessageGetKupan.value.isNotEmpty
                         ? Container(
                             height: Get.width,
                             alignment: Alignment.center,
@@ -164,19 +206,40 @@ class _HomeViewState extends State<HomeView> {
                               fontSize: size(14),
                             ),
                           )
-                        : ListView.separated(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: dashboardController.kupanList.length,
-                            itemBuilder: (context, index) {
-                              return RestaurantCard(
-                                  deal: dashboardController.kupanList[index]);
-                            },
-                            separatorBuilder: (context, index) => SizedBox(
-                              height: size(16),
-                            ),
-                          ),
+                        : dashboardController.kupanList.isEmpty
+                            ? Container(
+                                height: size(200),
+                                alignment: Alignment.center,
+                                child: CommonText(
+                                  text: 'No coupons available',
+                                  color: ColorConst.grey,
+                                  fontSize: size(14),
+                                ),
+                              )
+                            : GridView.builder(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: size(12),
+                                  mainAxisSpacing: size(12),
+                                  childAspectRatio: 0.75,
+                                ),
+                                itemCount: dashboardController
+                                    .kupanList.length,
+                                itemBuilder: (context, index) {
+                                  final coupon =
+                                      dashboardController.kupanList[index];
+                                  return RecentCouponCard(
+                                    imageUrl: coupon.kupanImages!.isNotEmpty
+                                        ? coupon.kupanImages![0]
+                                        : '',
+                                    title: coupon.title ?? 'Coupon',
+                                    subtitle: 'Limited time deals',
+                                  );
+                                },
+                              ),
               ),
             ],
           ),

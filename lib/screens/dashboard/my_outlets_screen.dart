@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:kupan_business/utils/appRoutesStrings.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../const/color_const.dart';
 import '../../controllers/my_outlets_controller.dart';
@@ -433,152 +434,157 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
             itemCount: controller.outletsList.length,
             itemBuilder: (context, index) {
               final outlet = controller.outletsList[index];
-              return Container(
-                margin: EdgeInsets.only(bottom: size(12)),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey[200]!,
-                    width: 1,
+              return InkWell(
+                onTap: () {
+                  Get.toNamed(AppRoutes.outletDetails, arguments: controller.outletsList[index]);
+                },
+                child: Container(
+                  margin: EdgeInsets.only(bottom: size(12)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey[200]!,
+                      width: 1,
+                    ),
                   ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(size(12)),
-                  child: Row(
-                    children: [
-                      // Outlet Image
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: outlet.outletImages != null && outlet.outletImages!.isNotEmpty
-                            ? Image.network(
-                                outlet.outletImages![0],
-                                width: 90,
-                                height: 90,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 90,
-                                    height: 90,
-                                    decoration: BoxDecoration(
-                                      color: ColorConst.primary.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      Icons.store,
-                                      color: ColorConst.primary,
-                                      size: size(40),
-                                    ),
-                                  );
-                                },
-                              )
-                            : Container(
-                                width: 90,
-                                height: 90,
-                                decoration: BoxDecoration(
-                                  color: ColorConst.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.store,
-                                  color: ColorConst.primary,
-                                  size: size(40),
-                                ),
-                              ),
-                      ),
-                      SizedBox(width: size(12)),
-                      // Outlet Details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              outlet.outletName ?? 'N/A',
-                              style: TextStyle(
-                                fontSize: size(14),
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: size(4)),
-                            Text(
-                              outlet.businessType ?? 'N/A',
-                              style: TextStyle(
-                                fontSize: size(12),
-                                fontWeight: FontWeight.w400,
-                                color: ColorConst.grey,
-                              ),
-                            ),
-                            SizedBox(height: size(6)),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.location_on,
-                                  size: size(12),
-                                  color: ColorConst.grey,
-                                ),
-                                SizedBox(width: size(3)),
-                                Expanded(
-                                  child: Text(
-                                    '${outlet.location?.city ?? 'N/A'}, ${outlet.location?.state ?? 'N/A'}',
-                                    style: TextStyle(
-                                      fontSize: size(11),
-                                      color: ColorConst.grey,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                  child: Padding(
+                    padding: EdgeInsets.all(size(12)),
+                    child: Row(
+                      children: [
+                        // Outlet Image
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: outlet.outletImages != null && outlet.outletImages!.isNotEmpty
+                              ? Image.network(
+                                  outlet.outletImages![0],
+                                  width: 90,
+                                  height: 90,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 90,
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        color: ColorConst.primary.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.store,
+                                        color: ColorConst.primary,
+                                        size: size(40),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  width: 90,
+                                  height: 90,
+                                  decoration: BoxDecoration(
+                                    color: ColorConst.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.store,
+                                    color: ColorConst.primary,
+                                    size: size(40),
                                   ),
                                 ),
-                              ],
+                        ),
+                        SizedBox(width: size(12)),
+                        // Outlet Details
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                outlet.outletName ?? 'N/A',
+                                style: TextStyle(
+                                  fontSize: size(14),
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: size(4)),
+                              Text(
+                                outlet.businessType ?? 'N/A',
+                                style: TextStyle(
+                                  fontSize: size(12),
+                                  fontWeight: FontWeight.w400,
+                                  color: ColorConst.grey,
+                                ),
+                              ),
+                              SizedBox(height: size(6)),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: size(12),
+                                    color: ColorConst.grey,
+                                  ),
+                                  SizedBox(width: size(3)),
+                                  Expanded(
+                                    child: Text(
+                                      '${outlet.location?.city ?? 'N/A'}, ${outlet.location?.state ?? 'N/A'}',
+                                      style: TextStyle(
+                                        fontSize: size(11),
+                                        color: ColorConst.grey,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: size(8)),
+                        // Action Icons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                _navigateToEditOutlet(outlet);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(size(6)),
+                                decoration: BoxDecoration(
+                                  color: ColorConst.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(
+                                  Icons.edit,
+                                  size: size(18),
+                                  color: ColorConst.primary,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: size(8)),
+                            GestureDetector(
+                              onTap: () {
+                                _showDeleteConfirmationDialog(context, outlet.id ?? '', outlet.outletName ?? 'Outlet');
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(size(6)),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(
+                                  Icons.delete,
+                                  size: size(18),
+                                  color: Colors.red,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      SizedBox(width: size(8)),
-                      // Action Icons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              _navigateToEditOutlet(outlet);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(size(6)),
-                              decoration: BoxDecoration(
-                                color: ColorConst.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Icon(
-                                Icons.edit,
-                                size: size(18),
-                                color: ColorConst.primary,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: size(8)),
-                          GestureDetector(
-                            onTap: () {
-                              _showDeleteConfirmationDialog(context, outlet.id ?? '', outlet.outletName ?? 'Outlet');
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(size(6)),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Icon(
-                                Icons.delete,
-                                size: size(18),
-                                color: Colors.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
