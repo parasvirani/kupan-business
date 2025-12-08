@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kupan_business/common_view/common_text.dart';
 import 'package:kupan_business/const/color_const.dart';
-import 'package:kupan_business/const/image_const.dart';
+import 'package:kupan_business/controllers/my_outlets_controller.dart';
 import 'package:kupan_business/models/user_businesses_res.dart';
 import 'package:kupan_business/utils/utils.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -18,6 +18,21 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
 
   SellerBusiness sellerBusiness = Get.arguments as SellerBusiness;
   final PageController _controller = PageController();
+  final MyOutletsController outletsController = Get.find<MyOutletsController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch kupans for this outlet
+    _loadOutletKupans();
+  }
+
+  void _loadOutletKupans() {
+    // Fetch kupans by businessId
+    outletsController.getOutletKupans(
+      businessId: sellerBusiness.id ?? '',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -231,35 +246,269 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Action Buttons Grid
-                  GridView.count(
-                    crossAxisCount: 3,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 2.5,
+                  // Action Buttons
+                  Row(
                     children: [
-                      _buildActionButton(
-                        'Add Coupons',
-                            () {},
+                      Expanded(
+                        child: _buildLargeActionButton(
+                          'Add Coupons',
+                          Icons.add_circle_outline,
+                          ColorConst.primary,
+                          () {},
+                        ),
                       ),
-                      _buildActionButton(
-                        'Edit Outlet',
-                            () {},
-                      ),
-                      _buildActionButton(
-                        'Delete Outlet',
-                            () {},
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildLargeActionButton(
+                          'Edit Outlet',
+                          Icons.edit_outlined,
+                          Colors.blue,
+                          () {},
+                        ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildLargeActionButton(
+                          'Remove Outlet',
+                          Icons.delete_outline,
+                          Colors.red,
+                          () {},
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildLargeActionButton(
+                          'Show QR Code',
+                          Icons.qr_code_2,
+                          Colors.purple,
+                          () {
+                            _showQRCodeDialog();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Kupans List Section
+                  CommonText(
+                    text: 'Coupons',
+                    fontSize: size(16),
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildKupansList(),
 
                   const SizedBox(height: 24),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKupansList() {
+    return Obx(
+      () {
+        if (outletsController.isLoadingOutletKupans.value) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (outletsController.errorMessageOutletKupans.value.isNotEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange.shade200),
+            ),
+            child: CommonText(
+              text: outletsController.errorMessageOutletKupans.value,
+              fontSize: 13,
+              color: Colors.orange.shade700,
+            ),
+          );
+        }
+
+        if (outletsController.outletKupanList.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.local_offer_outlined,
+                    size: 40,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 12),
+                  CommonText(
+                    text: 'No coupons available',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: outletsController.outletKupanList.length,
+          itemBuilder: (context, index) {
+            final kupan = outletsController.outletKupanList[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  // Coupon Image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      bottomLeft: Radius.circular(10),
+                    ),
+                    child: Image.network(
+                      kupan.kupanImages?.isNotEmpty == true
+                          ? kupan.kupanImages![0]
+                          : '',
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.grey.shade300,
+                          child: Icon(Icons.image_not_supported),
+                        );
+                      },
+                    ),
+                  ),
+                  // Coupon Details
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          CommonText(
+                            text: kupan.title ?? 'Coupon',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 4),
+                          if (kupan.kupanDays?.isNotEmpty == true)
+                            CommonText(
+                              text:
+                                  '${kupan.kupanDays?.length ?? 0} days available',
+                              fontSize: 11,
+                              color: Colors.grey.shade600,
+                            ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: ColorConst.primary.withAlpha(25),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: CommonText(
+                              text: 'View Details',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: ColorConst.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLargeActionButton(
+    String title,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Material(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+          decoration: BoxDecoration(
+            color: color.withAlpha(20),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: color.withAlpha(100),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: color,
+                size: 28,
+              ),
+              const SizedBox(height: 8),
+              CommonText(
+                text: title,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -284,5 +533,241 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
         ),
       ),
     );
+  }
+
+  void _showQRCodeDialog() {
+    // Get kupanId from arguments or use outlet id
+    String kupanId = sellerBusiness.id ?? '';
+    
+    if (kupanId.isEmpty) {
+      Get.snackbar('Error', 'Outlet ID not found');
+      return;
+    }
+
+    // Generate QR code
+    outletsController.generateQRCode(kupanId: kupanId);
+
+    // Show dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Obx(
+          () => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header with title and close button
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CommonText(
+                          text: 'QR Code',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
+                        InkWell(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.black87,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (outletsController.isLoadingQR.value)
+                          Column(
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              CommonText(
+                                text: 'Generating QR Code...',
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ],
+                          )
+                        else if (outletsController.errorMessageQR.value.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.red.shade200,
+                              ),
+                            ),
+                            child: CommonText(
+                              text: outletsController.errorMessageQR.value,
+                              fontSize: 14,
+                              color: Colors.red.shade700,
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        else if (outletsController.qrCodeUrl.value != null &&
+                            outletsController.qrCodeUrl.value!.isNotEmpty)
+                          Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    outletsController.qrCodeUrl.value!,
+                                    width: 280,
+                                    height: 280,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 280,
+                                        height: 280,
+                                        color: Colors.grey[300],
+                                        child: const Icon(Icons.broken_image),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              CommonText(
+                                text: '${sellerBusiness.outletName ?? "Outlet"}',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ],
+                          )
+                        else
+                          CommonText(
+                            text: 'No QR code available',
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  // Footer with action buttons
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: CommonText(
+                                  text: 'Close',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              if (outletsController.qrCodeUrl.value != null &&
+                                  outletsController.qrCodeUrl.value!.isNotEmpty) {
+                                _shareQRCode(outletsController.qrCodeUrl.value!);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: ColorConst.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.share,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    CommonText(
+                                      text: 'Share',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _shareQRCode(String qrUrl) {
+    // Share the QR code URL
+    // You can use share_plus package for native sharing
+    // For now, just copy to clipboard
+    if (qrUrl.isNotEmpty) {
+      // Option 1: Copy to clipboard
+      // Clipboard.setData(ClipboardData(text: qrUrl));
+      // Get.snackbar('Success', 'QR code URL copied to clipboard');
+      
+      // Option 2: Open URL in browser or share
+      Get.snackbar('Share', 'QR Code URL: $qrUrl');
+      // You can implement native share using share_plus package
+      // share(qrUrl, subject: 'QR Code for ${sellerBusiness.outletName}');
+    }
   }
 }

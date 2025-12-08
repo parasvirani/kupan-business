@@ -175,4 +175,16 @@ class ApiService {
 
     return await http.put(url, headers: headers, body: body);
   }
+
+  Future<http.Response> generateQRCode({required String kupanId}) async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/qr/generate/$kupanId");
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+
+    return await http.get(url, headers: headers);
+  }
 }

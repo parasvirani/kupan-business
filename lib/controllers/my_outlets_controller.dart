@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/kupans_list_res.dart';
+import '../models/qr_code_res.dart';
 import '../models/user_businesses_res.dart';
 import '../services/api_service.dart';
 
@@ -19,6 +21,16 @@ class MyOutletsController extends GetxController {
   var selectedOutletId = ''.obs;
   var selectedOutletName = ''.obs;
   var errorMessageOutletSelection = ''.obs;
+
+  // QR Code properties
+  var isLoadingQR = false.obs;
+  var errorMessageQR = ''.obs;
+  var qrCodeUrl = Rxn<String>();
+
+  // Outlet Kupans properties
+  var isLoadingOutletKupans = false.obs;
+  var errorMessageOutletKupans = ''.obs;
+  RxList<KupanData> outletKupanList = <KupanData>[].obs;
 
 
   @override
@@ -285,5 +297,124 @@ class MyOutletsController extends GetxController {
     selectedOutletName.value = selected.outletName ?? '';
     errorMessageOutletSelection.value = '';
   }
-}
 
+  Future<void> generateQRCode({required String kupanId}) async {
+    isLoadingQR(true);
+    errorMessageQR.value = '';
+    qrCodeUrl.value = null;
+
+    try {
+      print("🔄 Generating QR Code for kupan: $kupanId");
+
+      http.Response response =
+          await _apiService.generateQRCode(kupanId: kupanId);
+
+      print("📍 Response Status: ${response.statusCode}");
+      print("📍 Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        try {
+          final data = jsonDecode(response.body);
+          final qrRes = QRCodeRes.fromJson(data);
+
+          if (qrRes.success ?? false) {
+            qrCodeUrl.value = qrRes.data?.qrUrl;
+            print("✅ QR Code generated: ${qrCodeUrl.value}");
+          } else {
+            errorMessageQR.value = qrRes.message ?? 'Failed to generate QR code';
+          }
+        } catch (parseError) {
+          print("❌ JSON Parse Error: $parseError");
+          errorMessageQR.value = 'Invalid response format from server';
+        }
+      } else {
+        // Try to parse error response
+        try {
+          if (response.body.startsWith('<!DOCTYPE') ||
+              response.body.startsWith('<html')) {
+            print("❌ Server returned HTML error page");
+            errorMessageQR.value =
+                'Server error (${response.statusCode}): Please try again later';
+          } else {
+            final error = jsonDecode(response.body);
+            errorMessageQR.value = error['message'] ??
+                'Failed to generate QR code (${response.statusCode})';
+          }
+        } catch (e) {
+          print("❌ Error Response Parse Error: $e");
+          errorMessageQR.value =
+              'Server error (${response.statusCode}): Please try again';
+        }
+      }
+    } catch (e) {
+      print("❌ Error: $e");
+      errorMessageQR.value = "Error: ${e.toString()}";
+    } finally {
+      isLoadingQR(false);
+    }
+  }
+
+  Future<void> getOutletKupans({required String businessId}) async {
+    isLoadingOutletKupans(true);
+    errorMessageOutletKupans.value = '';
+    outletKupanList.clear();
+
+    try {
+      print("📋 Fetching kupans for outlet - BusinessId: $businessId");
+
+      http.Response response =
+          await _apiService.getKupanWithFilters(
+        vendorId: '', // Will use logged-in user's ID
+        businessId: businessId,
+        limit: 20,
+      );
+
+      print("📍 Response Status: ${response.statusCode}");
+      print(
+          "📍 Response Body (first 500 chars): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final data = jsonDecode(response.body);
+          final kupansRes = KupansListRes.fromJson(data);
+
+          if (kupansRes.success ?? false) {
+            outletKupanList.clear();
+            outletKupanList.addAll(kupansRes.data ?? []);
+            outletKupanList.refresh();
+            print("✅ Outlet kupans loaded: ${outletKupanList.length}");
+          } else {
+            errorMessageOutletKupans.value =
+                kupansRes.message ?? 'Failed to fetch coupons';
+          }
+        } catch (parseError) {
+          print("❌ JSON Parse Error: $parseError");
+          errorMessageOutletKupans.value = 'Invalid response format from server';
+        }
+      } else {
+        // Try to parse error response
+        try {
+          if (response.body.startsWith('<!DOCTYPE') ||
+              response.body.startsWith('<html')) {
+            print("❌ Server returned HTML error page");
+            errorMessageOutletKupans.value =
+                'Server error (${response.statusCode}): Please try again later';
+          } else {
+            final error = jsonDecode(response.body);
+            errorMessageOutletKupans.value = error['message'] ??
+                'Failed to fetch coupons (${response.statusCode})';
+          }
+        } catch (e) {
+          print("❌ Error Response Parse Error: $e");
+          errorMessageOutletKupans.value =
+              'Server error (${response.statusCode}): Please try again';
+        }
+      }
+    } catch (e) {
+      print("❌ Error: $e");
+      errorMessageOutletKupans.value = "Error: ${e.toString()}";
+    } finally {
+      isLoadingOutletKupans(false);
+    }
+  }
+}
