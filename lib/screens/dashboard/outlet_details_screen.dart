@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kupan_business/common_view/common_text.dart';
 import 'package:kupan_business/const/color_const.dart';
+import 'package:kupan_business/controllers/dashboard_controller.dart';
 import 'package:kupan_business/controllers/my_outlets_controller.dart';
 import 'package:kupan_business/models/user_businesses_res.dart';
 import 'package:kupan_business/utils/utils.dart';
+import 'package:kupan_business/utils/appRoutesStrings.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class OutletDetailsScreen extends StatefulWidget {
@@ -246,49 +248,43 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Action Buttons
+                  // Action Buttons in Single Line
                   Row(
                     children: [
-                      Expanded(
-                        child: _buildLargeActionButton(
-                          'Add Coupons',
-                          Icons.add_circle_outline,
-                          ColorConst.primary,
-                          () {},
-                        ),
+                      _buildCompactActionButton(
+                        'Add Coupons',
+                        Icons.add_circle_outline,
+                        ColorConst.primary,
+                            () {
+                          _navigateToAddKupan();
+                        },
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildLargeActionButton(
-                          'Edit Outlet',
-                          Icons.edit_outlined,
-                          Colors.blue,
-                          () {},
-                        ),
+                      const SizedBox(width: 10),
+                      _buildCompactActionButton(
+                        'Edit \nOutlet',
+                        Icons.edit_outlined,
+                        const Color(0xFF3B82F6),
+                            () {
+                          _navigateToEditOutlet();
+                        },
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildLargeActionButton(
-                          'Remove Outlet',
-                          Icons.delete_outline,
-                          Colors.red,
-                          () {},
-                        ),
+                      const SizedBox(width: 10),
+                      _buildCompactActionButton(
+                        'Remove Outlet',
+                        Icons.delete_outline,
+                        const Color(0xFFEF4444),
+                            () {
+                          _showRemoveConfirmation();
+                        },
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildLargeActionButton(
-                          'Show QR Code',
-                          Icons.qr_code_2,
-                          Colors.purple,
-                          () {
-                            _showQRCodeDialog();
-                          },
-                        ),
+                      const SizedBox(width: 10),
+                      _buildCompactActionButton(
+                        'QR \nCode',
+                        Icons.qr_code_2,
+                        const Color(0xFF8B5CF6),
+                            () {
+                          _showQRCodeDialog();
+                        },
                       ),
                     ],
                   ),
@@ -471,69 +467,68 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     );
   }
 
-  Widget _buildLargeActionButton(
+  Widget _buildCompactActionButton(
     String title,
     IconData icon,
     Color color,
     VoidCallback onTap,
   ) {
-    return Material(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          decoration: BoxDecoration(
-            color: color.withAlpha(20),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withAlpha(100),
-              width: 1.5,
+    return Expanded(
+      child: Material(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: color.withAlpha(60),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withAlpha(20),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: color,
-                size: 28,
-              ),
-              const SizedBox(height: 8),
-              CommonText(
-                text: title,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
-                textAlign: TextAlign.center,
-              ),
-            ],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(25),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                CommonText(
+                  text: title,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildActionButton(String title, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: ColorConst.primary,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: CommonText(
-            text: title,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
+
 
   void _showQRCodeDialog() {
     // Get kupanId from arguments or use outlet id
@@ -769,5 +764,177 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
       // You can implement native share using share_plus package
       // share(qrUrl, subject: 'QR Code for ${sellerBusiness.outletName}');
     }
+  }
+
+  void _navigateToAddKupan() {
+    // Set the selected outlet ID before navigating
+    DashboardController dashboardController = Get.find<DashboardController>();
+    dashboardController.selectedOutletId.value = sellerBusiness.id ?? '';
+    dashboardController.selectedOutletName.value = sellerBusiness.outletName ?? '';
+
+    // Show confirmation snackbar
+    Get.snackbar(
+      'Adding Coupon',
+      '${sellerBusiness.outletName} is selected',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 1),
+      backgroundColor: ColorConst.primary,
+      colorText: Colors.white,
+      icon: const Icon(Icons.check_circle, color: Colors.white),
+    );
+
+    // Navigate to Add Kupan screen and handle return
+    Get.toNamed(AppRoutes.addKupan)?.then((_) {
+      // When returning from add coupon screen, refresh the kupans list
+      _loadOutletKupans();
+    });
+  }
+
+  void _navigateToEditOutlet() {
+    // Navigate to Add Outlet screen in edit mode with outlet data
+    Get.toNamed(
+      AppRoutes.addOutlet,
+      arguments: {
+        'isEditMode': true,
+        'outletData': sellerBusiness,
+      },
+    );
+  }
+
+  void _showRemoveConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withAlpha(25),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: const Icon(
+                          Icons.warning_outlined,
+                          color: Color(0xFFEF4444),
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      CommonText(
+                        text: 'Remove Outlet',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
+                      const SizedBox(height: 12),
+                      CommonText(
+                        text: 'Are you sure you want to remove ${sellerBusiness.outletName}? This action cannot be undone.',
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: CommonText(
+                                text: 'Cancel',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.pop(context);
+                            _performRemoveOutlet();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: CommonText(
+                                text: 'Remove',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _performRemoveOutlet() {
+    // Call the remove outlet API
+    String outletId = sellerBusiness.id ?? '';
+    if (outletId.isEmpty) {
+      Get.snackbar('Error', 'Outlet ID not found');
+      return;
+    }
+
+    // Show loading dialog
+    Get.dialog(
+      Center(
+        child: CircularProgressIndicator(),
+      ),
+      barrierDismissible: false,
+    );
+
+    // Call the API to remove the outlet
+    outletsController.deleteBusiness(outletId).then((value) {
+      Get.back(); // Close loading dialog
+      Get.back(); // Go back to previous screen
+      Get.snackbar('Success', 'Outlet removed successfully');
+    }).catchError((error) {
+      Get.back(); // Close loading dialog
+      Get.snackbar('Error', 'Failed to remove outlet: $error');
+    });
   }
 }

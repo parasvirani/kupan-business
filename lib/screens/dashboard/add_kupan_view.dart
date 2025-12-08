@@ -33,6 +33,16 @@ class _AddKupanViewState extends State<AddKupanView> {
   final MyOutletsController controller = Get.put(MyOutletsController());
   final _fromKey = GlobalKey<FormState>();
   File? _imageFile;
+  bool isOutletPreSelected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if outlet was pre-selected from outlet details screen
+    if (dashboardController.selectedOutletId.value.isNotEmpty) {
+      isOutletPreSelected = true;
+    }
+  }
 
   bool validateAll() {
     bool isValid = _fromKey.currentState!.validate();
@@ -157,6 +167,60 @@ class _AddKupanViewState extends State<AddKupanView> {
                         ),
                       );
                     }
+
+                    // If outlet is pre-selected, show it as read-only
+                    if (isOutletPreSelected && dashboardController.selectedOutletId.value.isNotEmpty) {
+                      return Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(horizontal: size(15), vertical: size(14)),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: ColorConst.primary.withAlpha(100),
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(size(10)),
+                          color: ColorConst.primary.withAlpha(20),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  CommonText(
+                                    text: 'Selected Outlet',
+                                    fontSize: size(10),
+                                    color: ColorConst.grey,
+                                  ),
+                                  SizedBox(height: size(2)),
+                                  CommonText(
+                                    text: dashboardController.selectedOutletName.value,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: size(14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: ColorConst.primary.withAlpha(40),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(
+                                Icons.check_circle,
+                                color: ColorConst.primary,
+                                size: 20,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    // Show dropdown for outlet selection if not pre-selected
                     return Container(
                       width: double.infinity,
                       padding: EdgeInsets.symmetric(horizontal: size(15)),
@@ -373,7 +437,7 @@ class _AddKupanViewState extends State<AddKupanView> {
                         isLoading: dashboardController.isLoadingCreateKupan.value,
                           onPressed: () {
                         if (validateAll()) {
-                          dashboardController.createKupan();
+                          _createKupanAndNavigateBack();
                         }
                       }, text: "Save Kupan"),
                     ),
@@ -385,6 +449,63 @@ class _AddKupanViewState extends State<AddKupanView> {
         ),
       ),
     );
+  }
+
+  void _createKupanAndNavigateBack() async {
+    // Get the outlet ID before creating kupan
+    String outletId = dashboardController.selectedOutletId.value;
+
+    // Call createKupan
+    await dashboardController.createKupan();
+
+    // Check if creation was successful
+    if (dashboardController.errorMessageCreateKupan.value.isEmpty &&
+        dashboardController.createKupanRes.value?.success == true) {
+      // Success! Refresh the outlet kupans list
+      if (outletId.isNotEmpty) {
+        await controller.getOutletKupans(businessId: outletId);
+      }
+
+      // Show success message
+      Get.snackbar(
+        'Success',
+        'Coupon created successfully!',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+      );
+
+      // Navigate back to outlet details screen with the outlet data
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Get the outlet data from the outlets list
+      final selectedOutlet = controller.outletsList.firstWhereOrNull(
+        (outlet) => outlet.id == outletId,
+      );
+
+      if (selectedOutlet != null) {
+        // Navigate back to outlet details with the specific outlet data
+        Get.back(result: selectedOutlet);
+      } else {
+        // If outlet not found in list, just go back
+        Get.back();
+      }
+    } else {
+      // Show error message
+      Get.snackbar(
+        'Error',
+        dashboardController.errorMessageCreateKupan.value.isEmpty
+            ? 'Failed to create coupon'
+            : dashboardController.errorMessageCreateKupan.value,
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
+      );
+    }
   }
 
   void _showPickerOptions() {
