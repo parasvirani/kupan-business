@@ -12,14 +12,29 @@ class KupansListRes {
   });
 
   factory KupansListRes.fromJson(Map<String, dynamic> json) {
+    List<KupanData> kupanList = [];
+    
+    // Handle new API response format where kupans are in data.kupans
+    if (json['data'] != null && json['data'] is Map<String, dynamic>) {
+      final dataMap = json['data'] as Map<String, dynamic>;
+      if (dataMap['kupans'] != null && dataMap['kupans'] is List) {
+        kupanList = List<KupanData>.from(
+          (dataMap['kupans'] as List).map((x) => KupanData.fromJson(x))
+        );
+      }
+    } 
+    // Handle old API response format where data is a list
+    else if (json['data'] != null && json['data'] is List) {
+      kupanList = List<KupanData>.from(
+        (json['data'] as List).map((x) => KupanData.fromJson(x))
+      );
+    }
+    
     return KupansListRes(
       success: json['success'],
       message: json['message'],
       statusCode: json['statusCode'],
-      data: json['data'] != null
-          ? List<KupanData>.from(
-          json['data'].map((x) => KupanData.fromJson(x)))
-          : [],
+      data: kupanList,
     );
   }
 
@@ -38,7 +53,10 @@ class KupanData {
   final String? title;
   final List<String>? kupanImages;
   final List<String>? kupanDays;
-  final String? vendorId;
+  final dynamic vendorId; // Can be String or Object
+  final String? businessId;
+  final String? outletName;
+  final List<dynamic>? sellerBusinesses;
   final String? createdAt;
   final String? updatedAt;
   final int? v;
@@ -49,6 +67,9 @@ class KupanData {
     this.kupanImages,
     this.kupanDays,
     this.vendorId,
+    this.businessId,
+    this.outletName,
+    this.sellerBusinesses,
     this.createdAt,
     this.updatedAt,
     this.v,
@@ -64,7 +85,10 @@ class KupanData {
       kupanDays: json['kupanDays'] != null
           ? List<String>.from(json['kupanDays'])
           : [],
-      vendorId: json['vendorId'],
+      vendorId: json['vendorId'], // Keep as is (String or Object)
+      businessId: json['businessId'],
+      outletName: json['outletName'],
+      sellerBusinesses: json['sellerBusinesses'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
       v: json['__v'],
@@ -74,12 +98,49 @@ class KupanData {
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
+      'title': title,
       'kupanImages': kupanImages,
       'kupanDays': kupanDays,
       'vendorId': vendorId,
+      'businessId': businessId,
+      'outletName': outletName,
+      'sellerBusinesses': sellerBusinesses,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       '__v': v,
     };
+  }
+
+  /// Get outlet name from vendorId's sellerBusinesses by matching businessId
+  String? getOutletName() {
+    // First check if outletName exists directly
+    if (outletName != null && outletName!.isNotEmpty) {
+      return outletName;
+    }
+
+    // If vendorId is a Map and has sellerBusinesses, find matching outlet
+    if (vendorId is Map<String, dynamic>) {
+      final vendorMap = vendorId as Map<String, dynamic>;
+      final sellerBusinessesList = vendorMap['sellerBusinesses'] as List?;
+      
+      if (sellerBusinessesList != null && businessId != null) {
+        try {
+          final matchingBusiness = sellerBusinessesList.firstWhere(
+            (business) => 
+              business is Map<String, dynamic> && 
+              business['_id'] == businessId,
+            orElse: () => null,
+          );
+          
+          if (matchingBusiness is Map<String, dynamic>) {
+            return matchingBusiness['outletName'] as String?;
+          }
+        } catch (e) {
+          // If no match found, return null
+        }
+      }
+    }
+    
+    return null;
   }
 }

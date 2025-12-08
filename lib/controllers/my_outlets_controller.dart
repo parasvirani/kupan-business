@@ -16,6 +16,11 @@ class MyOutletsController extends GetxController {
   var userBusinessesRes = Rxn<UserBusinessesRes>();
   RxList<SellerBusiness> outletsList = <SellerBusiness>[].obs;
 
+  var selectedOutletId = ''.obs;
+  var selectedOutletName = ''.obs;
+  var errorMessageOutletSelection = ''.obs;
+
+
   @override
   void onInit() {
     super.onInit();
@@ -263,6 +268,22 @@ class MyOutletsController extends GetxController {
     } catch (e) {
       print("Error refreshing outlets: $e");
     }
+  }
+
+  void onOutletChanged(String? value) {
+    if (value == null) {
+      selectedOutletId.value = '';
+      selectedOutletName.value = '';
+      return;
+    }
+
+    selectedOutletId.value = value;
+    final selected = outletsList.firstWhere(
+          (o) => o.id == value,
+    );
+
+    selectedOutletName.value = selected.outletName ?? '';
+    errorMessageOutletSelection.value = '';
   }
 }
 

@@ -6,13 +6,12 @@ import 'package:kupan_business/screens/dashboard/components/main_drawer.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../common_view/common_text.dart';
-import '../../common_view/common_textfield.dart';
 import '../../const/color_const.dart';
 import '../../const/image_const.dart';
+import '../../const/string_const.dart';
 import '../../models/restaurant_deal.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
-import 'components/action_button.dart';
 import 'components/recent_coupon_card.dart';
 import 'components/stats_card.dart';
 
@@ -27,6 +26,26 @@ class _HomeViewState extends State<HomeView> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   DashboardController dashboardController = Get.find();
+
+  @override
+  void initState() {
+    super.initState();
+    // Fetch kupans with filters when page loads
+    _loadKupans();
+  }
+
+  void _loadKupans() {
+    // Get vendor ID from storage
+    String vendorId = dashboardController.box.read(StringConst.USER_ID) ?? '';
+
+    // Fetch all kupans for this vendor
+    if (vendorId.isNotEmpty) {
+      dashboardController.getKupanByVendor(
+        vendorId: vendorId,
+        limit: 10,
+      );
+    }
+  }
 
   final List<RestaurantDeal> deals = [
     RestaurantDeal(
@@ -180,7 +199,7 @@ class _HomeViewState extends State<HomeView> {
                             crossAxisCount: 2,
                             crossAxisSpacing: size(12),
                             mainAxisSpacing: size(12),
-                            childAspectRatio: 0.75,
+                                childAspectRatio: 1.0,
                           ),
                           itemCount: 4,
                           itemBuilder: (context, index) {
@@ -224,7 +243,7 @@ class _HomeViewState extends State<HomeView> {
                                   crossAxisCount: 2,
                                   crossAxisSpacing: size(12),
                                   mainAxisSpacing: size(12),
-                                  childAspectRatio: 0.75,
+                                  childAspectRatio: 1.0,
                                 ),
                                 itemCount: dashboardController
                                     .kupanList.length,
@@ -236,7 +255,8 @@ class _HomeViewState extends State<HomeView> {
                                         ? coupon.kupanImages![0]
                                         : '',
                                     title: coupon.title ?? 'Coupon',
-                                    subtitle: 'Limited time deals',
+                                    outletName: coupon.getOutletName() ?? 'Outlet',
+                                      kupanDays : coupon.kupanDays
                                   );
                                 },
                               ),

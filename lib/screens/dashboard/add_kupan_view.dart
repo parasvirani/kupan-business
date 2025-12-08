@@ -14,6 +14,7 @@ import '../../common_view/common_textfield.dart';
 import '../../const/color_const.dart';
 import '../../const/image_const.dart';
 import '../../controllers/dashboard_controller.dart';
+import '../../controllers/my_outlets_controller.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
 import 'components/main_drawer.dart';
@@ -29,6 +30,7 @@ class _AddKupanViewState extends State<AddKupanView> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   DashboardController dashboardController = Get.find();
+  final MyOutletsController controller = Get.put(MyOutletsController());
   final _fromKey = GlobalKey<FormState>();
   File? _imageFile;
 
@@ -57,6 +59,7 @@ class _AddKupanViewState extends State<AddKupanView> {
 
   @override
   Widget build(BuildContext context) {
+    final double borderRadius = 10;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: ColorConst.white,
@@ -111,47 +114,97 @@ class _AddKupanViewState extends State<AddKupanView> {
                   SizedBox(height: size(20)),
                   CommonText(text: "Select Outlet", color: Colors.black,),
                   SizedBox(height: size(5)),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: size(15)),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: ColorConst.border, width: 1),
-                      borderRadius: BorderRadius.circular(size(10)),
-                    ),
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      underline: SizedBox(),
-                      value: dashboardController.selectedOutletId.value.isEmpty
-                          ? null
-                          : dashboardController.selectedOutletId.value,
-                      hint: CommonText(
-                        text: 'Choose an outlet',
-                        color: ColorConst.grey,
+                  Obx(() {
+                    if (controller.isLoading.value) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300, width: 1),
+                          borderRadius: BorderRadius.circular(borderRadius),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 12),
+                            Text('Loading outlets...'),
+                          ],
+                        ),
+                      );
+                    }
+                    if (controller.errorMessage.isNotEmpty) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.red.shade200, width: 1),
+                          borderRadius: BorderRadius.circular(borderRadius),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(child: Text(controller.errorMessage.value)),
+                            TextButton(
+                              onPressed: controller.getOutlets,
+                              child: Text('Retry'),
+                            )
+                          ],
+                        ),
+                      );
+                    }
+                    return Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(horizontal: size(15)),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                            color: ColorConst.border, width: 1),
+                        borderRadius: BorderRadius.circular(size(10)),
                       ),
-                      items: dashboardController.outletsList.map((outlet) {
-                        return DropdownMenuItem(
-                          value: outlet.id ?? "",
-                          child: CommonText(
-                            text: outlet.outletName ?? "No outlet",
-                            color: Colors.black,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          dashboardController.selectedOutletId.value = value;
-                          final selectedOutlet = dashboardController.outletsList
-                              .firstWhere((outlet) => outlet.id == value);
-                          dashboardController.selectedOutletName.value = selectedOutlet.outletName ?? "";
-                          dashboardController.errorMessageOutletSelection.value = "";
-                        }
-                      },
-                    ),
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        underline: SizedBox(),
+                        value: controller.selectedOutletId.value.isEmpty
+                            ? null
+                            : controller.selectedOutletId.value,
+                        hint: CommonText(
+                          text: 'Choose an outlet',
+                          color: ColorConst.grey,
+                        ),
+                        items: controller.outletsList.map((outlet) {
+                          return DropdownMenuItem(
+                            value: outlet.id ?? "",
+                            child: CommonText(
+                              text: outlet.outletName ?? 'No outlet',
+                              color: Colors.black,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            controller.selectedOutletId.value = value;
+                            final selectedOutlet = controller.outletsList
+                                .firstWhere((outlet) => outlet.id == value);
+                            controller.selectedOutletName.value =
+                                selectedOutlet.outletName ?? "";
+                            controller.errorMessageOutletSelection.value = "";
+                            dashboardController.selectedOutletId.value = value;
+                            dashboardController.selectedOutletName.value =
+                                selectedOutlet.outletName ?? "";
+                          }
+                        },
+                      ),
+                    );
+                  }
                   ),
                   Visibility(
-                    visible: dashboardController.errorMessageOutletSelection.value.isNotEmpty,
+                    visible: controller.errorMessageOutletSelection.value.isNotEmpty,
                     child: CommonText(
-                      text: dashboardController.errorMessageOutletSelection.value,
+                      text: controller.errorMessageOutletSelection.value,
                       color: Colors.red,
                     ),
                   ),

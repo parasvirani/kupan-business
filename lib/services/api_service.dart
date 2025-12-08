@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -76,6 +77,41 @@ class ApiService {
 
     final url = Uri.parse("$baseUrl/kupan/vendor/$userId");
     final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
+
+    return await http.get(url, headers: headers);
+  }
+
+  Future<http.Response> getKupanWithFilters({
+    required String vendorId,
+    required String businessId,
+    int limit = 10,
+  }) async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse(
+      "$baseUrl/kupan?vendorId=$vendorId&businessId=$businessId&limit=$limit"
+    );
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+
+    return await http.get(url, headers: headers);
+  }
+
+  Future<http.Response> getKupanByVendor({
+    required String vendorId,
+    int limit = 10,
+  }) async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse(
+      "$baseUrl/kupan?vendorId=$vendorId&limit=$limit"
+    );
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
 
     return await http.get(url, headers: headers);
   }

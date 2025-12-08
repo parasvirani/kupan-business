@@ -6,13 +6,15 @@ import 'package:kupan_business/utils/utils.dart';
 class RecentCouponCard extends StatelessWidget {
   final String imageUrl;
   final String title;
-  final String? subtitle;
+  final String? outletName;
+  final List<String>? kupanDays;
 
   const RecentCouponCard({
     Key? key,
     required this.imageUrl,
     required this.title,
-    this.subtitle,
+    this.outletName,
+    this.kupanDays
   }) : super(key: key);
 
   @override
@@ -21,8 +23,8 @@ class RecentCouponCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(size(8)),
         border: Border.all(
-          color: ColorConst.secondary,
-          width: 2,
+          color: ColorConst.border,
+          width: 1,
         ),
       ),
       child: Column(
@@ -62,10 +64,20 @@ class RecentCouponCard extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   maxLines: 2,
                 ),
-                if (subtitle != null) ...[
-                  SizedBox(height: size(4)),
+                if (outletName != null && outletName!.isNotEmpty) ...[
+                  SizedBox(height: size(2)),
                   CommonText(
-                    text: subtitle!,
+                    text: outletName!,
+                    fontSize: size(10),
+                    color: ColorConst.grey,
+                    fontWeight: FontWeight.w400,
+                    maxLines: 1,
+                  ),
+                ],
+                if (kupanDays != null && kupanDays!.isNotEmpty) ...[
+                  SizedBox(height: size(2)),
+                  CommonText(
+                    text: kupanDays!.join(", "),
                     fontSize: size(10),
                     color: ColorConst.grey,
                     fontWeight: FontWeight.w400,
