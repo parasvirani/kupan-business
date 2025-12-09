@@ -9,6 +9,8 @@ import 'package:kupan_business/utils/utils.dart';
 import 'package:kupan_business/utils/appRoutesStrings.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
+import 'add_outlet_screen.dart';
+
 class OutletDetailsScreen extends StatefulWidget {
   const OutletDetailsScreen({super.key});
 
@@ -773,15 +775,15 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     dashboardController.selectedOutletName.value = sellerBusiness.outletName ?? '';
 
     // Show confirmation snackbar
-    Get.snackbar(
-      'Adding Coupon',
-      '${sellerBusiness.outletName} is selected',
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 1),
-      backgroundColor: ColorConst.primary,
-      colorText: Colors.white,
-      icon: const Icon(Icons.check_circle, color: Colors.white),
-    );
+    // Get.snackbar(
+    //   'Adding Coupon',
+    //   '${sellerBusiness.outletName} is selected',
+    //   snackPosition: SnackPosition.BOTTOM,
+    //   duration: const Duration(seconds: 1),
+    //   backgroundColor: ColorConst.primary,
+    //   colorText: Colors.white,
+    //   icon: const Icon(Icons.check_circle, color: Colors.white),
+    // );
 
     // Navigate to Add Kupan screen and handle return
     Get.toNamed(AppRoutes.addKupan)?.then((_) {
@@ -792,13 +794,21 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
 
   void _navigateToEditOutlet() {
     // Navigate to Add Outlet screen in edit mode with outlet data
-    Get.toNamed(
-      AppRoutes.addOutlet,
-      arguments: {
-        'isEditMode': true,
-        'outletData': sellerBusiness,
-      },
-    );
+    // Get.toNamed(
+    //   AppRoutes.addOutlet,
+    //   arguments: {
+    //     'isEditMode': true,
+    //     'outletData': sellerBusiness,
+    //   },
+    // );
+
+      Get.to(
+            () => AddOutletScreen(
+          isEditMode: true,
+          outletData: sellerBusiness,
+        ),
+      );
+
   }
 
   void _showRemoveConfirmation() {

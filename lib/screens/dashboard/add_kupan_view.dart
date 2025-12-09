@@ -467,18 +467,18 @@ class _AddKupanViewState extends State<AddKupanView> {
       }
 
       // Show success message
-      Get.snackbar(
-        'Success',
-        'Coupon created successfully!',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-      );
+      // Get.snackbar(
+      //   'Success',
+      //   'Coupon created successfully!',
+      //   snackPosition: SnackPosition.BOTTOM,
+      //   duration: const Duration(seconds: 2),
+      //   backgroundColor: Colors.green,
+      //   colorText: Colors.white,
+      //   icon: const Icon(Icons.check_circle, color: Colors.white),
+      // );
 
       // Navigate back to outlet details screen with the outlet data
-      await Future.delayed(const Duration(milliseconds: 500));
+      // await Future.delayed(const Duration(milliseconds: 500));
 
       // Get the outlet data from the outlets list
       final selectedOutlet = controller.outletsList.firstWhereOrNull(
