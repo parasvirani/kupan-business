@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kupan_business/screens/details/components/personal_info.dart';
+import 'package:kupan_business/utils/appRoutesStrings.dart';
+
 import '../../controllers/dashboard_controller.dart';
 
 class DetailsScreen extends StatefulWidget {
@@ -49,7 +51,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
       body: PersonalInfo(
         isEdit: args['isEdit'],
         mobileNumber: args['mobile_number'],
-        onTap: () {},
+        onTap: () {
+          Get.toNamed(AppRoutes.dashboard, arguments: {"initialIndex": 2});
+        },
       ),
     );
   }

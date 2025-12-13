@@ -9,7 +9,8 @@ import '../../utils/utils.dart';
 import 'add_outlet_screen.dart';
 
 class MyOutletsScreen extends StatefulWidget {
-  const MyOutletsScreen({super.key});
+  var args;
+  MyOutletsScreen({super.key, this.args});
 
   @override
   State<MyOutletsScreen> createState() => _MyOutletsScreenState();
@@ -173,6 +174,19 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
         });
       },
     );
+  }
+
+
+@override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+     if (widget.args != null && widget.args['initialIndex'] != null) {
+      
+      Future.delayed(Duration.zero, () {
+    Get.to(() => const AddOutletScreen());
+  });
+    }
   }
 
   @override

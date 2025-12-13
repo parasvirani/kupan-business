@@ -22,6 +22,16 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
 
   DashboardController dashboardController = Get.put(DashboardController());
+  var args = Get.arguments;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    if (args != null && args['initialIndex'] != null) {
+      dashboardController.currentIndex(args['initialIndex']);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             HomeView(),
             AddKupanView(),
-            MyOutletsScreen(),
+            MyOutletsScreen(args: args),
             ProfileView(),
           ],
         ),

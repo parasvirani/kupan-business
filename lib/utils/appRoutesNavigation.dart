@@ -56,7 +56,7 @@ class AppPage {
     GetPage(
       preventDuplicates: true,
       name: AppRoutes.myOutlets,
-      page: () => const MyOutletsScreen(),
+      page: () => MyOutletsScreen(),
       binding: null,
     ),
     GetPage(

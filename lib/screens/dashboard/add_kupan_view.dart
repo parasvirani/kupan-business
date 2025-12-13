@@ -15,12 +15,17 @@ import '../../const/color_const.dart';
 import '../../const/image_const.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../controllers/my_outlets_controller.dart';
+import '../../models/kupans_list_res.dart';
+import '../../models/redemptions_res.dart';
+import '../../services/redemptions_service.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
 import 'components/main_drawer.dart';
 
 class AddKupanView extends StatefulWidget {
-  const AddKupanView({super.key});
+  final dynamic kupanToEdit;
+
+  const AddKupanView({super.key, this.kupanToEdit});
 
   @override
   State<AddKupanView> createState() => _AddKupanViewState();
@@ -30,17 +35,89 @@ class _AddKupanViewState extends State<AddKupanView> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   DashboardController dashboardController = Get.find();
+  
   final MyOutletsController controller = Get.put(MyOutletsController());
   final _fromKey = GlobalKey<FormState>();
   File? _imageFile;
   bool isOutletPreSelected = false;
+  bool isEditMode = false;
+
+@override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+      dashboardController.titleController = TextEditingController();
+     dashboardController.daysList.forEach((element) => element.isSelected = false);
+            dashboardController.daysList.refresh();
+    });
+     
+    
+  }
 
   @override
   void initState() {
     super.initState();
-    // Check if outlet was pre-selected from outlet details screen
-    if (dashboardController.selectedOutletId.value.isNotEmpty) {
+   
+    if (widget.kupanToEdit != null) {
+      isEditMode = true;
+      _initializeEditMode();
+    } else {
+      if (dashboardController.selectedOutletId.value.isNotEmpty) {
+        isOutletPreSelected = true;
+      }
+    }
+  }
+
+ 
+
+  void _initializeEditMode() {
+    final kupan = widget.kupanToEdit;
+    dashboardController.titleController.text = kupan.title ?? '';
+    
+    // Handle both KupanData and RedemptionData models
+    if (kupan is KupanData) {
+      // KupanData model - has businessId and outlet info in sellerBusinesses
+      dashboardController.selectedOutletId.value = kupan.businessId ?? '';
+      // Use the getOutletName() method to properly extract outlet name from sellerBusinesses
+      final outletName = kupan.getOutletName() ?? kupan.outletName ?? '';
+      dashboardController.selectedOutletName.value = outletName;
+      isOutletPreSelected = true; // Lock outlet selection for KupanData
+    } else if (kupan is RedemptionData) {
+      // RedemptionData model - outlet info not available in this model
+      // Allow user to select outlet for redemption updates
+      dashboardController.selectedOutletId.value = '';
+      dashboardController.selectedOutletName.value = '';
+      isOutletPreSelected = false; // Allow outlet selection for RedemptionData
+    } else {
+      // Fallback for other types - if it's KupanData
+      if (kupan is KupanData) {
+        dashboardController.selectedOutletId.value = kupan.businessId ?? '';
+        final outletName = kupan.getOutletName() ?? kupan.outletName ?? '';
+        dashboardController.selectedOutletName.value = outletName;
+      } else {
+        dashboardController.selectedOutletId.value = kupan.businessId ?? '';
+        dashboardController.selectedOutletName.value = kupan.outletName ?? '';
+      }
       isOutletPreSelected = true;
+    }
+    
+    // Load existing kupan images
+    if (kupan.kupanImages != null && kupan.kupanImages!.isNotEmpty) {
+      // Note: kupan.kupanImages contains URLs (strings), not File objects
+      // We store them as metadata for display purposes
+      // Users will need to select new images if they want to update
+      print('Existing kupan images: ${kupan.kupanImages}');
+    }
+    
+    if (kupan.kupanDays != null) {
+      // Filter out 'All' and only use individual day names
+      final daysList = kupan.kupanDays!.where((day) => day != 'All').toList();
+      final selectedDaysSet = daysList.toSet();
+      for (int i = 0; i < dashboardController.daysList.length; i++) {
+        dashboardController.daysList[i].isSelected =
+            selectedDaysSet.contains(dashboardController.daysList[i].day);
+      }
     }
   }
 
@@ -77,27 +154,41 @@ class _AddKupanViewState extends State<AddKupanView> {
         backgroundColor: ColorConst.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-            onPressed: () {
-              _scaffoldKey.currentState?.openDrawer();
-            }, icon: SvgPicture.asset(ImageConst.ic_menu)),
+        leading: isEditMode
+            ? IconButton(
+                icon: Icon(Icons.arrow_back, color: ColorConst.dark),
+                onPressed: () => Get.back(),
+              )
+            : IconButton(
+                onPressed: () {
+                  _scaffoldKey.currentState?.openDrawer();
+                }, 
+                icon: SvgPicture.asset(ImageConst.ic_menu)
+            ),
         centerTitle: true,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            CommonText(
-              text: 'Current address',
-              fontSize: size(12),
-              color: ColorConst.grey,
+        title: isEditMode
+            ? CommonText(
+                text: 'Edit Kupan',
+                fontSize: size(16),
+                color: ColorConst.dark,
+                fontWeight: FontWeight.w600,
+              )
+            : Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CommonText(
+                  text: 'Current address',
+                  fontSize: size(12),
+                  color: ColorConst.grey,
+                ),
+                CommonText(
+                  text: '68 High Street, England',
+                  fontSize: size(16),
+                  color: ColorConst.dark,
+                  fontWeight: FontWeight.w600,
+                ),
+              ],
             ),
-            CommonText(
-              text: '68 High Street, England',
-              fontSize: size(16),
-              color: ColorConst.dark,
-              fontWeight: FontWeight.w600,
-            ),
-          ],
-        ),
         actions: [
           IconButton(
             icon: SvgPicture.asset(ImageConst.ic_notification),
@@ -107,7 +198,9 @@ class _AddKupanViewState extends State<AddKupanView> {
           ),
         ],
       ),
-      drawer: Drawer(
+      drawer: isEditMode
+          ? null
+          : Drawer(
         child: MainDrawer(onTap: () {
           _scaffoldKey.currentState?.closeDrawer();
         },),
@@ -168,8 +261,8 @@ class _AddKupanViewState extends State<AddKupanView> {
                       );
                     }
 
-                    // If outlet is pre-selected, show it as read-only
-                    if (isOutletPreSelected && dashboardController.selectedOutletId.value.isNotEmpty) {
+                    // If outlet is pre-selected AND in KupanData edit mode, show it as read-only
+                    if (isOutletPreSelected && dashboardController.selectedOutletId.value.isNotEmpty && widget.kupanToEdit is KupanData) {
                       return Container(
                         width: double.infinity,
                         padding: EdgeInsets.symmetric(horizontal: size(15), vertical: size(14)),
@@ -284,25 +377,43 @@ class _AddKupanViewState extends State<AddKupanView> {
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: dashboardController.images?.isNotEmpty ?? false
+                    child: (dashboardController.images?.isNotEmpty ?? false) || (isEditMode && (widget.kupanToEdit?.kupanImages?.isNotEmpty ?? false))
                         ? PageView.builder(
-                      itemCount: dashboardController.images?.length,
+                      itemCount: ((dashboardController.images?.length ?? 0) + (isEditMode ? (widget.kupanToEdit?.kupanImages?.length ?? 0) : 0)).toInt(),
                       itemBuilder: (context, index) => ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Stack(
                           children: [
-                            Image.file(
-                              File(dashboardController.images?[index].path ?? ""),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: 150,
-                            ),
+                            // Show newly selected images first, then existing images
+                            if (index < (dashboardController.images?.length ?? 0))
+                              Image.file(
+                                File(dashboardController.images?[index].path ?? ""),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 150,
+                              )
+                            else if (isEditMode && widget.kupanToEdit?.kupanImages != null)
+                              Image.network(
+                                widget.kupanToEdit!.kupanImages![index - (dashboardController.images?.length ?? 0)],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 150,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.grey[300],
+                                  child: Icon(Icons.broken_image),
+                                ),
+                              ),
                             Positioned(
                               right: size(10),
                               top: size(10),
                               child: InkWell(
                                 onTap: () {
-                                  dashboardController.images?.removeAt(index);
+                                  if (index < (dashboardController.images?.length ?? 0)) {
+                                    dashboardController.images?.removeAt(index);
+                                  } else if (isEditMode && widget.kupanToEdit?.kupanImages != null) {
+                                    final existingImageIndex = index - (dashboardController.images?.length ?? 0);
+                                    widget.kupanToEdit!.kupanImages!.removeAt(existingImageIndex);
+                                  }
                                 },
                                 child: Container(
                                     padding: EdgeInsets.all(size(5)),
@@ -344,14 +455,14 @@ class _AddKupanViewState extends State<AddKupanView> {
                         ),
                       ),
                       TextButton(
-                        onPressed: dashboardController.images!.length < 4
+                        onPressed: ((dashboardController.images?.length ?? 0) + (isEditMode ? (widget.kupanToEdit?.kupanImages?.length ?? 0) : 0)) < 4
                             ? () {
                           _showPickerOptions();
                         }
                             : null,
                         child: CommonText(
-                          text: "Add Image ${dashboardController.images?.length}/4",
-                          color: dashboardController.images!.length < 4
+                          text: "Add Image ${(dashboardController.images?.length ?? 0) + (isEditMode ? (widget.kupanToEdit?.kupanImages?.length ?? 0) : 0)}/4",
+                          color: ((dashboardController.images?.length ?? 0) + (isEditMode ? (widget.kupanToEdit?.kupanImages?.length ?? 0) : 0)) < 4
                               ? ColorConst.primary
                               : ColorConst.grey,
                         ),
@@ -437,9 +548,11 @@ class _AddKupanViewState extends State<AddKupanView> {
                         isLoading: dashboardController.isLoadingCreateKupan.value,
                           onPressed: () {
                         if (validateAll()) {
-                          _createKupanAndNavigateBack();
+                          isEditMode
+                              ? _updateKupanAndNavigateBack()
+                              : _createKupanAndNavigateBack();
                         }
-                      }, text: "Save Kupan"),
+                      }, text: isEditMode ? "Update Kupan" : "Save Kupan"),
                     ),
                   )
                 ],
@@ -494,17 +607,107 @@ class _AddKupanViewState extends State<AddKupanView> {
       }
     } else {
       // Show error message
-      Get.snackbar(
-        'Error',
-        dashboardController.errorMessageCreateKupan.value.isEmpty
-            ? 'Failed to create coupon'
-            : dashboardController.errorMessageCreateKupan.value,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        icon: const Icon(Icons.error, color: Colors.white),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            dashboardController.errorMessageCreateKupan.value.isEmpty
+                ? 'Failed to create coupon'
+                : dashboardController.errorMessageCreateKupan.value,
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
       );
+    }
+  }
+
+  void _updateKupanAndNavigateBack() async {
+    final kupan = widget.kupanToEdit;
+    final title = dashboardController.titleController.text.trim();
+    
+    final selectedDays = dashboardController.daysList
+        .where((day) => day.isSelected)
+        .map((day) => day.day!)
+        .toList();
+
+    try {
+      // Set loading state
+      dashboardController.isLoadingCreateKupan.value = true;
+      
+      final redemptionsService = RedemptionsService();
+      
+      // Handle both KupanData and RedemptionData models
+      String? kupanId;
+      List<String> kupanImages = [];
+      
+      // Check if it's a RedemptionData (has kupanId property)
+      if (kupan is RedemptionData) {
+        kupanId = kupan.kupanId;
+      } else {
+        // It's KupanData (has id property)
+        kupanId = kupan.id;
+      }
+      
+      if (kupanId == null) {
+        throw Exception('Kupan ID is missing');
+      }
+
+      // First, add any existing images that weren't deleted
+      if (kupan.kupanImages != null && kupan.kupanImages!.isNotEmpty) {
+        kupanImages.addAll(kupan.kupanImages!.cast<String>());
+      }
+      
+      // Then upload any new images and add their URLs
+      if (dashboardController.images != null && dashboardController.images!.isNotEmpty) {
+        for (var imageFile in dashboardController.images!) {
+          String? uploadedUrl = await dashboardController.uploadImage(imageFile);
+          if (uploadedUrl != null) {
+            kupanImages.add(uploadedUrl);
+          }
+        }
+      }
+      
+      await redemptionsService.editKupan(
+        kupanId: kupanId,
+        title: title,
+        kupanImages: kupanImages,
+        kupanDays: selectedDays,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Kupan updated successfully'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Refresh the appropriate list based on the source
+      final vendorId = dashboardController.selectedOutletId.value;
+      if (kupan is KupanData && vendorId.isNotEmpty) {
+        // Update from home screen - refresh the kupan list
+        await dashboardController.getKupanByVendor(
+          vendorId: vendorId,
+        );
+      } else if (kupan is RedemptionData && vendorId.isNotEmpty) {
+        // Update from redemptions screen - refresh all redemption ranges
+        await dashboardController.fetchAllRedemptionRanges(
+          vendorId: vendorId,
+        );
+      }
+
+      Get.back(result: true);
+    } catch (e) {
+      print('Failed to update kupan: ${e.toString()}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update kupan: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      dashboardController.isLoadingCreateKupan.value = false;
     }
   }
 

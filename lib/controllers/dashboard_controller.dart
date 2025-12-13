@@ -13,8 +13,10 @@ import '../models/Days.dart';
 import '../models/business_outlets_res.dart';
 import '../models/create_kupan_res.dart' hide KupanData;
 import '../models/kupans_list_res.dart';
+import '../models/redemptions_res.dart';
 import '../models/user_update_res.dart';
 import '../services/api_service.dart';
+import '../services/redemptions_service.dart';
 
 class DashboardController extends GetxController {
   RxList<File>? images = <File>[].obs;
@@ -46,7 +48,6 @@ class DashboardController extends GetxController {
     Days(day: "Thursday"),
     Days(day: "Friday"),
     Days(day: "Saturday"),
-    Days(day: "All"),
   ].obs;
   RxString errorMessageDaySelection = "".obs;
 
@@ -59,7 +60,22 @@ class DashboardController extends GetxController {
   var isLoadingOutlets = false.obs;
   var errorMessageOutlets = ''.obs;
   var businessOutletsRes = Rxn<BusinessOutletsRes>();
-  RxList<OutletData> outletsList = <OutletData>[].obs;
+
+  // Redemptions properties
+  final RedemptionsService _redemptionsService = RedemptionsService();
+  var isLoadingRedemptions = false.obs;
+  var errorMessageRedemptions = ''.obs;
+  var dailyRedemptions = Rxn<RedemptionsResponse>();
+  RxInt todayRedemptionCount = 0.obs;
+  
+  // Redemption ranges
+  var weeklyRedemptions = Rxn<RedemptionsResponse>();
+  var monthlyRedemptions = Rxn<RedemptionsResponse>();
+  var allTimeRedemptions = Rxn<RedemptionsResponse>();
+  RxString selectedRedemptionRange = 'weekly'.obs;
+  RxInt weeklyCount = 0.obs;
+  RxInt monthlyCount = 0.obs;
+  RxInt allTimeCount = 0.obs;
 
   @override
   void onInit() {
@@ -69,8 +85,8 @@ class DashboardController extends GetxController {
     String vendorId = box.read(StringConst.USER_ID) ?? '';
     if (vendorId.isNotEmpty) {
       getKupanByVendor(vendorId: vendorId, limit: 10);
+      fetchAllRedemptionRanges(vendorId: vendorId);
     }
-    getBusinessOutlets();
   }
 
   Future getUser() async {
@@ -147,29 +163,7 @@ class DashboardController extends GetxController {
   }
 
   daySelector(int index) {
-    if (daysList[index].day == "All") {
-      // Toggle All
-      bool newValue = !daysList[index].isSelected;
-      for (var day in daysList) {
-        day.isSelected = newValue;
-      }
-    } else {
-      // Toggle individual day
-      daysList[index].isSelected = !daysList[index].isSelected;
-
-      // If any one day is unselected, unselect "All"
-      if (!daysList[index].isSelected) {
-        daysList.firstWhere((d) => d.day == "All").isSelected = false;
-      } else {
-        // If all individual days selected, then select "All"
-        bool allSelected = daysList
-            .where((d) => d.day != "All")
-            .every((d) => d.isSelected);
-        if (allSelected) {
-          daysList.firstWhere((d) => d.day == "All").isSelected = true;
-        }
-      }
-    }
+    daysList[index].isSelected = !daysList[index].isSelected;
     daysList.refresh();
   }
 
@@ -246,6 +240,8 @@ class DashboardController extends GetxController {
         } catch (parseError) {
           print("❌ JSON Parse Error: $parseError");
           errorMessageCreateKupan.value = "Invalid response format from server";
+        } finally {
+          isLoadingCreateKupan.value = false;
         }
       } else {
         try {
@@ -465,63 +461,115 @@ class DashboardController extends GetxController {
     }
   }
 
-  Future<void> getBusinessOutlets() async {
-    isLoadingOutlets(true);
-    errorMessageOutlets.value = '';
+ 
+  Future<void> fetchAllRedemptionRanges({required String vendorId}) async {
+    await Future.wait([
+      _fetchRedemptionsForRange(vendorId: vendorId, range: 'weekly'),
+      _fetchRedemptionsForRange(vendorId: vendorId, range: 'monthly'),
+      _fetchRedemptionsForRange(vendorId: vendorId, range: 'all'),
+    ]);
+    // Set the default to weekly
+    setRedemptionRange('weekly');
+  }
 
+  Future<void> _fetchRedemptionsForRange({
+    required String vendorId,
+    required String range,
+  }) async {
     try {
-      print("📋 Fetching business outlets");
+      print("🔄 Fetching $range redemptions for vendor: $vendorId");
 
-      http.Response response = await _apiService.getBusinessOutlets();
+      final response = await _redemptionsService.getRedemptions(
+        vendorId: vendorId,
+        range: range,
+      );
 
-      print("📍 Response Status: ${response.statusCode}");
-      print("📍 Response Body (first 500 chars): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        try {
-          final data = jsonDecode(response.body);
-          businessOutletsRes.value = BusinessOutletsRes.fromJson(data);
-
-          if (businessOutletsRes.value!.success!) {
-            outletsList.clear();
-            outletsList.addAll(businessOutletsRes.value?.data ?? []);
-            outletsList.refresh();
-
-            // Auto-select the first outlet if available
-            if (outletsList.isNotEmpty) {
-              selectedOutletId.value = outletsList[0].id ?? "";
-              selectedOutletName.value = outletsList[0].outletName ?? "";
-            }
-            print("✅ Outlets loaded: ${outletsList.length}");
-          } else {
-            errorMessageOutlets.value = businessOutletsRes.value!.message ?? 'Unknown error';
-          }
-        } catch (parseError) {
-          print("❌ JSON Parse Error: $parseError");
-          errorMessageOutlets.value = 'Invalid response format from server';
+      if (response != null && response.success) {
+        int totalCount = 0;
+        print("📦 $range Redemption items: ${response.data.length}");
+        for (var item in response.data) {
+          print("  - ${item.title}: ${item.totalRedemptions}");
+          totalCount += item.totalRedemptions.toInt();
         }
+        
+        // Store the response based on range
+        if (range == 'weekly') {
+          weeklyRedemptions.value = response;
+          weeklyCount.value = totalCount;
+        } else if (range == 'monthly') {
+          monthlyRedemptions.value = response;
+          monthlyCount.value = totalCount;
+        } else if (range == 'all') {
+          allTimeRedemptions.value = response;
+          allTimeCount.value = totalCount;
+        }
+        
+        print("✅ $range Redemptions loaded: $totalCount");
       } else {
-        // Try to parse error response
-        try {
-          // Check if response is HTML (error page)
-          if (response.body.startsWith('<!DOCTYPE') || response.body.startsWith('<html')) {
-            print("❌ Server returned HTML error page");
-            errorMessageOutlets.value = 'Server error (${response.statusCode}): Please try again later';
-          } else {
-            // Try to parse as JSON
-            final error = jsonDecode(response.body);
-            errorMessageOutlets.value = error['message'] ?? 'Failed to fetch outlets (${response.statusCode})';
-          }
-        } catch (e) {
-          print("❌ Error Response Parse Error: $e");
-          errorMessageOutlets.value = 'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
-        }
+        errorMessageRedemptions.value = response?.message ?? 'Failed to fetch $range redemptions';
+        print("❌ $range Response not successful: ${response?.message}");
       }
     } catch (e) {
-      print("❌ Error fetching outlets: $e");
-      errorMessageOutlets.value = "Error: ${e.toString()}";
+      print("❌ Error fetching $range redemptions: $e");
+      errorMessageRedemptions.value = "Error: ${e.toString()}";
     } finally {
-      isLoadingOutlets(false);
+      isLoadingRedemptions.value = false;
+    }
+  }
+
+  void setRedemptionRange(String range) {
+    selectedRedemptionRange.value = range;
+    
+    // Update today's count based on selected range
+    if (range == 'weekly') {
+      todayRedemptionCount.value = weeklyCount.value;
+    } else if (range == 'monthly') {
+      todayRedemptionCount.value = monthlyCount.value;
+    } else if (range == 'all') {
+      todayRedemptionCount.value = allTimeCount.value;
+    }
+    
+    print("🔀 Redemption range changed to: $range");
+  }
+
+  Future<void> fetchTodayRedemptions({required String vendorId}) async {
+    try {
+      isLoadingRedemptions.value = true;
+      errorMessageRedemptions.value = '';
+
+      print("🔄 Fetching redemptions for vendor: $vendorId");
+
+      final response = await _redemptionsService.getRedemptions(
+        vendorId: vendorId,
+        range: 'weekly',
+      );
+
+      if (response != null && response.success && response.data.isNotEmpty) {
+        dailyRedemptions.value = response;
+        // Calculate total redemptions for today
+        int totalCount = 0;
+        print("📦 Redemption items: ${response.data.length}");
+        for (var item in response.data) {
+          print("  - ${item.title}: ${item.totalRedemptions}");
+          totalCount += item.totalRedemptions.toInt();
+        }
+        todayRedemptionCount.value = totalCount;
+        print("✅ Redemptions loaded: $totalCount");
+      } else if (response != null && response.success && response.data.isEmpty) {
+        print("⚠️  Response successful but no data found");
+        todayRedemptionCount.value = 0;
+        dailyRedemptions.value = response;
+      } else {
+        errorMessageRedemptions.value = response?.message ?? 'Failed to fetch redemptions';
+        print("❌ Response not successful: ${response?.message}");
+        todayRedemptionCount.value = 0;
+      }
+    } catch (e) {
+      print("❌ Error fetching redemptions: $e");
+      errorMessageRedemptions.value = "Error: ${e.toString()}";
+      todayRedemptionCount.value = 0;
+    } finally {
+      isLoadingRedemptions.value = false;
     }
   }
 }
