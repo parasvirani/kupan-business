@@ -330,18 +330,19 @@ class DetailsController extends GetxController {
     long(longitude);
     Placemark place = placemarks[0];
 
-    //             String address = """
-    // Address Line 1: ${place.street}
-    // Landmark: ${place.subLocality}
-    // City: ${place.locality}
-    // State: ${place.administrativeArea}
-    // Zip Code: ${place.postalCode}
-    // Country: ${place.country}
-    // """;
-    //             print("=====address=====");
-    //             print(address);
-    // print("=====address=====");
-    addressLine1Controller.text = place.street ?? "";
+                String address = """
+    Address Line 1: ${place.street}
+    Address Line 1: ${place.thoroughfare}
+    Landmark: ${place.subLocality}
+    City: ${place.locality}
+    State: ${place.administrativeArea}
+    Zip Code: ${place.postalCode}
+    Country: ${place.country}
+    """;
+                print("=====address=====${jsonEncode(place)}");
+                print(address);
+    print("=====address=====");
+    addressLine1Controller.text = place.thoroughfare ?? "";
     landmarkController.text = place.subLocality ?? "";
     zipCodeController.text = place.postalCode ?? "";
     updateStateByName(place.administrativeArea ?? "", cityName: place.locality);
