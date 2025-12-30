@@ -1,4 +1,3 @@
-
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -261,8 +260,8 @@ class _AddKupanViewState extends State<AddKupanView> {
                       );
                     }
 
-                    // If outlet is pre-selected AND in KupanData edit mode, show it as read-only
-                    if (isOutletPreSelected && dashboardController.selectedOutletId.value.isNotEmpty && widget.kupanToEdit is KupanData) {
+                    // If outlet is pre-selected (for example when navigating from an outlet's details), show it as read-only
+                    if (isOutletPreSelected && dashboardController.selectedOutletId.value.isNotEmpty) {
                       return Container(
                         width: double.infinity,
                         padding: EdgeInsets.symmetric(horizontal: size(15), vertical: size(14)),

@@ -373,19 +373,23 @@ class DetailsController extends GetxController {
   var isLoadingOutlet = false.obs;
   var errorMessageOutlet = ''.obs;
 
-  Future<void> submitOutlet() async {
+  Future<void> submitOutlet({List<String>? preUploadedImageUrls}) async {
     isLoadingOutlet.value = true;
     errorMessageOutlet.value = '';
 
     try {
-      // Upload images and get URLs
+      // Upload images and get URLs if not provided by caller
       List<String> uploadedImageUrls = [];
 
-      if (images != null && images!.isNotEmpty) {
-        for (var imageFile in images!) {
-          String? url = await dashboardController.uploadImage(imageFile);
-          if (url != null) {
-            uploadedImageUrls.add(url);
+      if (preUploadedImageUrls != null) {
+        uploadedImageUrls = preUploadedImageUrls;
+      } else {
+        if (images != null && images!.isNotEmpty) {
+          for (var imageFile in images!) {
+            String? url = await dashboardController.uploadImage(imageFile);
+            if (url != null) {
+              uploadedImageUrls.add(url);
+            }
           }
         }
       }
