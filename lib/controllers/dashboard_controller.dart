@@ -22,6 +22,7 @@ class DashboardController extends GetxController {
   RxList<File>? images = <File>[].obs;
   RxString errorMessageOutletImages = "".obs;
   TextEditingController titleController = TextEditingController();
+  TextEditingController descriptionController = TextEditingController();
   final ApiService _apiService = ApiService();
   var isLoading = false.obs;
   var userUpdateRes = Rxn<UserUpdateRes>();

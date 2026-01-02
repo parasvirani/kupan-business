@@ -471,8 +471,9 @@ class _AddKupanViewState extends State<AddKupanView> {
                   SizedBox(height: size(20)),
                   CommonTextfield(
                     controller: dashboardController.titleController,
-                    hintText: 'Title',
+                    hintText: 'Enter Offer',
                     maxLines: 5,
+                    isUpperCase: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Please enter title.";
@@ -482,6 +483,22 @@ class _AddKupanViewState extends State<AddKupanView> {
                       return null; // input is valid
                     },
                     keyboardType: TextInputType.name,
+                  ),
+                  SizedBox(height: size(20)),
+                  CommonTextfield(
+                    controller: dashboardController.descriptionController,
+                    hintText: 'Description',
+                    maxLines: 5,
+                    minLines: 5,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Please enter title.";
+                      } else if (value.length < 2) {
+                        return "Title must be at least 2 characters long.";
+                      }
+                      return null; // input is valid
+                    },
+                    keyboardType: TextInputType.none,
                   ),
                   SizedBox(height: size(20)),
                   CommonText(text: "Valid on", color: Colors.black,),

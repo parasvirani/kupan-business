@@ -16,6 +16,7 @@ class CommonTextfield extends StatelessWidget {
   Function(String value)? onChanged;
   final String? Function(String?)? validator;
   bool isNumber = false;
+  bool isUpperCase = false; // New parameter
   int minLines;
   int maxLines;
 
@@ -29,6 +30,7 @@ class CommonTextfield extends StatelessWidget {
     this.onTap,
     this.validator,
     this.isNumber = false,
+    this.isUpperCase = false, // New parameter
     this.suffixIcon,
     this.onChanged,
     this.minLines = 1,
@@ -46,12 +48,16 @@ class CommonTextfield extends StatelessWidget {
       validator: validator,
       minLines: minLines,
       maxLines: maxLines,
-      inputFormatters: isNumber
-          ? [
-              FilteringTextInputFormatter.digitsOnly, // only digits
-              LengthLimitingTextInputFormatter(10), // max 10 digits
-            ]
-          : [],
+      textCapitalization: isUpperCase
+          ? TextCapitalization.characters
+          : TextCapitalization.none,
+      inputFormatters: [
+        if (isNumber) ...[
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(10),
+        ],
+        if (isUpperCase) UpperCaseTextFormatter(), // Custom formatter
+      ],
       style: TextStyle(
           fontSize: size(16),
           color: ColorConst.dark,
@@ -103,6 +109,20 @@ class CommonTextfield extends StatelessWidget {
             borderRadius: BorderRadius.circular(size(8)),
             borderSide: BorderSide(color: ColorConst.primary)),
       ),
+    );
+  }
+}
+
+// Custom TextInputFormatter for uppercase
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue,
+      TextEditingValue newValue,
+      ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }
