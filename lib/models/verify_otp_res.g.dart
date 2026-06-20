@@ -78,8 +78,12 @@ Map<String, dynamic> _$SellerInfoToJson(SellerInfo instance) =>
 
 Location _$LocationFromJson(Map<String, dynamic> json) => Location(
       city: json['city'] as String?,
+      lat: (json['lat'] as num?)?.toDouble(),
+      long: (json['long'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$LocationToJson(Location instance) => <String, dynamic>{
       'city': instance.city,
+      'lat': instance.lat,
+      'long': instance.long,
     };

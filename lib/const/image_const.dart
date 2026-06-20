@@ -46,4 +46,12 @@ class ImageConst {
   static String icRight = "assets/images/ic_right.svg";
   static String icRestaurant = "assets/images/ic-restaurant.svg";
   static String myOutlets = "assets/images/my-outlets.svg";
+
+  static String splash_1 = "assets/images/splash_1.png";
+  static String splash_2 = "assets/images/splash_2.png";
+  static String splash_3 = "assets/images/splash_3.png";
+  static String splash_4 = "assets/images/splash_4.png";
+  static String splash_5 = "assets/images/splash_5.png";
+  static String ic_location2 = "assets/images/ic_location2.svg";
+  static String notification2 = "assets/images/notification2.svg";
 }

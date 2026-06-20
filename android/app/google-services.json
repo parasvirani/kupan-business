@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1069340901669",
+    "project_id": "kupan-a1c6f",
+    "storage_bucket": "kupan-a1c6f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1069340901669:android:3cbdc7a20efb97ea6a5acc",
+        "android_client_info": {
+          "package_name": "com.kupan.kupan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASx8KcklzbRK1gm434QdBTwzLjf_J7wSY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1069340901669:android:2f6521fb89186d5e6a5acc",
+        "android_client_info": {
+          "package_name": "com.kupanbusiness.kupan_business"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASx8KcklzbRK1gm434QdBTwzLjf_J7wSY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

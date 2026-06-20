@@ -74,9 +74,11 @@ class SellerInfo {
 @JsonSerializable()
 class Location {
   String? city;
+  double? lat;
+  double? long;
 
 
-  Location({this.city});
+  Location({this.city, this.lat, this.long});
 
   factory Location.fromJson(Map<String, dynamic> json) => _$LocationFromJson(json);
 

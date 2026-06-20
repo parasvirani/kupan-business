@@ -1,25 +1,47 @@
+// ============================================================
+// add_outlet_screen.dart  –  Pixel-perfect Outlet Info Screen
+// ============================================================
+// pubspec.yaml dependencies:
+//   image_picker: ^1.0.7
+//   image_cropper: ^5.0.0
+//   flutter_svg: ^2.0.9
+//   get: ^4.6.6
+//
+// Keep your existing controllers, models, routes, common widgets.
+// ============================================================
+
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:kupan_business/common_view/city_sheet.dart';
-import 'package:kupan_business/common_view/common_text.dart';
-import 'package:kupan_business/const/color_const.dart';
-import 'package:kupan_business/const/image_const.dart';
-import 'package:kupan_business/controllers/details_controller.dart';
-import 'package:kupan_business/models/user_businesses_res.dart';
-import 'package:kupan_business/utils/utils.dart';
+
+import '../../common_view/city_sheet.dart';
 import '../../common_view/common_button.dart';
-import '../../common_view/common_dropdown.dart';
-import '../../common_view/common_textfield.dart';
+import '../../common_view/common_text.dart';
 import '../../common_view/state_sheet.dart';
+import '../../const/color_const.dart';
+import '../../const/image_const.dart';
 import '../../controllers/dashboard_controller.dart';
+import '../../controllers/details_controller.dart';
 import '../../controllers/my_outlets_controller.dart';
+import '../../models/user_businesses_res.dart';
+import '../../utils/utils.dart';
 import '../details/components/address_search_bottom_sheet.dart';
+
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const Color _dark = Color(0xFF1A1A1A);
+const Color _labelColor = Color(0xFF6B6B6B);
+const Color _hintColor = Color(0xFFAAAAAA);
+const Color _borderColor = Color(0xFFE4E4E4);
+const Color _sectionBg = Color(0xFFFFFFFF);
+const Color _pageBg = Color(0xFFF5F5F5);
+const Color _primaryBlack = Color(0xFF1A1A1A);
+const String _font = 'Inter';
 
 class AddOutletScreen extends StatefulWidget {
   final bool isEditMode;
@@ -36,1030 +58,730 @@ class AddOutletScreen extends StatefulWidget {
 }
 
 class _AddOutletScreenState extends State<AddOutletScreen> {
-  DetailsController controller = Get.put(DetailsController());
-  DashboardController dashboardController = Get.put(DashboardController());
-  final _fromKey = GlobalKey<FormState>();
-  List<String> existingImageUrls = []; // Store existing image URLs for edit mode
-  int currentStep = 1; // 1: Outlet Address, 2: Outlet Images & Timing, 3: Outlet Information
+  // ── Controllers ───────────────────────────────────────────────────────────
+  final DetailsController controller = Get.put(DetailsController());
+  final DashboardController dashboardController = Get.put(DashboardController());
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  // Open days selection (used in images + timing step)
-  final List<String> weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  final Set<String> selectedDays = {};
-
-  final List<String> businessTypes = [
-    'restaurant',
-    'cafe',
-    'hotel'
-  ];
-
-  // Local loading flag for fetching current location and filling address fields
+  // ── Local state ───────────────────────────────────────────────────────────
+  List<String> existingImageUrls = [];
   bool _isFetchingLocation = false;
 
-  bool validateAll() {
-    bool isValid = _fromKey.currentState!.validate();
+  // Business type options
+  final List<String> businessTypes = ['restaurant', 'cafe', 'hotel'];
+  String? _selectedBusinessType;
 
-    // Dropdown validations
-    if (controller.selectedState == null) {
-      controller.stateErrorMessage("Please select state");
-      isValid = false;
-    } else {
-      controller.stateErrorMessage("");
-    }
+  // Open days
+  final List<String> weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  final Set<String> selectedDays = {'Sun'}; // Sun pre-selected as per design
 
-    if (controller.selectedCity == null) {
-      controller.cityErrorMessage("Please select city");
-      isValid = false;
-    } else {
-      controller.cityErrorMessage("");
-    }
-
-    // For edit mode, allow if there are existing images or new images
-    // For add mode, require at least one image
-    final totalImages = (controller.images?.length ?? 0) + existingImageUrls.length;
-    if (totalImages == 0) {
-      controller.errorMessageOutletImages("Please select image");
-      isValid = false;
-    } else {
-      controller.errorMessageOutletImages("");
-    }
-
-    if (controller.openTime == null) {
-      controller.startTimeErrorMessage("Please select open time");
-      isValid = false;
-    } else {
-      controller.startTimeErrorMessage("");
-    }
-
-    if (controller.closeTime == null) {
-      controller.endTimeErrorMessage("Please select close time");
-      isValid = false;
-    } else {
-      controller.endTimeErrorMessage("");
-    }
-
-    return isValid;
-  }
+  // Text controllers for address fields (to mirror the labelled design)
+  final TextEditingController _address1Ctrl = TextEditingController();
+  final TextEditingController _address2Ctrl = TextEditingController();
+  final TextEditingController _landmarkCtrl = TextEditingController();
+  final TextEditingController _zipCtrl = TextEditingController();
+  final TextEditingController _outletNameCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    getDetails();
+    _init();
   }
 
-  getDetails() async {
+  Future<void> _init() async {
     if (widget.isEditMode && widget.outletData != null) {
-      // Populate form with existing outlet data
-      final outlet = widget.outletData!;
-      controller.businessController.text = outlet.businessName ?? '';
-      controller.outletContactController.text = outlet.outletNumber ?? '';
-      controller.outletNameController.text = outlet.outletName ?? '';
-      controller.addressLine1Controller.text = outlet.location?.address ?? '';
-      controller.landmarkController.text = outlet.location?.address ?? '';
-      controller.zipCodeController.text = outlet.location?.pincode ?? '';
-      controller.selectedBusinessType = outlet.businessType;
-      
-      // Store existing image URLs
-      existingImageUrls = outlet.outletImages ?? [];
-      
-      // Populate state and city
-      if (outlet.location?.state != null && outlet.location?.city != null) {
+      final o = widget.outletData!;
+      _outletNameCtrl.text = o.outletName ?? '';
+      _selectedBusinessType = o.businessType;
+      _address1Ctrl.text = o.location?.address ?? '';
+      _landmarkCtrl.text = o.location?.address ?? '';
+      _zipCtrl.text = o.location?.pincode ?? '';
+      existingImageUrls = o.outletImages ?? [];
+
+      if (o.location?.state != null) {
         try {
           await controller.updateStateByName(
-            outlet.location!.state!,
-            cityName: outlet.location!.city,
+            o.location!.state!,
+            cityName: o.location?.city,
           );
-          // Trigger UI rebuild after state/city are set
-          if (mounted) {
-            setState(() {});
-          }
-        } catch (e) {
-          print("Error setting state/city: $e");
-        }
+        } catch (_) {}
       }
-      
-      // Parse time from outletTime (format: "9AM-9PM" or "9:00 AM - 9:00 PM")
-      if (outlet.outletTime != null && outlet.outletTime!.isNotEmpty) {
-        final times = outlet.outletTime!.split('-');
-        if (times.length == 2) {
+
+      if (o.outletTime != null && o.outletTime!.contains('-')) {
+        final parts = o.outletTime!.split('-');
+        if (parts.length == 2) {
           try {
-            controller.openTime = _parseTimeString(times[0].trim());
-            controller.closeTime = _parseTimeString(times[1].trim());
-            // Trigger UI rebuild after time is set
-            if (mounted) {
-              setState(() {});
-            }
-          } catch (e) {
-            print("Error parsing time: $e");
-          }
+            controller.openTime = _parseTime(parts[0].trim());
+            controller.closeTime = _parseTime(parts[1].trim());
+          } catch (_) {}
         }
       }
-      
-      // Clear local images - user will need to re-upload if they want to change images
-      controller.images?.clear();
-    } else {
-      // Initialize empty controllers for new outlet
-      controller.businessController.clear();
-      controller.outletContactController.clear();
-      controller.outletNameController.clear();
-      controller.addressLine1Controller.clear();
-      controller.addressLine2Controller.clear();
-      controller.landmarkController.clear();
-      controller.zipCodeController.clear();
-      controller.selectedState = null;
-      controller.selectedCity = null;
-      controller.openTime = null;
-      controller.closeTime = null;
-      controller.images?.clear();
-      existingImageUrls.clear();
+      if (mounted) setState(() {});
     }
   }
 
-  TimeOfDay _parseTimeString(String timeStr) {
-    // Handle formats like "9AM", "9:00 AM", "21", "21:00"
-    timeStr = timeStr.trim().toUpperCase();
-    
-    int hour = 0;
-    int minute = 0;
-    
-    if (timeStr.contains(':')) {
-      final parts = timeStr.split(':');
-      hour = int.parse(parts[0]);
-      final minutePart = parts[1].replaceAll(RegExp(r'[^\d]'), '');
-      minute = int.parse(minutePart);
+  TimeOfDay _parseTime(String s) {
+    s = s.trim().toUpperCase();
+    int h = 0, m = 0;
+    if (s.contains(':')) {
+      final p = s.split(':');
+      h = int.parse(p[0]);
+      m = int.parse(p[1].replaceAll(RegExp(r'[^\d]'), ''));
     } else {
-      final hourPart = timeStr.replaceAll(RegExp(r'[^\d]'), '');
-      hour = int.parse(hourPart);
+      h = int.parse(s.replaceAll(RegExp(r'[^\d]'), ''));
     }
-    
-    return TimeOfDay(hour: hour, minute: minute);
+    return TimeOfDay(hour: h, minute: m);
   }
 
-  Map<String, dynamic> _buildOutletData() {
-    final openTimeStr = controller.openTime != null
-        ? '${controller.openTime!.hour}:${controller.openTime!.minute.toString().padLeft(2, '0')}'
-        : '';
-    final closeTimeStr = controller.closeTime != null
-        ? '${controller.closeTime!.hour}:${controller.closeTime!.minute.toString().padLeft(2, '0')}'
-        : '';
-    
-    // Use existing location data if available, otherwise use current location or defaults
-    final lat = widget.outletData?.location?.lat ?? 0.0;
-    final long = widget.outletData?.location?.long ?? 0.0;
-    
-    // Combine existing images (that weren't removed) with new uploaded images
-    List<String> finalImages = List.from(existingImageUrls);
-    
-    return {
-      'businessName': controller.businessController.text,
-      'businessType': controller.selectedBusinessType,
-      'outletName': controller.outletNameController.text,
-      'outletTime': '$openTimeStr-$closeTimeStr',
-      'outletImages': finalImages,
-      'outletNumber': controller.outletContactController.text,
-      'email': widget.outletData?.email ?? '',
-      'location': {
-        'lat': lat,
-        'long': long,
-        'address': controller.addressLine1Controller.text,
-        'city': controller.selectedCity?.name ?? '',
-        'state': controller.selectedState?.name ?? '',
-        'pincode': controller.zipCodeController.text,
-      }
-    };
+  // ── Validation ────────────────────────────────────────────────────────────
+  bool _validate() {
+    bool ok = _formKey.currentState!.validate();
+    if (_selectedBusinessType == null) ok = false;
+    final totalImages = (controller.images?.length ?? 0) + existingImageUrls.length;
+    if (totalImages == 0) {
+      controller.errorMessageOutletImages('Please select at least one image');
+      ok = false;
+    } else {
+      controller.errorMessageOutletImages('');
+    }
+    if (controller.openTime == null) {
+      controller.startTimeErrorMessage('Please select start time');
+      ok = false;
+    } else {
+      controller.startTimeErrorMessage('');
+    }
+    if (controller.closeTime == null) {
+      controller.endTimeErrorMessage('Please select end time');
+      ok = false;
+    } else {
+      controller.endTimeErrorMessage('');
+    }
+    if (controller.selectedState == null) {
+      controller.stateErrorMessage('Please select state');
+      ok = false;
+    } else {
+      controller.stateErrorMessage('');
+    }
+    if (controller.selectedCity == null) {
+      controller.cityErrorMessage('Please select city');
+      ok = false;
+    } else {
+      controller.cityErrorMessage('');
+    }
+    return ok;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+  // ── Image picker ──────────────────────────────────────────────────────────
+  void _showImagePicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (_) => CupertinoActionSheet(
+        title: const Text('Select Image'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickImage(ImageSource.gallery);
+            },
+            child: const Text('Choose from Gallery'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickImage(ImageSource.camera);
+            },
+            child: const Text('Take a Photo'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          widget.isEditMode ? 'Edit Outlet' : 'Add Outlet',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Form(
-            key: _fromKey,
-            child: Column(
-              children: [
-                SizedBox(height: size(20)),
-                // Progress Indicator
-                _buildProgressIndicator(),
-                SizedBox(height: size(20)),
-                // Step Content (requested order: current 3 -> 1, current 1 -> 2, current 2 -> 3)
-                if (currentStep == 1) _buildStep1Content(), // current 3 moved to 1
-                if (currentStep == 2) _buildAddressStep(), // current 1 moved to 2
-                if (currentStep == 3) _buildImagesTimingStep(), // current 2 moved to 3
-              ],
-            ),
-          ),
+          isDefaultAction: true,
+          child: const Text('Cancel', style: TextStyle(color: Colors.red)),
         ),
       ),
     );
   }
 
-  Widget _buildProgressIndicator() {
+  Future<void> _pickImage(ImageSource source) async {
+    final picked = await ImagePicker().pickImage(source: source);
+    if (picked == null) return;
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: picked.path,
+      aspectRatio: const CropAspectRatio(ratioX: 2, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Image',
+          toolbarColor: Colors.blue,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(title: 'Crop Image', aspectRatioLockEnabled: true),
+      ],
+    );
+    if (cropped != null) {
+      final count = (controller.images?.length ?? 0) + existingImageUrls.length;
+      if (count < 4) {
+        setState(() => controller.images?.add(File(cropped.path)));
+        controller.update();
+      } else {
+        Get.snackbar('Limit reached', 'You can only upload 4 images');
+      }
+    }
+  }
+
+  // ── Time pickers ──────────────────────────────────────────────────────────
+  Future<void> _pickTime(BuildContext ctx, bool isOpen) async {
+    final init = DateTime(
+      2024, 1, 1,
+      isOpen ? (controller.openTime?.hour ?? 9) : (controller.closeTime?.hour ?? 21),
+      isOpen ? (controller.openTime?.minute ?? 0) : (controller.closeTime?.minute ?? 0),
+    );
+    DateTime picked = init;
+
+    await showCupertinoModalPopup(
+      context: ctx,
+      builder: (_) => Container(
+        height: 300,
+        color: Colors.white,
+        child: Column(
+          children: [
+            Container(
+              height: 50,
+              color: Colors.grey[100],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CupertinoButton(
+                    child: const Text('Cancel'),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                  CupertinoButton(
+                    child: const Text('Done'),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      setState(() {
+                        if (isOpen) {
+                          controller.openTime = TimeOfDay.fromDateTime(picked);
+                          controller.startTimeErrorMessage('');
+                        } else {
+                          controller.closeTime = TimeOfDay.fromDateTime(picked);
+                          controller.endTimeErrorMessage('');
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.time,
+                initialDateTime: init,
+                use24hFormat: false,
+                onDateTimeChanged: (v) => picked = v,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Submit ────────────────────────────────────────────────────────────────
+  Future<void> _onGetStarted() async {
+    // if (!_validate()) {
+    //   Get.snackbar('Error', 'Please complete all required fields');
+    //   return;
+    // }
+    // try {
+    //   controller.isLoadingOutlet.value = true;
+    //
+    //   List<String> uploadedUrls = [];
+    //   if (controller.images != null && controller.images!.isNotEmpty) {
+    //     for (final f in controller.images!) {
+    //       final url = await dashboardController.uploadImage(f);
+    //       if (url != null) uploadedUrls.add(url);
+    //     }
+    //   }
+    //
+    //   final finalImages = [...existingImageUrls, ...uploadedUrls];
+    //
+    //   if (widget.isEditMode && widget.outletData != null) {
+    //     final myOutletsController = Get.find<MyOutletsController>();
+    //     await myOutletsController.updateBusiness(
+    //       widget.outletData!.id ?? '',
+    //       _buildPayload(finalImages),
+    //     );
+        Get.back();
+    //   } else {
+    //     await controller.submitOutlet(preUploadedImageUrls: finalImages);
+    //   }
+    // } catch (e) {
+    //   Get.snackbar('Error', 'Something went wrong: $e');
+    // } finally {
+    //   controller.isLoadingOutlet.value = false;
+    // }
+  }
+
+  Map<String, dynamic> _buildPayload(List<String> images) {
+    final openStr = controller.openTime != null
+        ? '${controller.openTime!.hour}:${controller.openTime!.minute.toString().padLeft(2, '0')}'
+        : '';
+    final closeStr = controller.closeTime != null
+        ? '${controller.closeTime!.hour}:${controller.closeTime!.minute.toString().padLeft(2, '0')}'
+        : '';
+    return {
+      'outletName': _outletNameCtrl.text,
+      'businessType': _selectedBusinessType,
+      'outletTime': '$openStr-$closeStr',
+      'outletImages': images,
+      'openDays': selectedDays.toList(),
+      'location': {
+        'address': _address1Ctrl.text,
+        'address2': _address2Ctrl.text,
+        'landmark': _landmarkCtrl.text,
+        'city': controller.selectedCity?.name ?? '',
+        'state': controller.selectedState?.name ?? '',
+        'pincode': _zipCtrl.text,
+        'lat': widget.outletData?.location?.lat ?? 0.0,
+        'long': widget.outletData?.location?.long ?? 0.0,
+      },
+    };
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _pageBg,
+      appBar: _buildAppBar(),
+      body: Form(
+        key: _formKey,
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              child: Column(
+                children: [
+                  _buildOutletInfoCard(),
+                  const SizedBox(height: 12),
+                  _buildOutletAddressCard(),
+                  const SizedBox(height: 12),
+                  _buildOpenDaysCard(),
+                ],
+              ),
+            ),
+            // Sticky bottom button
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildBottomButton(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── AppBar ────────────────────────────────────────────────────────────────
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: _pageBg,
+      elevation: 0,
+      leading: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Container(
+          margin: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: _borderColor, width: 1.5),
+            color: Colors.white,
+          ),
+          child: const Icon(Icons.chevron_left_rounded, color: _dark, size: 22),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SECTION 1: OUTLET INFO
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildOutletInfoCard() {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel('OUTLET INFO'),
+          const SizedBox(height: 14),
+
+          // Image thumbnails row
+          _buildImageRow(),
+          const SizedBox(height: 16),
+
+          // Outlet Name
+          _buildLabeledField(
+            label: 'OUTLET NAME',
+            child: _InputField(
+              controller: _outletNameCtrl,
+              hint: 'Enter your name',
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Please enter outlet name';
+                if (v.trim().length < 2) return 'At least 2 characters required';
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Business Type
+          _buildLabeledField(
+            label: 'BUSINESS TYPE',
+            child: _buildBusinessTypeDropdown(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageRow() {
+    final localImages = controller.images ?? [];
+    final totalCount = localImages.length + existingImageUrls.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            CommonText(
-              // Update labels to match requested order
-              text: currentStep == 1
-                  ? 'Outlet Information' // page that was previously 3
-                  : currentStep == 2
-                      ? 'Outlet Address' // page that was previously 1
-                      : 'Outlet Images & Timing', // page that was previously 2
-              fontSize: size(16),
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-            ),
-          ],
-        ),
-        SizedBox(height: size(12)),
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  color: currentStep >= 1 ? ColorConst.primary : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
+            // Existing + local image thumbnails
+            ...List.generate(localImages.length, (i) => _buildThumb(
+              child: Image.file(File(localImages[i].path), fit: BoxFit.cover),
+              onRemove: () => setState(() {
+                controller.images?.removeAt(i);
+                controller.update();
+              }),
+            )),
+            ...List.generate(existingImageUrls.length, (i) => _buildThumb(
+              child: Image.network(
+                existingImageUrls[i],
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                const Icon(Icons.broken_image, color: _hintColor),
               ),
-            ),
-            SizedBox(width: size(8)),
-            Expanded(
-              child: Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  color: currentStep >= 2 ? ColorConst.primary : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            SizedBox(width: size(8)),
-            Expanded(
-              child: Container(
-                height: 4,
-                decoration: BoxDecoration(
-                  color: currentStep >= 3 ? ColorConst.primary : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+              onRemove: () => setState(() => existingImageUrls.removeAt(i)),
+            )),
 
-  // New first step: Address fields (was previously part of _buildStep2Content)
-  Widget _buildAddressStep() {
-    return Column(
-      children: [
-        // Current Location Button / Loader at the top of the Address page
-        _isFetchingLocation
-            ? Padding(
-                padding: EdgeInsets.symmetric(vertical: size(8)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: size(18),
-                      height: size(18),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        valueColor: AlwaysStoppedAnimation(ColorConst.primary),
-                      ),
+            // Upload button (show if < 4 images)
+            if (totalCount < 4)
+              GestureDetector(
+                onTap: _showImagePicker,
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(
+                      color: _borderColor,
+                      width: 1.5,
+                      style: BorderStyle.solid,
                     ),
-                    SizedBox(width: size(10)),
-                    CommonText(
-                      text: 'Getting current location...',
-                      color: ColorConst.primary,
-                      fontSize: size(14),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ],
-                ),
-              )
-            : InkWell(
-                onTap: () async {
-                  setState(() {
-                    _isFetchingLocation = true;
-                  });
-                  try {
-                    await controller.getCurrentLocation();
-
-                    // Wait until the controller populates the address fields (poll for up to ~2s)
-                    int tries = 0;
-                    while (controller.addressLine1Controller.text.trim().isEmpty &&
-                        (controller.selectedCity == null || controller.selectedState == null) &&
-                        tries < 20) {
-                      await Future.delayed(Duration(milliseconds: 100));
-                      tries++;
-                    }
-                  } catch (e) {
-                    print("Error fetching location: $e");
-                    Get.snackbar('Error', 'Unable to fetch current location');
-                  } finally {
-                    if (mounted) {
-                      setState(() {
-                        _isFetchingLocation = false;
-                      });
-                    }
-                  }
-                },
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(ImageConst.ic_current_location),
-                    SizedBox(width: size(6)),
-                    CommonText(
-                      text: "Use current location",
-                      color: ColorConst.primary,
-                      fontSize: size(16),
-                      fontWeight: FontWeight.w600,
-                    )
-                  ],
-                ),
-              ),
-        SizedBox(height: size(12)),
-
-        // Address Line 1
-        CommonTextfield(
-          controller: controller.addressLine1Controller,
-          hintText: 'Address Line 1',
-          readOnly: true,
-          keyboardType: TextInputType.name,
-          onTap: () {
-            _showAddressSearch();
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return "Please select an address.";
-            }
-            return null;
-          },
-        ),
-        SizedBox(height: size(12)),
-
-        // Address Line 2
-        CommonTextfield(
-          controller: controller.addressLine2Controller,
-          hintText: 'Address Line 2',
-          keyboardType: TextInputType.name,
-        ),
-        SizedBox(height: size(12)),
-
-        // Landmark
-        CommonTextfield(
-          controller: controller.landmarkController,
-          hintText: 'Landmark',
-          keyboardType: TextInputType.name,
-        ),
-        SizedBox(height: size(12)),
-
-        // State
-        GetBuilder<DetailsController>(
-          builder: (ctrl) {
-            return InkWell(
-              onTap: () {
-                Get.bottomSheet(StateSheet());
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                      color: controller.stateErrorMessage.isNotEmpty
-                          ? Colors.red
-                          : ColorConst.border),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        controller.selectedState?.name ?? "State",
-                        style: TextStyle(
-                            fontSize: size(16),
-                            color: ColorConst.dark,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: 'Inter'),
-                      ),
-                    ),
-                    SizedBox(width: size(12)),
-                    SvgPicture.asset(ImageConst.icDown, width: size(24)),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        if (controller.stateErrorMessage.isNotEmpty) ...[
-          SizedBox(height: size(5)),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: size(10)),
-            child: CommonText(
-              text: controller.stateErrorMessage.value,
-              color: Colors.red,
-            ),
-          ),
-        ],
-        SizedBox(height: size(12)),
-
-        // City
-        GetBuilder<DetailsController>(
-          builder: (ctrl) {
-            return InkWell(
-              onTap: () {
-                if (controller.selectedState == null) {
-                  Get.snackbar('Error', 'Please select a state first');
-                  return;
-                }
-                Get.bottomSheet(CitySheet());
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                      color: controller.cityErrorMessage.isNotEmpty
-                          ? Colors.red
-                          : ColorConst.border),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        controller.selectedCity?.name ?? "City",
-                        style: TextStyle(
-                            fontSize: size(16),
-                            color: ColorConst.dark,
-                            fontWeight: FontWeight.w500,
-                            fontFamily: 'Inter'),
-                      ),
-                    ),
-                    SizedBox(width: size(12)),
-                    SvgPicture.asset(ImageConst.icDown, width: size(24)),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        if (controller.cityErrorMessage.isNotEmpty) ...[
-          SizedBox(height: size(5)),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: size(10)),
-            child: CommonText(
-              text: controller.cityErrorMessage.value,
-              color: Colors.red,
-            ),
-          ),
-        ],
-        SizedBox(height: size(12)),
-
-        // Zip Code
-        CommonTextfield(
-          controller: controller.zipCodeController,
-          hintText: 'Zip Code',
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return "Please enter zip code.";
-            } else if (value.length != 6) {
-              return "Zip code must be 6 digits.";
-            }
-            return null;
-          },
-          keyboardType: TextInputType.number,
-        ),
-        SizedBox(height: size(30)),
-
-        // Navigation Buttons
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: ColorConst.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: CommonText(
-                    text: 'Cancel',
-                    color: ColorConst.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: size(12)),
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: CommonButton(
-                  onPressed: () {
-                    if (_fromKey.currentState!.validate() &&
-                        controller.selectedState != null &&
-                        controller.selectedCity != null) {
-                      setState(() {
-                        currentStep = 3; // advance to Images & Timing (now step 3)
-                      });
-                    }
-                  },
-                  text: 'Save & Continue',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // New second step: Images upload + open days + start/end time
-  Widget _buildImagesTimingStep() {
-    return Column(
-      children: [
-        // Image Upload (reused from previous implementation)
-        Container(
-          width: double.infinity,
-          height: 150,
-          decoration: BoxDecoration(
-            color: ColorConst.primary.withOpacity(0.03),
-            border: Border.all(
-              color: ColorConst.primary.withOpacity(0.5),
-              style: BorderStyle.solid,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: (controller.images?.isNotEmpty ?? false) || existingImageUrls.isNotEmpty
-              ? PageView.builder(
-                  itemCount: (controller.images?.length ?? 0) + existingImageUrls.length,
-                  itemBuilder: (context, index) {
-                    final isLocalImage = index < (controller.images?.length ?? 0);
-
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Stack(
-                        children: [
-                          isLocalImage
-                              ? Image.file(
-                                  File(controller.images?[index].path ?? ""),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: 150,
-                                )
-                              : Image.network(
-                                  existingImageUrls[index - (controller.images?.length ?? 0)],
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: 150,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey[300],
-                                      child: Icon(Icons.broken_image),
-                                    );
-                                  },
-                                ),
-                          Positioned(
-                            right: size(10),
-                            top: size(10),
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  if (isLocalImage) {
-                                    controller.images?.removeAt(index);
-                                  } else {
-                                    existingImageUrls.removeAt(index - (controller.images?.length ?? 0));
-                                  }
-                                });
-                                controller.update();
-                              },
-                              child: Container(
-                                  padding: EdgeInsets.all(size(5)),
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8)),
-                                  child: Icon(Icons.close)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                )
-              : GestureDetector(
-                  onTap: () {
-                    _showImagesPickerOptions();
-                  },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SvgPicture.asset(ImageConst.icUpload),
-                      const SizedBox(height: 8),
-                      CommonText(
-                        text: 'Upload Image',
-                        fontSize: size(14),
-                        color: ColorConst.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    children: const [
+                      Icon(Icons.upload_rounded, color: _dark, size: 26),
                     ],
                   ),
                 ),
-        ),
-        SizedBox(height: size(5)),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Visibility(
-              visible: controller.errorMessageOutletImages.value.isNotEmpty,
-              child: CommonText(
-                text: controller.errorMessageOutletImages.value,
-                color: Colors.red,
               ),
-            ),
-            TextButton(
-              onPressed: ((controller.images?.length ?? 0) + existingImageUrls.length) < 4
-                  ? () {
-                      _showImagesPickerOptions();
-                    }
-                  : null,
-              child: CommonText(
-                text: "Add Image ${(controller.images?.length ?? 0) + existingImageUrls.length}/4",
-                color: ((controller.images?.length ?? 0) + existingImageUrls.length) < 4
-                    ? ColorConst.primary
-                    : ColorConst.grey,
-              ),
-            ),
           ],
         ),
-        SizedBox(height: size(20)),
-        // Start & End Time (reused)
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () => _selectOpenTime(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: ColorConst.border),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            controller.openTime != null
-                                ? controller.openTime!.format(context)
-                                : 'Start Time',
-                            style: TextStyle(
-                              fontSize: size(16),
-                              color: controller.openTime != null ? Colors.black : Colors.grey,
-                            ),
-                          ),
-                          SvgPicture.asset(ImageConst.icTime),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (controller.startTimeErrorMessage.isNotEmpty) ...[
-                    SizedBox(height: size(5)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: size(10)),
-                      child: CommonText(
-                        text: controller.startTimeErrorMessage.value,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ],
+
+        // Error message
+        Obx(() => controller.errorMessageOutletImages.isNotEmpty
+            ? Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            controller.errorMessageOutletImages.value,
+            style: const TextStyle(color: Colors.red, fontSize: 12, fontFamily: _font),
+          ),
+        )
+            : const SizedBox()),
+
+        // Add image count
+        if (totalCount > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Add Image $totalCount/4',
+              style: const TextStyle(
+                color: _labelColor,
+                fontSize: 12,
+                fontFamily: _font,
               ),
             ),
-            SizedBox(width: size(12)),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GestureDetector(
-                    onTap: () => _selectCloseTime(context),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: ColorConst.border),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            controller.closeTime != null
-                                ? controller.closeTime!.format(context)
-                                : 'End Time',
-                            style: TextStyle(
-                              fontSize: size(16),
-                              color: controller.closeTime != null ? Colors.black : Colors.grey,
-                            ),
-                          ),
-                          SvgPicture.asset(ImageConst.icTime),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (controller.endTimeErrorMessage.isNotEmpty) ...[
-                    SizedBox(height: size(5)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: size(10)),
-                      child: CommonText(
-                        text: controller.endTimeErrorMessage.value,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: size(30)),
-
-        // Navigation Buttons
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      currentStep = 2; // back to address (now step 2)
-                    });
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: ColorConst.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: CommonText(
-                    text: 'Back',
-                    color: ColorConst.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: size(12)),
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: Obx(
-                  () => CommonButton(
-                    isLoading: controller.isLoadingOutlet.value,
-                    onPressed: () async {
-                      // Validate images & times before submitting
-                      if ((controller.images?.isNotEmpty ?? false || existingImageUrls.isNotEmpty) &&
-                          controller.openTime != null &&
-                          controller.closeTime != null) {
-                        if (!validateAll()) {
-                          Get.snackbar('Error', 'Please complete required fields');
-                          return;
-                        }
-
-                        if (widget.isEditMode && widget.outletData != null) {
-                          await _handleEditOutlet();
-                        } else {
-                          // For add flow: upload local images first, then call submitOutlet with URLs
-                          try {
-                            controller.isLoadingOutlet.value = true;
-
-                            List<String> newUploadedUrls = [];
-                            if (controller.images != null && controller.images!.isNotEmpty) {
-                              for (var file in controller.images!) {
-                                String? url = await dashboardController.uploadImage(file);
-                                if (url != null) newUploadedUrls.add(url);
-                              }
-                            }
-
-                            // Combine existing image urls (should be empty for new add) with newly uploaded
-                            List<String> combinedUrls = List.from(existingImageUrls);
-                            combinedUrls.addAll(newUploadedUrls);
-
-                            await controller.submitOutlet(preUploadedImageUrls: combinedUrls);
-                          } catch (e) {
-                            print('Error uploading images or submitting outlet: $e');
-                            Get.snackbar('Error', 'Failed to upload images or submit outlet');
-                          } finally {
-                            controller.isLoadingOutlet.value = false;
-                          }
-                        }
-                      } else {
-                        Get.snackbar('Error', 'Please add at least one image and select both start and end times');
-                      }
-                    },
-                    text: 'Save & Submit',
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
       ],
     );
   }
 
-  Widget _buildStep1Content() {
-    return Column(
-      children: [
-        // Business Name
-        CommonTextfield(
-          controller: controller.businessController,
-          hintText: 'Business Name',
-          prefixIcon: Padding(
-            padding: EdgeInsets.symmetric(horizontal: size(10)),
-            child: SvgPicture.asset(ImageConst.business_outlined),
+  Widget _buildThumb({required Widget child, required VoidCallback onRemove}) {
+    return Container(
+      width: 72,
+      height: 72,
+      margin: const EdgeInsets.only(right: 10),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(width: 72, height: 72, child: child),
           ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return "Please enter business name.";
-            } else if (value.length < 2) {
-              return "Business name must be at least 2 characters long.";
-            }
-            String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
-            RegExp regex = RegExp(pattern);
-            if (!regex.hasMatch(value)) {
-              return "Business name can only contain letters, numbers, spaces, &, ., and -.";
-            }
-            return null;
-          },
-          keyboardType: TextInputType.name,
-        ),
-        SizedBox(height: size(12)),
-        // Outlet Contact Number
-        CommonTextfield(
-          controller: controller.outletContactController,
-          hintText: 'Outlet Contact Number',
-          prefixIcon: Padding(
-            padding: EdgeInsets.symmetric(horizontal: size(10)),
-            child: SvgPicture.asset(ImageConst.phone_outlined),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return "Please enter outlet contact number.";
-            }
-            String pattern = r'^[6-9]\d{9}$';
-            RegExp regex = RegExp(pattern);
-            if (!regex.hasMatch(value)) {
-              return "Please enter a valid Indian mobile number.";
-            }
-            return null;
-          },
-          keyboardType: TextInputType.phone,
-        ),
-        SizedBox(height: size(12)),
-        // Outlet Name
-        CommonTextfield(
-          controller: controller.outletNameController,
-          hintText: 'Outlet Name',
-          prefixIcon: Padding(
-            padding: EdgeInsets.symmetric(horizontal: size(10)),
-            child: SvgPicture.asset(ImageConst.business_outlined),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return "Please enter outlet name.";
-            } else if (value.length < 2) {
-              return "Outlet name must be at least 2 characters long.";
-            }
-            String pattern = r'^[a-zA-Z0-9&.\-\s]+$';
-            RegExp regex = RegExp(pattern);
-            if (!regex.hasMatch(value)) {
-              return "Outlet name can only contain letters, numbers, spaces, &, ., and -.";
-            }
-            return null;
-          },
-          keyboardType: TextInputType.name,
-        ),
-        SizedBox(height: size(12)),
-        // Business Type
-        CommonDropdown(
-          value: controller.selectedBusinessType,
-          items: businessTypes,
-          onChanged: (value) {
-            setState(() {
-              controller.selectedBusinessType = value;
-            });
-          },
-          hintText: 'Business Type',
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return "Please select business type.";
-            }
-            return null;
-          },
-        ),
-        SizedBox(height: size(30)),
-        // Navigation Buttons
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: ColorConst.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: CommonText(
-                    text: 'Cancel',
-                    color: ColorConst.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+          Positioned(
+            top: -6,
+            right: -6,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
                 ),
+                child: const Icon(Icons.close, size: 12, color: Colors.white),
               ),
             ),
-            SizedBox(width: size(12)),
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: CommonButton(
-                  onPressed: () {
-                    if (_fromKey.currentState!.validate() &&
-                        controller.selectedBusinessType != null) {
-                      setState(() {
-                        currentStep = 2;
-                      });
-                    }
-                  },
-                  text: 'Save & Continue',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Future<void> _pickImagesFromGallery(ImageSource source) async {
-    final pickedFile = await ImagePicker().pickImage(source: source);
-    if (pickedFile != null) {
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: pickedFile.path,
-        aspectRatio: CropAspectRatio(ratioX: 2, ratioY: 1),
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Image',
-            toolbarColor: Colors.blue,
-            toolbarWidgetColor: Colors.white,
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Crop Image',
-            aspectRatioLockEnabled: true,
           ),
         ],
-      );
+      ),
+    );
+  }
 
-      if (croppedFile != null) {
-        if ((controller.images?.length ?? 0) < 4) {
-          setState(() {
-            controller.images?.add(File(croppedFile.path));
-          });
-          controller.update();
-        } else {
-          Get.snackbar('Error', 'You can only upload 4 images');
-        }
-      }
-    }
+  Widget _buildBusinessTypeDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedBusinessType,
+      hint: const Text(
+        'Select business type',
+        style: TextStyle(color: _hintColor, fontSize: 15, fontFamily: _font),
+      ),
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: _dark),
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _borderColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _dark),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      style: const TextStyle(
+        color: _dark,
+        fontSize: 15,
+        fontFamily: _font,
+        fontWeight: FontWeight.w400,
+      ),
+      items: businessTypes
+          .map((t) => DropdownMenuItem(
+        value: t,
+        child: Text(t[0].toUpperCase() + t.substring(1)),
+      ))
+          .toList(),
+      onChanged: (v) => setState(() => _selectedBusinessType = v),
+      validator: (v) =>
+      (v == null || v.isEmpty) ? 'Please select business type' : null,
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SECTION 2: OUTLET ADDRESS
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildOutletAddressCard() {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel('OUTLET ADDRESS'),
+          const SizedBox(height: 16),
+
+          // Use current location
+          _isFetchingLocation
+              ? Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 8),
+              Text('Getting current location...',
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF2E7D32),
+                      fontFamily: _font,
+                      fontWeight: FontWeight.w600)),
+            ],
+          )
+              : GestureDetector(
+            onTap: () async {
+              setState(() => _isFetchingLocation = true);
+              try {
+                await controller.getCurrentLocation();
+                int tries = 0;
+                while (_address1Ctrl.text.trim().isEmpty && tries < 20) {
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  // Sync address from controller if populated
+                  if (controller.addressLine1Controller.text.isNotEmpty) {
+                    _address1Ctrl.text = controller.addressLine1Controller.text;
+                  }
+                  tries++;
+                }
+              } catch (_) {
+                Get.snackbar('Error', 'Unable to fetch current location');
+              } finally {
+                if (mounted) setState(() => _isFetchingLocation = false);
+              }
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF2E7D32), width: 2),
+                  ),
+                  child: const Icon(Icons.my_location,
+                      size: 12, color: Color(0xFF2E7D32)),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Use current location',
+                  style: TextStyle(
+                    color: Color(0xFF2E7D32),
+                    fontSize: 15,
+                    fontFamily: _font,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Address Line 1
+          _buildLabeledField(
+            label: 'ADDRESS LINE 1',
+            child: _InputField(
+              controller: _address1Ctrl,
+              hint: 'Address line 1',
+              readOnly: true,
+              onTap: _showAddressSearch,
+              validator: (v) =>
+              (v == null || v.isEmpty) ? 'Please enter address' : null,
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Address Line 2
+          _buildLabeledField(
+            label: 'ADDRESS LINE 2',
+            child: _InputField(
+              controller: _address2Ctrl,
+              hint: 'Address line 2',
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Landmark
+          _buildLabeledField(
+            label: 'LANDMARK',
+            child: _InputField(
+              controller: _landmarkCtrl,
+              hint: 'Landmark',
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // City + State row
+          Row(
+            children: [
+              Expanded(
+                child: _buildLabeledField(
+                  label: 'CITY',
+                  child: GetBuilder<DetailsController>(
+                    builder: (ctrl) => _DropdownTile(
+                      value: ctrl.selectedCity?.name,
+                      hint: 'City',
+                      hasError: ctrl.cityErrorMessage.isNotEmpty,
+                      errorText: ctrl.cityErrorMessage.value,
+                      onTap: () {
+                        if (ctrl.selectedState == null) {
+                          Get.snackbar('Error', 'Please select state first');
+                          return;
+                        }
+                        Get.bottomSheet(CitySheet());
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildLabeledField(
+                  label: 'STATE',
+                  child: GetBuilder<DetailsController>(
+                    builder: (ctrl) => _DropdownTile(
+                      value: ctrl.selectedState?.name,
+                      hint: 'State',
+                      hasError: ctrl.stateErrorMessage.isNotEmpty,
+                      errorText: ctrl.stateErrorMessage.value,
+                      onTap: () => Get.bottomSheet(StateSheet()),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Zip Code
+          _buildLabeledField(
+            label: 'ZIP CODE',
+            child: _InputField(
+              controller: _zipCtrl,
+              hint: 'Zip Code',
+              inputType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Please enter zip code';
+                if (v.length != 6) return 'Zip code must be 6 digits';
+                return null;
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAddressSearch() {
@@ -1067,9 +789,10 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AddressSearchBottomSheet(
+      builder: (_) => AddressSearchBottomSheet(
         onAddressSelected: (address) {
           setState(() {
+            _address1Ctrl.text = address;
             controller.addressLine1Controller.text = address;
           });
         },
@@ -1077,206 +800,439 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     );
   }
 
-  void _showImagesPickerOptions() {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: Text('Select Image'),
-        actions: [
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _pickImagesFromGallery(ImageSource.gallery);
-            },
-            child: CommonText(
-              text: 'Choose from Gallery',
-              color: Colors.black,
+  // ─────────────────────────────────────────────────────────────────────────
+  // SECTION 3: OPEN DAYS
+  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildOpenDaysCard() {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel('OPEN DAYS'),
+          const SizedBox(height: 16),
+
+          // Select open days label
+          const Text(
+            'SELECT OPEN DAYS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: _labelColor,
+              letterSpacing: 0.6,
+              fontFamily: _font,
             ),
           ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _pickImagesFromGallery(ImageSource.camera);
-            },
-            child: CommonText(text: 'Take a Photo', color: Colors.black),
+          const SizedBox(height: 10),
+
+          // Day chips
+          _buildDayChips(),
+          const SizedBox(height: 20),
+
+          // Start Time + End Time
+          Row(
+            children: [
+              Expanded(
+                child: _buildLabeledField(
+                  label: 'START TIME',
+                  child: _TimeTile(
+                    value: controller.openTime?.format(context),
+                    hint: 'Start Time',
+                    onTap: () => _pickTime(context, true),
+                    errorText: controller.startTimeErrorMessage.value,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildLabeledField(
+                  label: 'END TIME',
+                  child: _TimeTile(
+                    value: controller.closeTime?.format(context),
+                    hint: 'End Time',
+                    onTap: () => _pickTime(context, false),
+                    errorText: controller.endTimeErrorMessage.value,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          isDefaultAction: true,
-          child: CommonText(text: 'Cancel', color: Colors.red),
+      ),
+    );
+  }
+
+  Widget _buildDayChips() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: weekDays.map((day) {
+        final selected = selectedDays.contains(day);
+        return GestureDetector(
+          onTap: () => setState(() {
+            if (selected) {
+              selectedDays.remove(day);
+            } else {
+              selectedDays.add(day);
+            }
+          }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? _primaryBlack : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: selected ? _primaryBlack : _borderColor,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  day,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : _dark,
+                    fontFamily: _font,
+                  ),
+                ),
+                if (selected) ...[
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () => setState(() => selectedDays.remove(day)),
+                    child: const Icon(Icons.close, size: 14, color: Colors.white),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ── Bottom button ─────────────────────────────────────────────────────────
+  Widget _buildBottomButton() {
+    return Container(
+      color: _pageBg,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+      child: Obx(
+            () => SizedBox(
+          height: 54,
+          child: ElevatedButton(
+            onPressed: controller.isLoadingOutlet.value ? null : _onGetStarted,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryBlack,
+              disabledBackgroundColor: _primaryBlack.withOpacity(0.6),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: controller.isLoadingOutlet.value
+                ? const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                  color: Colors.white, strokeWidth: 2.5),
+            )
+                : const Text(
+              'Get Started',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                fontFamily: _font,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-
-  Future<void> _selectOpenTime(BuildContext context) async {
-    final now = DateTime.now();
-    final initialTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      controller.openTime?.hour ?? 9,
-      controller.openTime?.minute ?? 0,
-    );
-
-    // Initialize picked to the initialTime so 'Done' without moving still selects it
-    DateTime picked = initialTime;
-
-    await showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) => Container(
-        height: 300,
-        color: Colors.white,
-        child: Column(
-          children: [
-            Container(
-              height: 50,
-              color: Colors.grey[100],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CupertinoButton(
-                    child: const Text('Cancel'),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  CupertinoButton(
-                    child: const Text('Done'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      setState(() {
-                        controller.openTime = TimeOfDay.fromDateTime(picked);
-                        controller.startTimeErrorMessage("");
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                initialDateTime: initialTime,
-                use24hFormat: false,
-                onDateTimeChanged: (DateTime value) {
-                  picked = value;
-                },
-              ),
-            ),
-          ],
+  // ── Shared labeled-field wrapper ──────────────────────────────────────────
+  Widget _buildLabeledField({required String label, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: _labelColor,
+            letterSpacing: 0.6,
+            fontFamily: _font,
+          ),
         ),
+        const SizedBox(height: 6),
+        child,
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _outletNameCtrl.dispose();
+    _address1Ctrl.dispose();
+    _address2Ctrl.dispose();
+    _landmarkCtrl.dispose();
+    _zipCtrl.dispose();
+    super.dispose();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared small widgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// White card with rounded corners and subtle shadow
+class _Card extends StatelessWidget {
+  const _Card({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _sectionBg,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+/// ALL-CAPS section title
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: _dark,
+        letterSpacing: 0.8,
+        fontFamily: _font,
       ),
     );
   }
+}
 
-  Future<void> _handleEditOutlet() async {
-    try {
-      controller.isLoadingOutlet.value = true;
-      
-      // Upload new images if any
-      List<String> newImageUrls = [];
-      if (controller.images != null && controller.images!.isNotEmpty) {
-        for (var imageFile in controller.images!) {
-          String? url = await dashboardController.uploadImage(imageFile);
-          if (url != null) {
-            newImageUrls.add(url);
-          }
-        }
-      }
-      
-      // Combine existing images with newly uploaded images
-      List<String> finalImages = List.from(existingImageUrls);
-      finalImages.addAll(newImageUrls);
-      
-      // Build outlet data with final images
-      Map<String, dynamic> outletData = _buildOutletData();
-      outletData['outletImages'] = finalImages;
-      
-      // Call update API
-      final myOutletsController = Get.find<MyOutletsController>();
-      await myOutletsController.updateBusiness(
-        widget.outletData!.id ?? '',
-        outletData,
-      );
-      
-      // Go back after successful update
-      Get.back();
-    } catch (e) {
-      print("Error updating outlet: $e");
-      Get.snackbar('Error', 'Error updating outlet: ${e.toString()}');
-    } finally {
-      controller.isLoadingOutlet.value = false;
-    }
-  }
+/// Reusable plain text input field
+class _InputField extends StatelessWidget {
+  const _InputField({
+    required this.controller,
+    required this.hint,
+    this.inputType = TextInputType.text,
+    this.inputFormatters,
+    this.validator,
+    this.readOnly = false,
+    this.onTap,
+  });
 
-  Future<void> _selectCloseTime(BuildContext context) async {
-    final now = DateTime.now();
-    final initialTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      controller.closeTime?.hour ?? 21,
-      controller.closeTime?.minute ?? 0,
-    );
+  final TextEditingController controller;
+  final String hint;
+  final TextInputType inputType;
+  final List<TextInputFormatter>? inputFormatters;
+  final FormFieldValidator<String>? validator;
+  final bool readOnly;
+  final VoidCallback? onTap;
 
-    // Initialize picked so 'Done' selects the visible time even if unchanged
-    DateTime picked = initialTime;
-
-    await showCupertinoModalPopup(
-      context: context,
-      builder: (BuildContext context) => Container(
-        height: 300,
-        color: Colors.white,
-        child: Column(
-          children: [
-            Container(
-              height: 50,
-              color: Colors.grey[100],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  CupertinoButton(
-                    child: const Text('Cancel'),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  CupertinoButton(
-                    child: const Text('Done'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      setState(() {
-                        controller.closeTime = TimeOfDay.fromDateTime(picked);
-                        controller.endTimeErrorMessage("");
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                initialDateTime: initialTime,
-                use24hFormat: false,
-                onDateTimeChanged: (DateTime value) {
-                  picked = value;
-                },
-              ),
-            ),
-          ],
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      readOnly: readOnly,
+      keyboardType: inputType,
+      inputFormatters: inputFormatters,
+      validator: validator,
+      onTap: onTap,
+      style: const TextStyle(
+        fontSize: 15,
+        color: _dark,
+        fontFamily: _font,
+        fontWeight: FontWeight.w400,
+      ),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(
+          fontSize: 15,
+          color: _hintColor,
+          fontFamily: _font,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _borderColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _dark, width: 1.4),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.red),
         ),
       ),
     );
   }
 }
 
+/// Dropdown-style tap tile (for State/City)
+class _DropdownTile extends StatelessWidget {
+  const _DropdownTile({
+    required this.hint,
+    required this.onTap,
+    this.value,
+    this.hasError = false,
+    this.errorText,
+  });
 
+  final String? value;
+  final String hint;
+  final VoidCallback onTap;
+  final bool hasError;
+  final String? errorText;
 
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: hasError ? Colors.red : _borderColor,
+                width: 1.4,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value ?? hint,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontFamily: _font,
+                      color: value != null ? _dark : _hintColor,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.keyboard_arrow_down_rounded,
+                    color: _dark, size: 20),
+              ],
+            ),
+          ),
+        ),
+        if (hasError && (errorText?.isNotEmpty ?? false))
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(
+              errorText!,
+              style: const TextStyle(
+                  color: Colors.red, fontSize: 12, fontFamily: _font),
+            ),
+          ),
+      ],
+    );
+  }
+}
 
+/// Time selector tile
+class _TimeTile extends StatelessWidget {
+  const _TimeTile({
+    required this.hint,
+    required this.onTap,
+    this.value,
+    this.errorText,
+  });
 
+  final String? value;
+  final String hint;
+  final VoidCallback onTap;
+  final String? errorText;
 
-
-
-
-
-
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: (errorText?.isNotEmpty ?? false) ? Colors.red : _borderColor,
+                width: 1.4,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value ?? hint,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontFamily: _font,
+                      color: value != null ? _dark : _hintColor,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.access_time_rounded, color: _dark, size: 18),
+              ],
+            ),
+          ),
+        ),
+        if (errorText?.isNotEmpty ?? false)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(
+              errorText!,
+              style: const TextStyle(
+                  color: Colors.red, fontSize: 12, fontFamily: _font),
+            ),
+          ),
+      ],
+    );
+  }
+}

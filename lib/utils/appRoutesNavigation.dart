@@ -26,13 +26,13 @@ class AppPage {
     GetPage(
       preventDuplicates: true,
       name: AppRoutes.login,
-      page: () => const LoginScreen(),
+      page: () => LoginScreen(),
       binding: null,
     ),
     GetPage(
       preventDuplicates: true,
       name: AppRoutes.otp,
-      page: () => const OtpScreen(),
+      page: () => OtpScreen(),
       binding: null,
     ),
     GetPage(

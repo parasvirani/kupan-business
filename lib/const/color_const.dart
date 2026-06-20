@@ -13,4 +13,5 @@ class ColorConst {
   static Color success = Color(0XFF12B76A);
   static Color secondaryGrey = Color(0X5854561A);
   static Color divider = Color(0X58545614);
+  static Color textSubColor = Color(0X58545614);
 }

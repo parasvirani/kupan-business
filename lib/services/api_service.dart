@@ -21,16 +21,15 @@ class ApiService {
     return await http.post(url, headers: headers, body: body);
   }
 
-  Future<http.Response> verifyOtp(String mobileNumber, String otp, String role) async {
-    final url = Uri.parse("${baseUrl}/auth/verify-otp");
-    final headers = {"Content-Type": "application/json"};
-    final body = jsonEncode({
-      "contact": "+91$mobileNumber",
-      "otp": otp,
-      "role": role
-    });
-
-    return await http.post(url, headers: headers, body: body);
+  Future<http.Response> verifyOtp(String idToken, String role) async {
+    return await http.post(
+      Uri.parse('${baseUrl}/auth/verify-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'firebaseToken': idToken,
+        'role': role,
+      }),
+    );
   }
 
   Future<http.Response> updateUser(Map<String, dynamic> map) async {

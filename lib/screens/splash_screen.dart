@@ -41,34 +41,48 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final responsiveSize = (value) => screenWidth / (375 / value); // 375 is standard width base
+
     return Scaffold(
       body: Stack(
         children: [
-          Image.asset(
-            ImageConst.splash,
+          Container(
             width: Get.width,
             height: Get.height,
-            fit: BoxFit.cover,
+            color: Color(0XFF1A1A1A),
           ),
           Center(
-            child: Text(
-              "kupan.",
-              style: TextStyle(
-                  fontSize: size(62),
-                  color: ColorConst.white,
-                  fontFamily: 'ScriptMTBold'),
+            child: Image.asset(
+              ImageConst.splash_5,
             ),
           ),
           Positioned(
-            bottom: size(36),
+            top: 0,
             right: 0,
+            child: Image.asset(
+              ImageConst.splash_1,
+            ),
+          ),
+          Positioned(
+            top: 150,
             left: 0,
-            child: Center(
-              child: CommonText(
-                text:
-                    "By dolor sit amet, elit, sed do eiusmod\ntempor ut labore et dolore magna aliqua.",
-                fontSize: size(12),
-              ),
+            child: Image.asset(
+              ImageConst.splash_2,
+            ),
+          ),
+          Positioned(
+            bottom: 150,
+            right: 0,
+            child: Image.asset(
+              ImageConst.splash_3,
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            child: Image.asset(
+              ImageConst.splash_4,
             ),
           ),
         ],
