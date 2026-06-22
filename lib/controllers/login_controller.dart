@@ -79,7 +79,7 @@ class LoginController extends GetxController {
       }
 
       // Step 3: Backend API Call
-      http.Response response = await _apiService.verifyOtp(idToken, "buyer");
+      http.Response response = await _apiService.verifyOtp(idToken, "vendor");
 
       if (response.statusCode == 200) {
         print("VerifyOtp Response Body: ${response.body}");
@@ -170,7 +170,7 @@ class LoginController extends GetxController {
     errorOtpMessage.value = '';
 
     try {
-      http.Response response = await _apiService.verifyOtp(idToken, "buyer");
+      http.Response response = await _apiService.verifyOtp(idToken, "vendor");
 
       if (response.statusCode == 200) {
         print("VerifyOtpWithToken Response Body: ${response.body}");

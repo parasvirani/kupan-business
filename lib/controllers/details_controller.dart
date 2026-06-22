@@ -108,8 +108,12 @@ class DetailsController extends GetxController {
       String? profilePic;
       if (imageFile != null) {
         profilePic = await dashboardController.uploadImage(imageFile!);
+        if (profilePic == null) {
+          errorMessage.value = 'Image upload failed. Please try again.';
+          isLoading.value = false;
+          return;
+        }
       }
-      print("User add successfully ${profilePic}");
 
       Map<String, dynamic> map = {
         "profilePic": profilePic ?? "",
@@ -314,10 +318,19 @@ class DetailsController extends GetxController {
 
     Placemark place = placemarks[0];
 
-    addressLine1Controller.text = place.street ?? "";
+    addressLine1Controller.text = place.thoroughfare ?? place.street ?? "";
+    addressLine2Controller.text = place.subLocality ?? "";
     landmarkController.text = place.subLocality ?? "";
     zipCodeController.text = place.postalCode ?? "";
-    updateStateByName(place.administrativeArea ?? "", cityName: place.locality);
+
+    try {
+      await updateStateByName(
+        place.administrativeArea ?? "",
+        cityName: place.locality,
+      );
+    } catch (_) {
+      // state/city name may not match the package list exactly — other fields still filled
+    }
     update();
   }
 

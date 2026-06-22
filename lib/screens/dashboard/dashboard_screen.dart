@@ -36,16 +36,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ColorConst.white,
-      body: Obx(
-        () => IndexedStack(
-          index: currentIndex,
-          children: [
-            HomeView(),
-            MyOutletsScreen(args: args),
-            AddKupanView(),
-            ProfileView(),
-          ],
-        ),
+      body: IndexedStack(
+        index: currentIndex,
+        children: [
+          HomeView(),
+          MyOutletsScreen(args: args),
+          AddKupanView(),
+          ProfileView(),
+        ],
       ),
        bottomNavigationBar: _buildBottomNavBar(),
       );

@@ -10,28 +10,23 @@
 // Keep your existing controllers, models, routes, common widgets.
 // ============================================================
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../common_view/city_sheet.dart';
-import '../../common_view/common_button.dart';
-import '../../common_view/common_text.dart';
 import '../../common_view/state_sheet.dart';
-import '../../const/color_const.dart';
-import '../../const/image_const.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../controllers/details_controller.dart';
 import '../../controllers/my_outlets_controller.dart';
 import '../../models/user_businesses_res.dart';
-import '../../utils/utils.dart';
-import '../details/components/address_search_bottom_sheet.dart';
+import '../../services/api_service.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const Color _dark = Color(0xFF1A1A1A);
@@ -289,62 +284,81 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
 
   // ── Submit ────────────────────────────────────────────────────────────────
   Future<void> _onGetStarted() async {
-    // if (!_validate()) {
-    //   Get.snackbar('Error', 'Please complete all required fields');
-    //   return;
-    // }
-    // try {
-    //   controller.isLoadingOutlet.value = true;
-    //
-    //   List<String> uploadedUrls = [];
-    //   if (controller.images != null && controller.images!.isNotEmpty) {
-    //     for (final f in controller.images!) {
-    //       final url = await dashboardController.uploadImage(f);
-    //       if (url != null) uploadedUrls.add(url);
-    //     }
-    //   }
-    //
-    //   final finalImages = [...existingImageUrls, ...uploadedUrls];
-    //
-    //   if (widget.isEditMode && widget.outletData != null) {
-    //     final myOutletsController = Get.find<MyOutletsController>();
-    //     await myOutletsController.updateBusiness(
-    //       widget.outletData!.id ?? '',
-    //       _buildPayload(finalImages),
-    //     );
-        Get.back();
-    //   } else {
-    //     await controller.submitOutlet(preUploadedImageUrls: finalImages);
-    //   }
-    // } catch (e) {
-    //   Get.snackbar('Error', 'Something went wrong: $e');
-    // } finally {
-    //   controller.isLoadingOutlet.value = false;
-    // }
+    if (!_validate()) return;
+
+    try {
+      controller.isLoadingOutlet.value = true;
+
+      // Upload new local images
+      List<String> uploadedUrls = [];
+      for (final f in controller.images ?? []) {
+        final url = await dashboardController.uploadImage(f);
+        if (url == null) {
+          Get.snackbar('Error', 'Image upload failed. Please try again.',
+              backgroundColor: Colors.red, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM);
+          return;
+        }
+        uploadedUrls.add(url);
+      }
+
+      final finalImages = [...existingImageUrls, ...uploadedUrls];
+      final payload = _buildPayload(finalImages);
+
+      if (widget.isEditMode && widget.outletData != null) {
+        final myOutletsController = Get.find<MyOutletsController>();
+        await myOutletsController.updateBusiness(widget.outletData!.id ?? '', payload);
+      } else {
+        final apiService = ApiService();
+        final response = await apiService.addBusiness(payload);
+        final data = jsonDecode(response.body);
+        if (response.statusCode == 200 && data['success'] == true) {
+          controller.images?.clear();
+          await MyOutletsController.refreshOutlets();
+          Get.back();
+          Get.snackbar('Success', 'Outlet added successfully!',
+              backgroundColor: Colors.green, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM);
+        } else {
+          Get.snackbar('Error', data['message'] ?? 'Failed to add outlet',
+              backgroundColor: Colors.red, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM);
+        }
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Something went wrong: $e',
+          backgroundColor: Colors.red, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      controller.isLoadingOutlet.value = false;
+    }
   }
 
   Map<String, dynamic> _buildPayload(List<String> images) {
-    final openStr = controller.openTime != null
-        ? '${controller.openTime!.hour}:${controller.openTime!.minute.toString().padLeft(2, '0')}'
-        : '';
-    final closeStr = controller.closeTime != null
-        ? '${controller.closeTime!.hour}:${controller.closeTime!.minute.toString().padLeft(2, '0')}'
-        : '';
+    final openStr = controller.openTime?.format(Get.context!) ?? '';
+    final closeStr = controller.closeTime?.format(Get.context!) ?? '';
+    final lat = controller.lat.value != 0.0
+        ? controller.lat.value
+        : (widget.outletData?.location?.lat ?? 0.0);
+    final long = controller.long.value != 0.0
+        ? controller.long.value
+        : (widget.outletData?.location?.long ?? 0.0);
     return {
-      'outletName': _outletNameCtrl.text,
+      'outletName': _outletNameCtrl.text.trim(),
+      'businessName': _outletNameCtrl.text.trim(),
       'businessType': _selectedBusinessType,
-      'outletTime': '$openStr-$closeStr',
+      'outletTime': '$openStr - $closeStr',
       'outletImages': images,
-      'openDays': selectedDays.toList(),
+      'outletDays': selectedDays.toList(),
       'location': {
-        'address': _address1Ctrl.text,
-        'address2': _address2Ctrl.text,
-        'landmark': _landmarkCtrl.text,
+        'address': _address1Ctrl.text.trim(),
+        'address2': _address2Ctrl.text.trim(),
+        'landmark': _landmarkCtrl.text.trim(),
         'city': controller.selectedCity?.name ?? '',
         'state': controller.selectedState?.name ?? '',
-        'pincode': _zipCtrl.text,
-        'lat': widget.outletData?.location?.lat ?? 0.0,
-        'long': widget.outletData?.location?.long ?? 0.0,
+        'pincode': _zipCtrl.text.trim(),
+        'lat': lat,
+        'long': long,
       },
     };
   }
@@ -642,17 +656,16 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
               setState(() => _isFetchingLocation = true);
               try {
                 await controller.getCurrentLocation();
-                int tries = 0;
-                while (_address1Ctrl.text.trim().isEmpty && tries < 20) {
-                  await Future.delayed(const Duration(milliseconds: 100));
-                  // Sync address from controller if populated
-                  if (controller.addressLine1Controller.text.isNotEmpty) {
+                if (mounted) {
+                  setState(() {
                     _address1Ctrl.text = controller.addressLine1Controller.text;
-                  }
-                  tries++;
+                    _address2Ctrl.text = controller.addressLine2Controller.text;
+                    _landmarkCtrl.text = controller.landmarkController.text;
+                    _zipCtrl.text = controller.zipCodeController.text;
+                  });
                 }
-              } catch (_) {
-                Get.snackbar('Error', 'Unable to fetch current location');
+              } catch (e) {
+                Get.snackbar('Error', e.toString().replaceFirst('Exception: ', ''));
               } finally {
                 if (mounted) setState(() => _isFetchingLocation = false);
               }
@@ -691,8 +704,6 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
             child: _InputField(
               controller: _address1Ctrl,
               hint: 'Address line 1',
-              readOnly: true,
-              onTap: _showAddressSearch,
               validator: (v) =>
               (v == null || v.isEmpty) ? 'Please enter address' : null,
             ),
@@ -780,22 +791,6 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showAddressSearch() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AddressSearchBottomSheet(
-        onAddressSelected: (address) {
-          setState(() {
-            _address1Ctrl.text = address;
-            controller.addressLine1Controller.text = address;
-          });
-        },
       ),
     );
   }
@@ -1044,8 +1039,6 @@ class _InputField extends StatelessWidget {
     this.inputType = TextInputType.text,
     this.inputFormatters,
     this.validator,
-    this.readOnly = false,
-    this.onTap,
   });
 
   final TextEditingController controller;
@@ -1053,18 +1046,14 @@ class _InputField extends StatelessWidget {
   final TextInputType inputType;
   final List<TextInputFormatter>? inputFormatters;
   final FormFieldValidator<String>? validator;
-  final bool readOnly;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      readOnly: readOnly,
       keyboardType: inputType,
       inputFormatters: inputFormatters,
       validator: validator,
-      onTap: onTap,
       style: const TextStyle(
         fontSize: 15,
         color: _dark,

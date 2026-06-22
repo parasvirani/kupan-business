@@ -263,41 +263,29 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
           
           if (uploadResponse.statusCode == 200) {
             final uploadData = jsonDecode(uploadResponse.body);
-            print("Upload response: $uploadData");
-            
-            // Safely extract image URL from response
-            try {
-              if (uploadData is Map) {
-                final data = uploadData['data'];
-                if (data is List && data.isNotEmpty) {
-                  final firstItem = data[0];
-                  if (firstItem is Map && firstItem.containsKey('url')) {
-                    imageUrl = firstItem['url']?.toString();
-                  }
-                } else if (data is Map && data.containsKey('url')) {
-                  imageUrl = data['url']?.toString();
-                }
-              }
-              
-              if (imageUrl != null && imageUrl.isNotEmpty) {
-                print("Image URL: $imageUrl");
-              } else {
-                throw Exception('No image URL found in response');
-              }
-            } catch (e) {
-              print("Image URL extraction error: $e");
-              throw Exception('Failed to extract image URL from upload response');
+            // Backend returns: { "data": ["https://cloudinary-url..."] }
+            final data = uploadData['data'];
+            if (data is List && data.isNotEmpty) {
+              imageUrl = data[0]?.toString();
+            } else if (data is String && data.isNotEmpty) {
+              imageUrl = data;
+            }
+            if (imageUrl == null || imageUrl.isEmpty) {
+              throw Exception('No image URL in upload response');
             }
           } else {
-            throw Exception('Image upload failed with status ${uploadResponse.statusCode}');
+            throw Exception('Image upload failed (${uploadResponse.statusCode})');
           }
         } catch (e) {
           print("Image upload error: $e");
-          // Continue without image if upload fails
-          imageUrl = null;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Image upload failed, continuing without image: $e')),
+            const SnackBar(
+              content: Text('Image upload failed. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
           );
+          setState(() => _isLoading = false);
+          return;
         }
       }
 

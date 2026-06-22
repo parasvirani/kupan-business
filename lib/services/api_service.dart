@@ -139,8 +139,9 @@ class ApiService {
 
   Future<http.Response> getBusinessOutlets() async {
     String token = box.read(StringConst.TOKEN);
+    String userId = box.read(StringConst.USER_ID);
 
-    final url = Uri.parse("$baseUrl/users/business");
+    final url = Uri.parse("$baseUrl/users/$userId");
     final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
 
     return await http.get(url, headers: headers);
@@ -185,5 +186,53 @@ class ApiService {
     };
 
     return await http.get(url, headers: headers);
+  }
+
+  Future<http.Response> deleteKupan(String kupanId) async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/kupan/$kupanId");
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+
+    return await http.delete(url, headers: headers);
+  }
+
+  Future<http.Response> getNotifications() async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/notifications");
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+
+    return await http.get(url, headers: headers);
+  }
+
+  Future<http.Response> markAllNotificationsRead() async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/notifications/read-all");
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+
+    return await http.patch(url, headers: headers);
+  }
+
+  Future<http.Response> deleteNotification(String notifId) async {
+    String token = box.read(StringConst.TOKEN);
+
+    final url = Uri.parse("$baseUrl/notifications/$notifId");
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+
+    return await http.delete(url, headers: headers);
   }
 }
