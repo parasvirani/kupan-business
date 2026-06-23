@@ -13,23 +13,32 @@ class KupansListRes {
 
   factory KupansListRes.fromJson(Map<String, dynamic> json) {
     List<KupanData> kupanList = [];
-    
-    // Handle new API response format where kupans are in data.kupans
+
     if (json['data'] != null && json['data'] is Map<String, dynamic>) {
       final dataMap = json['data'] as Map<String, dynamic>;
+
+      // New flat vendor list format: data is a list directly in data
       if (dataMap['kupans'] != null && dataMap['kupans'] is List) {
         kupanList = List<KupanData>.from(
-          (dataMap['kupans'] as List).map((x) => KupanData.fromJson(x))
+          (dataMap['kupans'] as List).map((x) => KupanData.fromJson(x)),
         );
       }
-    } 
-    // Handle old API response format where data is a list
+      // Prioritized format: data.upPriority.kupans + data.downPriority.kupans
+      else if (dataMap['upPriority'] != null || dataMap['downPriority'] != null) {
+        final upKupans = (dataMap['upPriority']?['kupans'] as List?) ?? [];
+        final downKupans = (dataMap['downPriority']?['kupans'] as List?) ?? [];
+        kupanList = [...upKupans, ...downKupans]
+            .map((x) => KupanData.fromJson(x as Map<String, dynamic>))
+            .toList();
+      }
+    }
+    // Flat list format: data is a List directly
     else if (json['data'] != null && json['data'] is List) {
       kupanList = List<KupanData>.from(
-        (json['data'] as List).map((x) => KupanData.fromJson(x))
+        (json['data'] as List).map((x) => KupanData.fromJson(x)),
       );
     }
-    
+
     return KupansListRes(
       success: json['success'],
       message: json['message'],
@@ -51,12 +60,20 @@ class KupansListRes {
 class KupanData {
   final String? id;
   final String? title;
+  final String? description;
+  final String? kupanType;
   final List<String>? kupanImages;
   final List<String>? kupanDays;
-  final dynamic vendorId; // Can be String or Object
+  final dynamic vendorId; // Can be String or Object (populated)
   final String? businessId;
   final String? outletName;
+  final String? outletAddress;
+  final String? businessType;
   final List<dynamic>? sellerBusinesses;
+  final int? dailyLimit;
+  final bool? isVerified;
+  final bool? isPaused;
+  final bool? isCancelled;
   final String? createdAt;
   final String? updatedAt;
   final int? v;
@@ -64,12 +81,20 @@ class KupanData {
   KupanData({
     this.id,
     this.title,
+    this.description,
+    this.kupanType,
     this.kupanImages,
     this.kupanDays,
     this.vendorId,
     this.businessId,
     this.outletName,
+    this.outletAddress,
+    this.businessType,
     this.sellerBusinesses,
+    this.dailyLimit,
+    this.isVerified,
+    this.isPaused,
+    this.isCancelled,
     this.createdAt,
     this.updatedAt,
     this.v,
@@ -77,18 +102,29 @@ class KupanData {
 
   factory KupanData.fromJson(Map<String, dynamic> json) {
     return KupanData(
-      id: json['_id'],
+      // Support both '_id' (raw model) and 'kupanId' (service-mapped)
+      id: json['_id']?.toString() ?? json['kupanId']?.toString(),
       title: json['title'],
+      description: json['description'],
+      kupanType: json['kupanType'],
       kupanImages: json['kupanImages'] != null
           ? List<String>.from(json['kupanImages'])
           : [],
       kupanDays: json['kupanDays'] != null
           ? List<String>.from(json['kupanDays'])
           : [],
-      vendorId: json['vendorId'], // Keep as is (String or Object)
-      businessId: json['businessId'],
+      vendorId: json['vendorId'],
+      // Support both 'businessId' and 'outletId' (service-mapped)
+      businessId:
+          json['businessId']?.toString() ?? json['outletId']?.toString(),
       outletName: json['outletName'],
+      outletAddress: json['outletAddress'],
+      businessType: json['businessType'],
       sellerBusinesses: json['sellerBusinesses'],
+      dailyLimit: json['dailyLimit'] as int?,
+      isVerified: json['isVerified'] as bool?,
+      isPaused: json['isPaused'] as bool?,
+      isCancelled: json['isCancelled'] as bool?,
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
       v: json['__v'],
@@ -99,12 +135,20 @@ class KupanData {
     return {
       '_id': id,
       'title': title,
+      'description': description,
+      'kupanType': kupanType,
       'kupanImages': kupanImages,
       'kupanDays': kupanDays,
       'vendorId': vendorId,
       'businessId': businessId,
       'outletName': outletName,
+      'outletAddress': outletAddress,
+      'businessType': businessType,
       'sellerBusinesses': sellerBusinesses,
+      'dailyLimit': dailyLimit,
+      'isVerified': isVerified,
+      'isPaused': isPaused,
+      'isCancelled': isCancelled,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       '__v': v,
@@ -113,34 +157,89 @@ class KupanData {
 
   /// Get outlet name from vendorId's sellerBusinesses by matching businessId
   String? getOutletName() {
-    // First check if outletName exists directly
-    if (outletName != null && outletName!.isNotEmpty) {
-      return outletName;
-    }
+    if (outletName != null && outletName!.isNotEmpty) return outletName;
 
-    // If vendorId is a Map and has sellerBusinesses, find matching outlet
     if (vendorId is Map<String, dynamic>) {
       final vendorMap = vendorId as Map<String, dynamic>;
       final sellerBusinessesList = vendorMap['sellerBusinesses'] as List?;
-      
+
       if (sellerBusinessesList != null && businessId != null) {
         try {
           final matchingBusiness = sellerBusinessesList.firstWhere(
-            (business) => 
-              business is Map<String, dynamic> && 
-              business['_id'] == businessId,
+            (business) =>
+                business is Map<String, dynamic> &&
+                business['_id'].toString() == businessId,
             orElse: () => null,
           );
-          
+
           if (matchingBusiness is Map<String, dynamic>) {
             return matchingBusiness['outletName'] as String?;
           }
-        } catch (e) {
-          // If no match found, return null
-        }
+        } catch (_) {}
       }
     }
-    
+    return null;
+  }
+
+  /// Get business type from vendorId's sellerBusinesses or direct field
+  String? getBusinessType() {
+    if (businessType != null && businessType!.isNotEmpty) return businessType;
+
+    if (vendorId is Map<String, dynamic>) {
+      final vendorMap = vendorId as Map<String, dynamic>;
+      final sellerBusinessesList = vendorMap['sellerBusinesses'] as List?;
+
+      if (sellerBusinessesList != null && businessId != null) {
+        try {
+          final matchingBusiness = sellerBusinessesList.firstWhere(
+            (business) =>
+                business is Map<String, dynamic> &&
+                business['_id'].toString() == businessId,
+            orElse: () => null,
+          );
+
+          if (matchingBusiness is Map<String, dynamic>) {
+            return matchingBusiness['businessType'] as String?;
+          }
+        } catch (_) {}
+      }
+    }
+    return null;
+  }
+
+  /// Get outlet address from vendorId's sellerBusinesses
+  String? getOutletAddress() {
+    if (outletAddress != null && outletAddress!.isNotEmpty) return outletAddress;
+
+    if (vendorId is Map<String, dynamic>) {
+      final vendorMap = vendorId as Map<String, dynamic>;
+      final sellerBusinessesList = vendorMap['sellerBusinesses'] as List?;
+
+      if (sellerBusinessesList != null && businessId != null) {
+        try {
+          final matchingBusiness = sellerBusinessesList.firstWhere(
+            (business) =>
+                business is Map<String, dynamic> &&
+                business['_id'].toString() == businessId,
+            orElse: () => null,
+          );
+
+          if (matchingBusiness is Map<String, dynamic>) {
+            final loc = matchingBusiness['location'];
+            if (loc is Map<String, dynamic>) {
+              final parts = <String>[];
+              if (loc['address'] != null && loc['address'].toString().isNotEmpty) {
+                parts.add(loc['address'].toString());
+              }
+              if (loc['city'] != null && loc['city'].toString().isNotEmpty) {
+                parts.add(loc['city'].toString());
+              }
+              return parts.join(', ');
+            }
+          }
+        } catch (_) {}
+      }
+    }
     return null;
   }
 }

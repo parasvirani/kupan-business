@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
@@ -57,6 +59,10 @@ class DashboardController extends GetxController {
   RxString selectedOutletName = "".obs;
   RxString errorMessageOutletSelection = "".obs;
 
+  // Coupon type selection
+  RxString selectedKupanType = "".obs;
+  RxString errorMessageKupanType = "".obs;
+
   // Business outlets properties
   var isLoadingOutlets = false.obs;
   var errorMessageOutlets = ''.obs;
@@ -78,15 +84,61 @@ class DashboardController extends GetxController {
   RxInt monthlyCount = 0.obs;
   RxInt allTimeCount = 0.obs;
 
+  // Today's redemptions per kupanId (for daily limit display)
+  RxMap<String, int> todayRedemptionsByKupan = <String, int>{}.obs;
+
   @override
   void onInit() {
     super.onInit();
     getUser();
-    // Fetch kupans using the new API endpoint
+    fetchCurrentLocation();
     String vendorId = box.read(StringConst.USER_ID) ?? '';
     if (vendorId.isNotEmpty) {
-      getKupanByVendor(vendorId: vendorId, limit: 10);
+      getVendorKupans(vendorId: vendorId);
       fetchAllRedemptionRanges(vendorId: vendorId);
+      fetchTodayRedemptionsByKupan(vendorId: vendorId);
+    }
+  }
+
+  Future<void> fetchCurrentLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      if (permission == LocationPermission.deniedForever) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isEmpty) return;
+      final p = placemarks.first;
+
+      final parts = [
+        p.thoroughfare,
+        p.subLocality,
+        p.locality,
+        p.administrativeArea,
+      ].where((e) => e != null && e.trim().isNotEmpty).toList();
+
+      if (parts.isNotEmpty) {
+        currentAddress.value = parts.join(', ');
+      }
+    } catch (_) {
+      // GPS unavailable — currentAddress stays as whatever getUser() set
     }
   }
 
@@ -110,19 +162,35 @@ class DashboardController extends GetxController {
           userUpdateRes.value = UserUpdateRes.fromJson(data);
 
           if (userUpdateRes.value!.success!) {
-            // print("Success user get");
+            // Try sellerInfo.location first, then fall back to sellerBusinesses[0].location
             final location = userUpdateRes.value?.data?.sellerInfo?.location;
+            Map<String, dynamic>? rawLocation;
+            if (location == null) {
+              final rawData = data['data'];
+              if (rawData is Map) {
+                final businesses = rawData['sellerBusinesses'];
+                if (businesses is List && businesses.isNotEmpty) {
+                  final first = businesses.first;
+                  if (first is Map) {
+                    rawLocation = (first['location'] as Map<String, dynamic>?);
+                  }
+                }
+              }
+            }
 
-            final fullAddress = [
-              location?.address,
-              location?.address2,
-              location?.landmark,
-              location?.city,
-              location?.state,
-            ]
-                .where((e) => e != null && e.toString().trim().isNotEmpty) // remove null/empty
-                .join(", ");
-            currentAddress(fullAddress);
+            final address = location?.address ?? rawLocation?['address']?.toString();
+            final address2 = location?.address2 ?? rawLocation?['address2']?.toString();
+            final landmark = location?.landmark ?? rawLocation?['landmark']?.toString();
+            final city = location?.city ?? rawLocation?['city']?.toString();
+            final state = location?.state ?? rawLocation?['state']?.toString();
+
+            final fullAddress = [address, address2, landmark, city, state]
+                .where((e) => e != null && e.trim().isNotEmpty)
+                .join(', ');
+
+            if (fullAddress.isNotEmpty && currentAddress.value.isEmpty) {
+              currentAddress.value = fullAddress;
+            }
             print("✅ User loaded successfully");
           } else {
             errorMessage.value = userUpdateRes.value!.message!;
@@ -204,6 +272,8 @@ class DashboardController extends GetxController {
       Map<String, dynamic> map = {
         "kupanImages": uploadedUrls,
         "title": titleController.text,
+        "description": descriptionController.text,
+        "kupanType": selectedKupanType.value,
         "kupanDays": days,
         "vendorId": vendorId,
         "businessId": businessId,
@@ -230,11 +300,13 @@ class DashboardController extends GetxController {
             }
             currentIndex(0);
             titleController.clear();
+            descriptionController.clear();
             images!.clear();
             daysList.forEach((element) => element.isSelected = false);
             daysList.refresh();
             selectedOutletId.value = '';
             selectedOutletName.value = '';
+            selectedKupanType.value = '';
           } else {
             errorMessageCreateKupan.value = createKupanRes.value!.message!;
           }
@@ -463,13 +535,106 @@ class DashboardController extends GetxController {
   }
 
  
+  // ------------------------------------------------------------------
+  // GET VENDOR KUPANS via /kupan/vendor/:id (flat list, new endpoint)
+  // ------------------------------------------------------------------
+  Future<void> getVendorKupans({required String vendorId}) async {
+    isLoadingGetKupan(true);
+    errorMessageGetKupan.value = '';
+
+    try {
+      http.Response response = await _apiService.getKupan();
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        // Response is { success, data: [...] }
+        if (data['success'] == true && data['data'] is List) {
+          kupanList.clear();
+          kupanList.addAll(
+            (data['data'] as List).map((x) => KupanData.fromJson(x as Map<String, dynamic>)),
+          );
+          kupanList.refresh();
+        } else {
+          errorMessageGetKupan.value = data['message'] ?? 'Failed to load kupans';
+        }
+      } else {
+        try {
+          final error = jsonDecode(response.body);
+          errorMessageGetKupan.value = error['message'] ?? 'Failed to load kupans (${response.statusCode})';
+        } catch (_) {
+          errorMessageGetKupan.value = 'Server error: ${response.statusCode}';
+        }
+      }
+    } catch (e) {
+      errorMessageGetKupan.value = "Error: ${e.toString()}";
+    } finally {
+      isLoadingGetKupan(false);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // DELETE KUPAN
+  // ------------------------------------------------------------------
+  Future<void> deleteKupan(String kupanId) async {
+    try {
+      http.Response response = await _apiService.deleteKupan(kupanId);
+      if (response.statusCode == 200) {
+        kupanList.removeWhere((k) => k.id == kupanId);
+        kupanList.refresh();
+        Get.snackbar(
+          'Success',
+          'Coupon deleted successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFF4CAF50),
+          colorText: const Color(0xFFFFFFFF),
+          duration: const Duration(seconds: 2),
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to delete coupon',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFFF44336),
+          colorText: const Color(0xFFFFFFFF),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Error: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFF44336),
+        colorText: const Color(0xFFFFFFFF),
+      );
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // TODAY REDEMPTIONS per kupan (for daily limit display)
+  // ------------------------------------------------------------------
+  Future<void> fetchTodayRedemptionsByKupan({required String vendorId}) async {
+    try {
+      final response = await _redemptionsService.getRedemptions(
+        vendorId: vendorId,
+        range: 'today',
+      );
+
+      if (response != null && response.success) {
+        final map = <String, int>{};
+        for (var item in response.data) {
+          map[item.kupanId] = item.totalRedemptions.toInt();
+        }
+        todayRedemptionsByKupan.value = map;
+      }
+    } catch (_) {}
+  }
+
   Future<void> fetchAllRedemptionRanges({required String vendorId}) async {
     await Future.wait([
       _fetchRedemptionsForRange(vendorId: vendorId, range: 'weekly'),
       _fetchRedemptionsForRange(vendorId: vendorId, range: 'monthly'),
-      _fetchRedemptionsForRange(vendorId: vendorId, range: 'all'),
+      _fetchRedemptionsForRange(vendorId: vendorId, range: 'allTime'),
     ]);
-    // Set the default to weekly
     setRedemptionRange('weekly');
   }
 
@@ -500,7 +665,7 @@ class DashboardController extends GetxController {
         } else if (range == 'monthly') {
           monthlyRedemptions.value = response;
           monthlyCount.value = totalCount;
-        } else if (range == 'all') {
+        } else if (range == 'allTime') {
           allTimeRedemptions.value = response;
           allTimeCount.value = totalCount;
         }
@@ -526,7 +691,7 @@ class DashboardController extends GetxController {
       todayRedemptionCount.value = weeklyCount.value;
     } else if (range == 'monthly') {
       todayRedemptionCount.value = monthlyCount.value;
-    } else if (range == 'all') {
+    } else if (range == 'allTime') {
       todayRedemptionCount.value = allTimeCount.value;
     }
     

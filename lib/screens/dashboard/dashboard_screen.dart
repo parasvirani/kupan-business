@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:kupan_business/screens/dashboard/add_kupan_view.dart';
+import 'package:kupan_business/screens/dashboard/my_kupan_view.dart';
 import 'package:kupan_business/screens/dashboard/profile_view.dart';
 
 import '../../const/color_const.dart';
@@ -21,14 +21,15 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   DashboardController dashboardController = Get.put(DashboardController());
   var args = Get.arguments;
- int currentIndex = 0;
-  int previousIndex = 0;
+  int currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
     if (args != null && args['initialIndex'] != null) {
-      dashboardController.currentIndex(args['initialIndex']);
+      setState(() {
+        currentIndex = args['initialIndex'] as int;
+      });
     }
   }
 
@@ -41,19 +42,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           HomeView(),
           MyOutletsScreen(args: args),
-          AddKupanView(),
+          MyKupanView(),
           ProfileView(),
         ],
       ),
-       bottomNavigationBar: _buildBottomNavBar(),
-      );
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
   }
-Widget _buildBottomNavBar() {
+
+  Widget _buildBottomNavBar() {
     final List<Map<String, dynamic>> items = [
-      {'icon': ImageConst.ic_home, 'label': 'COUPON'},
-      {'icon': ImageConst.ic_category, 'label': 'CATEGORY'},
-      {'icon': ImageConst.ic_hot_deal, 'label': 'HOT DEAL'},
-      {'icon': ImageConst.ic_profile, 'label': 'PROFILE'},
+      {'icon': ImageConst.bnvHome, 'label': 'HOME'},
+      {'icon': ImageConst.bnvMyOutlet, 'label': 'MY OUTLETS'},
+      {'icon': ImageConst.bnvMyKupan, 'label': 'MY KUPAN'},
+      {'icon': ImageConst.bnvProfile, 'label': 'PROFILE'},
     ];
 
     return Container(
@@ -61,7 +63,7 @@ Widget _buildBottomNavBar() {
         color: ColorConst.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, -2),
           ),
@@ -69,7 +71,7 @@ Widget _buildBottomNavBar() {
       ),
       child: SafeArea(
         child: SizedBox(
-          height: 80,
+          height: 68,
           child: Row(
             children: List.generate(items.length, (index) {
               final isSelected = currentIndex == index;
@@ -77,38 +79,30 @@ Widget _buildBottomNavBar() {
                 child: GestureDetector(
                   onTap: () {
                     if (currentIndex != index) {
-                      setState(() {
-                        previousIndex = currentIndex;
-                        currentIndex = index;
-                      });
+                      setState(() => currentIndex = index);
                     }
                   },
                   behavior: HitTestBehavior.opaque,
-                  child: Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 5),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: size(10),
+                        vertical: size(7),
+                      ),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? ColorConst.black
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                        border: isSelected
-                            ? Border(
-                            bottom: BorderSide(
-                                color: ColorConst.textSubColor,
-                                width: size(2)))
-                            : null,
+                        color: isSelected ? ColorConst.black : Colors.transparent,
+                        borderRadius: BorderRadius.circular(size(10)),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           SvgPicture.asset(
-                            items[index]['icon'],
-                            width: 22,
-                            height: 22,
+                            items[index]['icon'] as String,
+                            width: size(22),
+                            height: size(22),
                             colorFilter: ColorFilter.mode(
                               isSelected ? Colors.white : ColorConst.grey,
                               BlendMode.srcIn,
@@ -116,11 +110,10 @@ Widget _buildBottomNavBar() {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            items[index]['label'],
+                            items[index]['label'] as String,
                             style: TextStyle(
-                              fontSize: size(11),
-                              color:
-                              isSelected ? Colors.white : ColorConst.grey,
+                              fontSize: size(9),
+                              color: isSelected ? Colors.white : ColorConst.grey,
                               fontWeight: FontWeight.w700,
                               fontFamily: 'Urbanist',
                             ),
@@ -133,39 +126,6 @@ Widget _buildBottomNavBar() {
               );
             }),
           ),
-        ),
-      ),
-    );
-  }
-  Widget _navItem(int index, String iconPath, String label) {
-    final isSelected = dashboardController.currentIndex.value == index;
-    final color = isSelected ? ColorConst.primary : ColorConst.grey;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => dashboardController.currentIndex(index),
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              iconPath,
-              width: size(24),
-              height: size(24),
-              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-            ),
-            SizedBox(height: size(5)),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: size(10),
-                fontWeight: FontWeight.w600,
-                color: color,
-                fontFamily: 'Urbanist',
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
         ),
       ),
     );

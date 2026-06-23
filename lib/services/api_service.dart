@@ -68,11 +68,8 @@ class ApiService {
   }
 
   Future<http.Response> getKupan() async {
-
     String userId = box.read(StringConst.USER_ID);
     String token = box.read(StringConst.TOKEN);
-
-    print("ASDF:::${userId}");
 
     final url = Uri.parse("$baseUrl/kupan/vendor/$userId");
     final headers = {"Content-Type": "application/json", "Authorization": "Bearer $token"};
@@ -119,7 +116,7 @@ class ApiService {
 
     String token = box.read(StringConst.TOKEN);
 
-    var request = http.MultipartRequest('POST', Uri.parse("${baseUrl}/uploads"));
+    var request = http.MultipartRequest('POST', Uri.parse("$baseUrl/uploads"));
     request.headers['Authorization'] = "Bearer $token";
 
     // detect file type

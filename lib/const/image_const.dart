@@ -54,4 +54,16 @@ class ImageConst {
   static String splash_5 = "assets/images/splash_5.png";
   static String ic_location2 = "assets/images/ic_location2.svg";
   static String notification2 = "assets/images/notification2.svg";
+
+  // Bottom navigation bar icons
+  static String bnvHome = "assets/images/bnv_home.svg";
+  static String bnvMyKupan = "assets/images/bnv_my_kupan.svg";
+  static String bnvMyOutlet = "assets/images/bnv_my_outlet.svg";
+  static String bnvProfile = "assets/images/bnv_profile.svg";
+
+  // Feature icons
+  static String icRate = "assets/images/ic_rate.svg";
+  static String icKupan = "assets/images/ic_kupan.svg";
+  static String icDelete2 = "assets/images/ic_delete2.svg";
+  static String icEdit2 = "assets/images/ic_edit2.svg";
 }
