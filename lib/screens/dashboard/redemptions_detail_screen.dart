@@ -7,6 +7,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../common_view/common_text.dart';
 import '../../const/color_const.dart';
+import '../../const/string_const.dart';
 import '../../utils/utils.dart';
 
 class RedemptionsDetailScreen extends StatefulWidget {
@@ -24,6 +25,13 @@ class _RedemptionsDetailScreenState extends State<RedemptionsDetailScreen> {
   void initState() {
     super.initState();
     dashboardController = Get.find<DashboardController>();
+  }
+
+  Future<void> _refresh() async {
+    final vendorId = dashboardController.box.read(StringConst.USER_ID) ?? '';
+    if (vendorId.isNotEmpty) {
+      await dashboardController.fetchAllRedemptionRanges(vendorId: vendorId);
+    }
   }
 
   @override
@@ -46,8 +54,11 @@ class _RedemptionsDetailScreenState extends State<RedemptionsDetailScreen> {
           fontWeight: FontWeight.w600,
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
           padding: EdgeInsets.all(size(20)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,6 +257,7 @@ class _RedemptionsDetailScreenState extends State<RedemptionsDetailScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

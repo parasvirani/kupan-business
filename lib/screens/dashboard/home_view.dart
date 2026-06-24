@@ -37,6 +37,7 @@ class _HomeViewState extends State<HomeView> {
     final vendorId = dashboardController.box.read(StringConst.USER_ID) ?? '';
     if (vendorId.isNotEmpty) {
       dashboardController.getVendorKupans(vendorId: vendorId);
+      dashboardController.fetchAllRedemptionRanges(vendorId: vendorId);
     }
   }
 

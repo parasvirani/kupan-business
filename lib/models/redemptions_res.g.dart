@@ -28,17 +28,21 @@ Map<String, dynamic> _$RedemptionsResponseToJson(
 RedemptionData _$RedemptionDataFromJson(Map<String, dynamic> json) =>
     RedemptionData(
       totalRedemptions: (json['totalRedemptions'] as num).toInt(),
-      latestRedemptionAt: json['latestRedemptionAt'] as String,
+      latestRedemptionAt: json['latestRedemptionAt'] as String?,
       kupanId: json['kupanId'] as String,
       title: json['title'] as String,
-      kupanImages: (json['kupanImages'] as List<dynamic>)
-          .map((e) => e as String)
-          .toList(),
-      kupanDays:
-          (json['kupanDays'] as List<dynamic>).map((e) => e as String).toList(),
-      buyers: (json['buyers'] as List<dynamic>)
-          .map((e) => Buyer.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      kupanImages: (json['kupanImages'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      kupanDays: (json['kupanDays'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      buyers: (json['buyers'] as List<dynamic>?)
+              ?.map((e) => Buyer.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
 
 Map<String, dynamic> _$RedemptionDataToJson(RedemptionData instance) =>
@@ -54,7 +58,7 @@ Map<String, dynamic> _$RedemptionDataToJson(RedemptionData instance) =>
 
 Buyer _$BuyerFromJson(Map<String, dynamic> json) => Buyer(
       id: json['id'] as String?,
-      buyerId: json['_id'] as String,
+      buyerId: json['_id'] as String?,
       contact: json['contact'] as String?,
       role: json['role'] as String?,
       profilePic: json['profilePic'] as String?,
@@ -81,24 +85,27 @@ Map<String, dynamic> _$BuyerToJson(Buyer instance) => <String, dynamic>{
     };
 
 BuyerInfo _$BuyerInfoFromJson(Map<String, dynamic> json) => BuyerInfo(
-      birthdate: json['birthdate'] as String,
-      location: Location.fromJson(json['location'] as Map<String, dynamic>),
-      id: json['_id'] as String,
+      birthdate: json['birthdate'] as String?,
+      location: json['location'] == null
+          ? null
+          : Location.fromJson(json['location'] as Map<String, dynamic>),
+      id: json['_id'] as String?,
     );
 
-Map<String, dynamic> _$BuyerInfoToJson(BuyerInfo instance) => <String, dynamic>{
+Map<String, dynamic> _$BuyerInfoToJson(BuyerInfo instance) =>
+    <String, dynamic>{
       'birthdate': instance.birthdate,
       'location': instance.location,
       '_id': instance.id,
     };
 
 Location _$LocationFromJson(Map<String, dynamic> json) => Location(
-      lat: (json['lat'] as num).toDouble(),
-      long: (json['long'] as num).toDouble(),
-      city: json['city'] as String,
-      pincode: json['pincode'] as String,
-      state: json['state'] as String,
-      address: json['address'] as String,
+      lat: (json['lat'] as num?)?.toDouble(),
+      long: (json['long'] as num?)?.toDouble(),
+      city: json['city'] as String?,
+      pincode: json['pincode'] as String?,
+      state: json['state'] as String?,
+      address: json['address'] as String?,
     );
 
 Map<String, dynamic> _$LocationToJson(Location instance) => <String, dynamic>{

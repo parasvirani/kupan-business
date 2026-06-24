@@ -232,4 +232,18 @@ class ApiService {
 
     return await http.delete(url, headers: headers);
   }
+
+  Future<http.Response> updateFcmToken(String fcmToken) async {
+    String token = box.read(StringConst.TOKEN) ?? '';
+    if (token.isEmpty) return http.Response('', 401);
+
+    final url = Uri.parse("$baseUrl/users/fcm-token");
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token"
+    };
+
+    return await http.patch(url,
+        headers: headers, body: jsonEncode({"fcmToken": fcmToken}));
+  }
 }

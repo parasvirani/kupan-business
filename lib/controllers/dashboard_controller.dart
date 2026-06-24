@@ -18,6 +18,7 @@ import '../models/kupans_list_res.dart';
 import '../models/redemptions_res.dart';
 import '../models/user_update_res.dart';
 import '../services/api_service.dart';
+import '../services/push_service.dart';
 import '../services/redemptions_service.dart';
 
 class DashboardController extends GetxController {
@@ -92,12 +93,22 @@ class DashboardController extends GetxController {
     super.onInit();
     getUser();
     fetchCurrentLocation();
+    _registerFcmToken();
     String vendorId = box.read(StringConst.USER_ID) ?? '';
     if (vendorId.isNotEmpty) {
       getVendorKupans(vendorId: vendorId);
       fetchAllRedemptionRanges(vendorId: vendorId);
       fetchTodayRedemptionsByKupan(vendorId: vendorId);
     }
+  }
+
+  Future<void> _registerFcmToken() async {
+    try {
+      final token = await PushService.getFcmToken();
+      if (token != null && token.isNotEmpty) {
+        await _apiService.updateFcmToken(token);
+      }
+    } catch (_) {}
   }
 
   Future<void> fetchCurrentLocation() async {

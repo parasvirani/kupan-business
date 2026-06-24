@@ -25,7 +25,7 @@ class RedemptionsResponse {
 @JsonSerializable()
 class RedemptionData {
   final int totalRedemptions;
-  final String latestRedemptionAt;
+  final String? latestRedemptionAt;
   final String kupanId;
   final String title;
   final List<String> kupanImages;
@@ -34,7 +34,7 @@ class RedemptionData {
 
   RedemptionData({
     required this.totalRedemptions,
-    required this.latestRedemptionAt,
+    this.latestRedemptionAt,
     required this.kupanId,
     required this.title,
     required this.kupanImages,
@@ -52,7 +52,7 @@ class RedemptionData {
 class Buyer {
   final String? id;
   @JsonKey(name: '_id')
-  final String buyerId;
+  final String? buyerId;
   final String? contact;
   final String? role;
   final String? profilePic;
@@ -64,7 +64,7 @@ class Buyer {
 
   Buyer({
     this.id,
-    required this.buyerId,
+    this.buyerId,
     this.contact,
     this.role,
     this.profilePic,
@@ -82,15 +82,15 @@ class Buyer {
 
 @JsonSerializable()
 class BuyerInfo {
-  final String birthdate;
-  final Location location;
+  final String? birthdate;
+  final Location? location;
   @JsonKey(name: '_id')
-  final String id;
+  final String? id;
 
   BuyerInfo({
-    required this.birthdate,
-    required this.location,
-    required this.id,
+    this.birthdate,
+    this.location,
+    this.id,
   });
 
   factory BuyerInfo.fromJson(Map<String, dynamic> json) =>
@@ -101,20 +101,20 @@ class BuyerInfo {
 
 @JsonSerializable()
 class Location {
-  final double lat;
-  final double long;
-  final String city;
-  final String pincode;
-  final String state;
-  final String address;
+  final double? lat;
+  final double? long;
+  final String? city;
+  final String? pincode;
+  final String? state;
+  final String? address;
 
   Location({
-    required this.lat,
-    required this.long,
-    required this.city,
-    required this.pincode,
-    required this.state,
-    required this.address,
+    this.lat,
+    this.long,
+    this.city,
+    this.pincode,
+    this.state,
+    this.address,
   });
 
   factory Location.fromJson(Map<String, dynamic> json) =>
