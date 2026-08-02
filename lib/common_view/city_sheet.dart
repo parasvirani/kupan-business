@@ -127,8 +127,8 @@ class _CitySheetState extends State<CitySheet> with TickerProviderStateMixin {
               ),
               suffixIcon: searchQuery.isNotEmpty
                   ? Padding(
-                padding: EdgeInsets.symmetric(horizontal: size(10)),
-                    child: GestureDetector(
+                      padding: EdgeInsets.symmetric(horizontal: size(10)),
+                      child: GestureDetector(
                         onTap: () {
                           searchController.clear();
                           setState(() {
@@ -141,7 +141,7 @@ class _CitySheetState extends State<CitySheet> with TickerProviderStateMixin {
                           size: size(18),
                         ),
                       ),
-                  )
+                    )
                   : null,
             ),
           ),
@@ -183,7 +183,8 @@ class _CitySheetState extends State<CitySheet> with TickerProviderStateMixin {
                         itemBuilder: (context, index) {
                           final city = filteredStates[index];
                           return TweenAnimationBuilder<double>(
-                            duration: Duration(milliseconds: 300 + (index * 50)),
+                            duration:
+                                Duration(milliseconds: 300 + (index * 50)),
                             tween: Tween(begin: 0.0, end: 1.0),
                             builder: (context, value, child) {
                               return Transform.translate(
@@ -225,7 +226,8 @@ class _CitySheetState extends State<CitySheet> with TickerProviderStateMixin {
                                       width: size(40),
                                       height: size(40),
                                       decoration: BoxDecoration(
-                                        color: ColorConst.primary.withOpacity(0.1),
+                                        color:
+                                            ColorConst.primary.withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Icon(

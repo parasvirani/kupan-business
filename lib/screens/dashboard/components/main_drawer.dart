@@ -17,7 +17,6 @@ class MainDrawer extends StatefulWidget {
 }
 
 class _MainDrawerState extends State<MainDrawer> {
-
   DashboardController dashboardController = Get.find();
 
   @override
@@ -58,11 +57,19 @@ class _MainDrawerState extends State<MainDrawer> {
                     color: Color(0xFF7FB3D3),
                     shape: BoxShape.circle,
                   ),
-                  child: (dashboardController.userUpdateRes.value?.data?.profilePic ?? "").isNotEmpty ? ClipOval(child: Image.network(dashboardController.userUpdateRes.value?.data?.profilePic ?? "")) : Icon(
-                    Icons.person,
-                    size: 60,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
+                  child: (dashboardController
+                                  .userUpdateRes.value?.data?.profilePic ??
+                              "")
+                          .isNotEmpty
+                      ? ClipOval(
+                          child: Image.network(dashboardController
+                                  .userUpdateRes.value?.data?.profilePic ??
+                              ""))
+                      : Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
                 ),
                 Positioned(
                   bottom: 0,
@@ -108,7 +115,8 @@ class _MainDrawerState extends State<MainDrawer> {
             padding: EdgeInsets.symmetric(horizontal: size(20)),
             child: CommonText(
               isLoading: dashboardController.isLoading.value,
-              text: dashboardController.userUpdateRes.value?.data?.contact ?? "",
+              text:
+                  dashboardController.userUpdateRes.value?.data?.contact ?? "",
               fontSize: size(16),
               fontWeight: FontWeight.w500,
               color: ColorConst.textGrey,
@@ -132,27 +140,35 @@ class _MainDrawerState extends State<MainDrawer> {
               color: ColorConst.textGrey,
             ),
           ),
-          _menu(text: "Invite friends", onTap: () {
-
-          },),
+          _menu(
+            text: "Invite friends",
+            onTap: () {},
+          ),
           Divider(
             color: ColorConst.divider,
           ),
-          _menu(text: "Help & Support", onTap: () {
-
-          },),
+          _menu(
+            text: "Help & Support",
+            onTap: () {},
+          ),
           Divider(
             color: ColorConst.divider,
           ),
-          _menu(text: "Logout", onTap: () {
-            dashboardController.logoutUser();
-          }, isLogout : true),
+          _menu(
+              text: "Logout",
+              onTap: () {
+                dashboardController.logoutUser();
+              },
+              isLogout: true),
         ],
       ),
     );
   }
 
-  _menu({required String text, required Function() onTap, bool isLogout = false}) {
+  _menu(
+      {required String text,
+      required Function() onTap,
+      bool isLogout = false}) {
     return InkWell(
       onTap: onTap,
       child: Padding(

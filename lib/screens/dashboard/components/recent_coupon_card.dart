@@ -9,13 +9,13 @@ class RecentCouponCard extends StatelessWidget {
   final String? outletName;
   final List<String>? kupanDays;
 
-  const RecentCouponCard({
-    Key? key,
-    required this.imageUrl,
-    required this.title,
-    this.outletName,
-    this.kupanDays
-  }) : super(key: key);
+  const RecentCouponCard(
+      {Key? key,
+      required this.imageUrl,
+      required this.title,
+      this.outletName,
+      this.kupanDays})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {

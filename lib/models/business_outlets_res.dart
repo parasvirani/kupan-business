@@ -10,7 +10,8 @@ class BusinessOutletsRes {
 
   BusinessOutletsRes({this.success, this.message, this.statusCode, this.data});
 
-  factory BusinessOutletsRes.fromJson(Map<String, dynamic> json) => _$BusinessOutletsResFromJson(json);
+  factory BusinessOutletsRes.fromJson(Map<String, dynamic> json) =>
+      _$BusinessOutletsResFromJson(json);
 
   Map<String, dynamic> toJson() => _$BusinessOutletsResToJson(this);
 }
@@ -42,7 +43,8 @@ class OutletData {
     this.id,
   });
 
-  factory OutletData.fromJson(Map<String, dynamic> json) => _$OutletDataFromJson(json);
+  factory OutletData.fromJson(Map<String, dynamic> json) =>
+      _$OutletDataFromJson(json);
 
   Map<String, dynamic> toJson() => _$OutletDataToJson(this);
 }
@@ -65,8 +67,8 @@ class OutletLocation {
     this.address,
   });
 
-  factory OutletLocation.fromJson(Map<String, dynamic> json) => _$OutletLocationFromJson(json);
+  factory OutletLocation.fromJson(Map<String, dynamic> json) =>
+      _$OutletLocationFromJson(json);
 
   Map<String, dynamic> toJson() => _$OutletLocationToJson(this);
 }
-

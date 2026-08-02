@@ -35,9 +35,9 @@ class _OtpScreenState extends State<OtpScreen> {
 
   // ── State ────────────────────────────────────────────────────────────────
   final List<TextEditingController> _controllers =
-  List.generate(_otpLength, (_) => TextEditingController());
+      List.generate(_otpLength, (_) => TextEditingController());
   final List<FocusNode> _focusNodes =
-  List.generate(_otpLength, (_) => FocusNode());
+      List.generate(_otpLength, (_) => FocusNode());
   final LoginController controller = Get.put(LoginController());
   String _errorMessage = '';
   bool _isLoading = false;
@@ -87,11 +87,14 @@ class _OtpScreenState extends State<OtpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final String? verificationId = args != null ? args['verificationId'] : null;
+      final String? verificationId =
+          args != null ? args['verificationId'] : null;
 
       if (verificationId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification ID not found. Please request OTP again.')),
+          const SnackBar(
+              content:
+                  Text('Verification ID not found. Please request OTP again.')),
         );
         return;
       }
@@ -99,7 +102,9 @@ class _OtpScreenState extends State<OtpScreen> {
       // Delegate full verification (Firebase + backend) to the controller.
       // Await it so we can correctly update this screen's loading state.
       await controller.verifyOtp(
-        args != null && args['mobile_number'] != null ? args['mobile_number'] : _mobileNumber,
+        args != null && args['mobile_number'] != null
+            ? args['mobile_number']
+            : _mobileNumber,
         _pin.trim(),
         verificationId,
       );
@@ -168,8 +173,7 @@ class _OtpScreenState extends State<OtpScreen> {
             shape: BoxShape.circle,
             border: Border.all(color: _borderIdle, width: 1.5),
           ),
-          child: const Icon(Icons.chevron_left_rounded,
-              color: _dark, size: 22),
+          child: const Icon(Icons.chevron_left_rounded, color: _dark, size: 22),
         ),
       ),
     );
@@ -329,23 +333,23 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
           child: _isLoading
               ? const SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(
-              color: _white,
-              strokeWidth: 2.5,
-            ),
-          )
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: _white,
+                    strokeWidth: 2.5,
+                  ),
+                )
               : Text(
-            'OTP Verify',
-            style: TextStyle(
-              fontSize: 16,
-              color: disabled ? Colors.white60 : Colors.white,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Inter',
-              letterSpacing: 0.3,
-            ),
-          ),
+                  'OTP Verify',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: disabled ? Colors.white60 : Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Inter',
+                    letterSpacing: 0.3,
+                  ),
+                ),
         ),
       ),
     );
@@ -416,12 +420,12 @@ class _OtpDigitBoxState extends State<_OtpDigitBox> {
             ),
             boxShadow: _isFocused
                 ? [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              )
-            ]
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
                 : [],
           ),
           child: TextField(

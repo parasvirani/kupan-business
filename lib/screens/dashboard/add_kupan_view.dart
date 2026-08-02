@@ -41,15 +41,6 @@ class _AddKupanViewState extends State<AddKupanView> {
   bool isOutletPreSelected = false;
   File? _lastPickedFile;
 
-  // Coupon type options
-  static const List<String> _kupanTypes = [
-    'Buy 1 Get 1 Free',
-    'Flat Discount',
-    'Free Item',
-    'Combo Deal',
-    'Happy Hours',
-    'Special Offer',
-  ];
 
   @override
   void initState() {
@@ -72,9 +63,15 @@ class _AddKupanViewState extends State<AddKupanView> {
         isEditMode = true;
         _initEditMode();
       } else {
-        if (dc.selectedOutletId.value.isNotEmpty) {
+        // Lock the outlet ONLY when opened from an outlet's details
+        // (arguments: {'fromOutlet': true}); direct/general add-kupan stays
+        // switchable and starts with no stale selection.
+        final fromOutlet =
+            Get.arguments is Map && Get.arguments['fromOutlet'] == true;
+        if (fromOutlet && dc.selectedOutletId.value.isNotEmpty) {
           isOutletPreSelected = true;
         } else {
+          isOutletPreSelected = false;
           dc.selectedOutletId.value = '';
           dc.selectedOutletName.value = '';
           dc.selectedKupanType.value = '';
@@ -91,8 +88,7 @@ class _AddKupanViewState extends State<AddKupanView> {
 
     if (k is KupanData) {
       dc.selectedOutletId.value = k.businessId ?? '';
-      dc.selectedOutletName.value =
-          k.getOutletName() ?? k.outletName ?? '';
+      dc.selectedOutletName.value = k.getOutletName() ?? k.outletName ?? '';
       isOutletPreSelected = true;
     } else if (k is RedemptionData) {
       dc.selectedOutletId.value = '';
@@ -106,8 +102,7 @@ class _AddKupanViewState extends State<AddKupanView> {
           .map((d) => d.toString())
           .toSet();
       for (int i = 0; i < dc.daysList.length; i++) {
-        dc.daysList[i].isSelected =
-            selected.contains(dc.daysList[i].day);
+        dc.daysList[i].isSelected = selected.contains(dc.daysList[i].day);
       }
       dc.daysList.refresh();
     }
@@ -121,13 +116,6 @@ class _AddKupanViewState extends State<AddKupanView> {
       valid = false;
     } else {
       dc.errorMessageOutletSelection.value = '';
-    }
-
-    if (dc.selectedKupanType.value.isEmpty) {
-      dc.errorMessageKupanType.value = 'Please select a coupon type';
-      valid = false;
-    } else {
-      dc.errorMessageKupanType.value = '';
     }
 
     if (!dc.daysList.any((d) => d.isSelected)) {
@@ -190,8 +178,7 @@ class _AddKupanViewState extends State<AddKupanView> {
         cancelButton: CupertinoActionSheetAction(
           isDefaultAction: true,
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel',
-              style: TextStyle(color: Colors.red)),
+          child: const Text('Cancel', style: TextStyle(color: Colors.red)),
         ),
       ),
     );
@@ -218,8 +205,8 @@ class _AddKupanViewState extends State<AddKupanView> {
       if (outletId.isNotEmpty) {
         await oc.getOutletKupans(businessId: outletId);
       }
-      final selectedOutlet = oc.outletsList
-          .firstWhereOrNull((o) => o.id == outletId);
+      final selectedOutlet =
+          oc.outletsList.firstWhereOrNull((o) => o.id == outletId);
       Get.back(result: selectedOutlet ?? true);
     } else {
       _showError(dc.errorMessageCreateKupan.value.isEmpty
@@ -230,10 +217,8 @@ class _AddKupanViewState extends State<AddKupanView> {
 
   Future<void> _updateKupan() async {
     final k = widget.kupanToEdit;
-    final selectedDays = dc.daysList
-        .where((d) => d.isSelected)
-        .map((d) => d.day!)
-        .toList();
+    final selectedDays =
+        dc.daysList.where((d) => d.isSelected).map((d) => d.day!).toList();
 
     try {
       dc.isLoadingCreateKupan.value = true;
@@ -309,18 +294,15 @@ class _AddKupanViewState extends State<AddKupanView> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-              size(16), size(16), size(16), size(24)),
+          padding: EdgeInsets.fromLTRB(size(16), size(16), size(16), size(24)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Card 1: Outlet + Coupon Type ─────────────────────────────
+              // ── Card 1: Outlet ───────────────────────────────────────────
               _card(
                 child: Column(
                   children: [
                     _buildOutletSelector(),
-                    _divider(),
-                    _buildCouponTypeSelector(),
                   ],
                 ),
               ),
@@ -434,8 +416,7 @@ class _AddKupanViewState extends State<AddKupanView> {
                 ImageConst.ic_back,
                 width: size(18),
                 height: size(18),
-                colorFilter:
-                    const ColorFilter.mode(_dark, BlendMode.srcIn),
+                colorFilter: const ColorFilter.mode(_dark, BlendMode.srcIn),
               ),
             ),
           ),
@@ -486,15 +467,12 @@ class _AddKupanViewState extends State<AddKupanView> {
                 value: o.id ?? '',
                 child: Text(o.outletName ?? '',
                     style: TextStyle(
-                        fontSize: size(14),
-                        fontFamily: _font,
-                        color: _dark)),
+                        fontSize: size(14), fontFamily: _font, color: _dark)),
               );
             }).toList(),
             onChanged: (val) {
               if (val == null) return;
-              final outlet = oc.outletsList
-                  .firstWhere((o) => o.id == val);
+              final outlet = oc.outletsList.firstWhere((o) => o.id == val);
               dc.selectedOutletId.value = val;
               dc.selectedOutletName.value = outlet.outletName ?? '';
               dc.errorMessageOutletSelection.value = '';
@@ -506,52 +484,11 @@ class _AddKupanViewState extends State<AddKupanView> {
             Padding(
               padding: EdgeInsets.only(top: size(4)),
               child: Text(dc.errorMessageOutletSelection.value,
-                  style:
-                      TextStyle(color: Colors.red, fontSize: size(12))),
+                  style: TextStyle(color: Colors.red, fontSize: size(12))),
             ),
         ],
       );
     });
-  }
-
-  // ── Coupon Type Selector ────────────────────────────────────────────────────
-
-  Widget _buildCouponTypeSelector() {
-    return Obx(() => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _fieldLabel('SELECT COUPON TYPE'),
-            SizedBox(height: size(8)),
-            _dropdownContainer(
-              hint: 'Select coupon type',
-              value: dc.selectedKupanType.value.isEmpty
-                  ? null
-                  : dc.selectedKupanType.value,
-              items: _kupanTypes.map((t) {
-                return DropdownMenuItem(
-                  value: t,
-                  child: Text(t,
-                      style: TextStyle(
-                          fontSize: size(14),
-                          fontFamily: _font,
-                          color: _dark)),
-                );
-              }).toList(),
-              onChanged: (val) {
-                if (val == null) return;
-                dc.selectedKupanType.value = val;
-                dc.errorMessageKupanType.value = '';
-              },
-            ),
-            if (dc.errorMessageKupanType.value.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.only(top: size(4)),
-                child: Text(dc.errorMessageKupanType.value,
-                    style:
-                        TextStyle(color: Colors.red, fontSize: size(12))),
-              ),
-          ],
-        ));
   }
 
   // ── Image Upload Row ────────────────────────────────────────────────────────
@@ -559,10 +496,10 @@ class _AddKupanViewState extends State<AddKupanView> {
   Widget _buildImageUploadRow() {
     return Obx(() {
       final newImages = dc.images ?? [];
-      final existingUrls = (isEditMode &&
-              widget.kupanToEdit?.kupanImages != null)
-          ? (widget.kupanToEdit!.kupanImages as List).cast<String>()
-          : <String>[];
+      final existingUrls =
+          (isEditMode && widget.kupanToEdit?.kupanImages != null)
+              ? (widget.kupanToEdit!.kupanImages as List).cast<String>()
+              : <String>[];
 
       final totalCount = newImages.length + existingUrls.length;
       final canAddMore = totalCount < 4;
@@ -584,8 +521,7 @@ class _AddKupanViewState extends State<AddKupanView> {
                       errorBuilder: (_, __, ___) =>
                           const Icon(Icons.broken_image)),
                   onRemove: () {
-                    (widget.kupanToEdit!.kupanImages as List)
-                        .removeAt(idx);
+                    (widget.kupanToEdit!.kupanImages as List).removeAt(idx);
                     setState(() {});
                   },
                 ),
@@ -618,8 +554,7 @@ class _AddKupanViewState extends State<AddKupanView> {
                         style: BorderStyle.solid,
                         width: 1.5),
                     borderRadius: BorderRadius.circular(size(10)),
-                    color:
-                        ColorConst.primary.withValues(alpha: 0.04),
+                    color: ColorConst.primary.withValues(alpha: 0.04),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -680,8 +615,8 @@ class _AddKupanViewState extends State<AddKupanView> {
                   ImageConst.icClose,
                   width: size(10),
                   height: size(10),
-                  colorFilter: const ColorFilter.mode(
-                      Colors.white, BlendMode.srcIn),
+                  colorFilter:
+                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
               ),
             ),
@@ -697,8 +632,7 @@ class _AddKupanViewState extends State<AddKupanView> {
     return TextFormField(
       controller: dc.titleController,
       textCapitalization: TextCapitalization.sentences,
-      style:
-          TextStyle(fontSize: size(14), fontFamily: _font, color: _dark),
+      style: TextStyle(fontSize: size(14), fontFamily: _font, color: _dark),
       decoration: _inputDecoration('Enter your offer title'),
       validator: (v) {
         if (v == null || v.trim().isEmpty) return 'Please enter offer title';
@@ -716,18 +650,9 @@ class _AddKupanViewState extends State<AddKupanView> {
       maxLines: 4,
       minLines: 3,
       textCapitalization: TextCapitalization.sentences,
-      style:
-          TextStyle(fontSize: size(14), fontFamily: _font, color: _dark),
+      style: TextStyle(fontSize: size(14), fontFamily: _font, color: _dark),
       decoration: _inputDecoration('Enter coupon description'),
-      validator: (v) {
-        if (v == null || v.trim().isEmpty) {
-          return 'Please enter description';
-        }
-        if (v.trim().length < 2) {
-          return 'Description must be at least 2 characters';
-        }
-        return null;
-      },
+      // Description is optional — no required validation.
     );
   }
 
@@ -776,8 +701,7 @@ class _AddKupanViewState extends State<AddKupanView> {
                           shape: BoxShape.circle,
                         ),
                         child: const Center(
-                          child: Icon(Icons.close,
-                              size: 10, color: _dark),
+                          child: Icon(Icons.close, size: 10, color: _dark),
                         ),
                       ),
                     ],
@@ -835,13 +759,6 @@ class _AddKupanViewState extends State<AddKupanView> {
     );
   }
 
-  Widget _divider() {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: size(14)),
-      child: const Divider(color: _borderColor, height: 1),
-    );
-  }
-
   Widget _dropdownContainer({
     required String hint,
     required String? value,
@@ -893,8 +810,8 @@ class _AddKupanViewState extends State<AddKupanView> {
         SizedBox(height: size(8)),
         Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(
-              horizontal: size(14), vertical: size(13)),
+          padding:
+              EdgeInsets.symmetric(horizontal: size(14), vertical: size(13)),
           decoration: BoxDecoration(
             border: Border.all(
               color: locked
@@ -952,9 +869,7 @@ class _AddKupanViewState extends State<AddKupanView> {
           SizedBox(width: size(10)),
           Text(msg,
               style: TextStyle(
-                  fontSize: size(14),
-                  fontFamily: _font,
-                  color: _labelColor)),
+                  fontSize: size(14), fontFamily: _font, color: _labelColor)),
         ],
       ),
     );
@@ -964,9 +879,11 @@ class _AddKupanViewState extends State<AddKupanView> {
     return InputDecoration(
       hintText: hint,
       hintStyle: TextStyle(
-          fontSize: size(14), fontFamily: _font, color: const Color(0xFFAAAAAA)),
-      contentPadding: EdgeInsets.symmetric(
-          horizontal: size(14), vertical: size(12)),
+          fontSize: size(14),
+          fontFamily: _font,
+          color: const Color(0xFFAAAAAA)),
+      contentPadding:
+          EdgeInsets.symmetric(horizontal: size(14), vertical: size(12)),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(size(10)),
         borderSide: const BorderSide(color: _borderColor, width: 1),

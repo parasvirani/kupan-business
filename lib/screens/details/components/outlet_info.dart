@@ -33,11 +33,7 @@ class _OutletInfoState extends State<OutletInfo> {
   final _fromKey = GlobalKey<FormState>();
 
   File? _imageFile;
-  final List<String> businessTypes = [
-    'restaurant',
-    'cafe',
-    'hotel'
-  ];
+  final List<String> businessTypes = ['restaurant', 'cafe', 'hotel'];
 
   bool validateAll() {
     bool isValid = _fromKey.currentState!.validate();
@@ -90,23 +86,49 @@ class _OutletInfoState extends State<OutletInfo> {
 
   getDetails() {
     if (widget.isEdit) {
-      controller.businessController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessName ?? "";
-      controller.outletContactController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletContact ?? "";
-      controller.outletNameController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletName ?? "";
-      controller.selectedBusinessType = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessType ?? "";
-      controller.addressLine1Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address ?? "";
-      controller.addressLine2Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address2 ?? "";
-      controller.landmarkController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.landmark ?? "";
-      controller.updateStateByName(dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.state ?? "", cityName: dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.city ?? "");
-      controller.zipCodeController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.pincode ?? "";
-      final apiDays = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletDay ?? [];
+      controller.businessController.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.businessName ??
+          "";
+      controller.outletContactController.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.outletContact ??
+          "";
+      controller.outletNameController.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.outletName ??
+          "";
+      controller.selectedBusinessType = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.businessType ??
+          "";
+      controller.addressLine1Controller.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.location?.address ??
+          "";
+      controller.addressLine2Controller.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.location?.address2 ??
+          "";
+      controller.landmarkController.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.location?.landmark ??
+          "";
+      controller.updateStateByName(
+          dashboardController
+                  .userUpdateRes.value?.data?.sellerInfo?.location?.state ??
+              "",
+          cityName: dashboardController
+                  .userUpdateRes.value?.data?.sellerInfo?.location?.city ??
+              "");
+      controller.zipCodeController.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.location?.pincode ??
+          "";
+      final apiDays = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.outletDay ??
+          [];
 
       for (var day in controller.daysList) {
         day.isSelected = apiDays.contains(day.day);
       }
       controller.daysList.refresh();
 
-      String apiTime = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletTime ?? "9 AM - 9 PM";
+      String apiTime = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.outletTime ??
+          "9 AM - 9 PM";
       final parts = apiTime.split('-');
 
       if (parts.length == 2) {
@@ -115,8 +137,10 @@ class _OutletInfoState extends State<OutletInfo> {
       }
 
       // Initialize open and close time
-      String? openTimeStr = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletOpenTime;
-      String? closeTimeStr = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletCloseTime;
+      String? openTimeStr = dashboardController
+          .userUpdateRes.value?.data?.sellerInfo?.outletOpenTime;
+      String? closeTimeStr = dashboardController
+          .userUpdateRes.value?.data?.sellerInfo?.outletCloseTime;
 
       if (openTimeStr != null && openTimeStr.isNotEmpty) {
         controller.openTime = controller.parseTime(openTimeStr);
@@ -225,7 +249,6 @@ class _OutletInfoState extends State<OutletInfo> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 20),
                   CommonTextfield(
                     controller: controller.businessController,
@@ -312,7 +335,7 @@ class _OutletInfoState extends State<OutletInfo> {
                       return null;
                     },
                     onChanged: (value) {
-                        controller.selectedBusinessType = value;
+                      controller.selectedBusinessType = value;
                     },
                   ),
                   SizedBox(height: size(12)),
@@ -516,13 +539,15 @@ class _OutletInfoState extends State<OutletInfo> {
                             GestureDetector(
                               onTap: () => _selectOpenTime(context),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
                                 decoration: BoxDecoration(
                                   border: Border.all(color: ColorConst.border),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       controller.openTime != null
@@ -530,7 +555,9 @@ class _OutletInfoState extends State<OutletInfo> {
                                           : 'Open Time',
                                       style: TextStyle(
                                         fontSize: size(16),
-                                        color: controller.openTime != null ? Colors.black : Colors.grey,
+                                        color: controller.openTime != null
+                                            ? Colors.black
+                                            : Colors.grey,
                                       ),
                                     ),
                                     SvgPicture.asset(ImageConst.icTime),
@@ -538,10 +565,12 @@ class _OutletInfoState extends State<OutletInfo> {
                                 ),
                               ),
                             ),
-                            if (controller.startTimeErrorMessage.isNotEmpty) ...[
+                            if (controller
+                                .startTimeErrorMessage.isNotEmpty) ...[
                               SizedBox(height: size(5)),
                               Padding(
-                                padding: EdgeInsets.symmetric(horizontal: size(10)),
+                                padding:
+                                    EdgeInsets.symmetric(horizontal: size(10)),
                                 child: CommonText(
                                   text: controller.startTimeErrorMessage.value,
                                   color: Colors.red,
@@ -559,21 +588,26 @@ class _OutletInfoState extends State<OutletInfo> {
                             GestureDetector(
                               onTap: () => _selectCloseTime(context),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
                                 decoration: BoxDecoration(
                                   border: Border.all(color: ColorConst.border),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       controller.closeTime != null
-                                          ? controller.closeTime!.format(context)
+                                          ? controller.closeTime!
+                                              .format(context)
                                           : 'Close Time',
                                       style: TextStyle(
                                         fontSize: size(16),
-                                        color: controller.closeTime != null ? Colors.black : Colors.grey,
+                                        color: controller.closeTime != null
+                                            ? Colors.black
+                                            : Colors.grey,
                                       ),
                                     ),
                                     SvgPicture.asset(ImageConst.icTime),
@@ -584,7 +618,8 @@ class _OutletInfoState extends State<OutletInfo> {
                             if (controller.endTimeErrorMessage.isNotEmpty) ...[
                               SizedBox(height: size(5)),
                               Padding(
-                                padding: EdgeInsets.symmetric(horizontal: size(10)),
+                                padding:
+                                    EdgeInsets.symmetric(horizontal: size(10)),
                                 child: CommonText(
                                   text: controller.endTimeErrorMessage.value,
                                   color: Colors.red,
@@ -600,7 +635,7 @@ class _OutletInfoState extends State<OutletInfo> {
                   SizedBox(
                     width: Get.width,
                     child: CommonButton(
-                      isLoading: false,
+                        isLoading: false,
                         onPressed: () {
                           if (validateAll()) {
                             Get.back();
@@ -680,7 +715,6 @@ class _OutletInfoState extends State<OutletInfo> {
     }
   }
 
-
   void _showAddressSearch() {
     showModalBottomSheet(
       context: context,
@@ -700,8 +734,7 @@ class _OutletInfoState extends State<OutletInfo> {
     DateTime? picked;
     final now = DateTime.now();
     final initialTime = DateTime(now.year, now.month, now.day,
-      controller.openTime?.hour ?? 9,
-      controller.openTime?.minute ?? 0);
+        controller.openTime?.hour ?? 9, controller.openTime?.minute ?? 0);
 
     await showCupertinoModalPopup(
       context: context,
@@ -755,8 +788,7 @@ class _OutletInfoState extends State<OutletInfo> {
     DateTime? picked;
     final now = DateTime.now();
     final initialTime = DateTime(now.year, now.month, now.day,
-      controller.closeTime?.hour ?? 21,
-      controller.closeTime?.minute ?? 0);
+        controller.closeTime?.hour ?? 21, controller.closeTime?.minute ?? 0);
 
     await showCupertinoModalPopup(
       context: context,
@@ -781,7 +813,8 @@ class _OutletInfoState extends State<OutletInfo> {
                       Navigator.of(context).pop();
                       if (picked != null) {
                         setState(() {
-                          controller.closeTime = TimeOfDay.fromDateTime(picked!);
+                          controller.closeTime =
+                              TimeOfDay.fromDateTime(picked!);
                           controller.endTimeErrorMessage("");
                         });
                       }

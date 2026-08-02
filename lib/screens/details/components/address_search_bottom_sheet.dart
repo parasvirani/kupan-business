@@ -4,7 +4,6 @@
 //   geolocator: ^10.1.0 (optional, for current location)
 
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -20,11 +19,11 @@ class AddressSearchBottomSheet extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<AddressSearchBottomSheet> createState() => _AddressSearchBottomSheetState();
+  State<AddressSearchBottomSheet> createState() =>
+      _AddressSearchBottomSheetState();
 }
 
 class _AddressSearchBottomSheetState extends State<AddressSearchBottomSheet> {
-
   DetailsController detailsController = Get.find();
 
   final TextEditingController _searchController = TextEditingController();
@@ -56,10 +55,9 @@ class _AddressSearchBottomSheetState extends State<AddressSearchBottomSheet> {
       // Using Google Places Autocomplete API with focus on India
       final url = Uri.parse(
           'https://maps.googleapis.com/maps/api/place/autocomplete/json?'
-              'input=${Uri.encodeComponent(query)}&'
-              'components=country:in&'
-              'key=$_apiKey'
-      );
+          'input=${Uri.encodeComponent(query)}&'
+          'components=country:in&'
+          'key=$_apiKey');
 
       final response = await http.get(url);
 
@@ -167,70 +165,72 @@ class _AddressSearchBottomSheetState extends State<AddressSearchBottomSheet> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _searchResults.isEmpty
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Start typing to search for addresses',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            )
-                : ListView.builder(
-              itemCount: _searchResults.length,
-              itemBuilder: (context, index) {
-                final result = _searchResults[index];
-                return ListTile(
-                  leading: const Icon(
-                    Icons.location_on,
-                    color: Colors.red,
-                  ),
-                  title: Text(
-                    result.mainText,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  subtitle: Text(
-                    result.secondaryText,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                  onTap: () async {
-                    // print("Address::::${result.mainText}");
-                    // widget.onAddressSelected(result.description);
-                    final latLng = await _getPlaceDetails(result.placeId);
-                    if (latLng != null) {
-                      // print("Selected Address: ${result.description}");
-                      // print("Lat: ${latLng['lat']}, Lng: ${latLng['lng']}");
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Start typing to search for addresses',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _searchResults.length,
+                        itemBuilder: (context, index) {
+                          final result = _searchResults[index];
+                          return ListTile(
+                            leading: const Icon(
+                              Icons.location_on,
+                              color: Colors.red,
+                            ),
+                            title: Text(
+                              result.mainText,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              result.secondaryText,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            onTap: () async {
+                              // print("Address::::${result.mainText}");
+                              // widget.onAddressSelected(result.description);
+                              final latLng =
+                                  await _getPlaceDetails(result.placeId);
+                              if (latLng != null) {
+                                // print("Selected Address: ${result.description}");
+                                // print("Lat: ${latLng['lat']}, Lng: ${latLng['lng']}");
 
-                      // widget.onAddressSelected(result.description, latLng['lat'], latLng['lng']);
-                      detailsController.getAddressFromLatLong(latLng['lat'], latLng['lng']);
-                      // List<Placemark> placemarks = await placemarkFromCoordinates(
-                      //   latLng['lat'],
-                      //   latLng['lng'],
-                      // );
-                      // Placemark place = placemarks[0];
-                      Navigator.pop(context);
-                    }
-                    // Navigator.pop(context);
-                  },
-                );
-              },
-            ),
+                                // widget.onAddressSelected(result.description, latLng['lat'], latLng['lng']);
+                                detailsController.getAddressFromLatLong(
+                                    latLng['lat'], latLng['lng']);
+                                // List<Placemark> placemarks = await placemarkFromCoordinates(
+                                //   latLng['lat'],
+                                //   latLng['lng'],
+                                // );
+                                // Placemark place = placemarks[0];
+                                Navigator.pop(context);
+                              }
+                              // Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
           ),
         ],
       ),
@@ -238,8 +238,8 @@ class _AddressSearchBottomSheetState extends State<AddressSearchBottomSheet> {
   }
 
   Future<Map<String, dynamic>?> _getPlaceDetails(String placeId) async {
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/place/details/json?'
+    final url =
+        Uri.parse('https://maps.googleapis.com/maps/api/place/details/json?'
             'place_id=$placeId&fields=geometry&key=$_apiKey');
 
     final response = await http.get(url);
@@ -280,6 +280,4 @@ class PlaceResult {
       secondaryText: structuredFormatting['secondary_text'] ?? '',
     );
   }
-
-
 }

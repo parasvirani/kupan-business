@@ -127,8 +127,8 @@ class _StateSheetState extends State<StateSheet> with TickerProviderStateMixin {
               ),
               suffixIcon: searchQuery.isNotEmpty
                   ? Padding(
-                padding: EdgeInsets.symmetric(horizontal: size(10)),
-                    child: GestureDetector(
+                      padding: EdgeInsets.symmetric(horizontal: size(10)),
+                      child: GestureDetector(
                         onTap: () {
                           searchController.clear();
                           setState(() {
@@ -141,7 +141,7 @@ class _StateSheetState extends State<StateSheet> with TickerProviderStateMixin {
                           size: size(18),
                         ),
                       ),
-                  )
+                    )
                   : null,
             ),
           ),
@@ -224,7 +224,8 @@ class _StateSheetState extends State<StateSheet> with TickerProviderStateMixin {
                                     width: size(40),
                                     height: size(40),
                                     decoration: BoxDecoration(
-                                      color: ColorConst.primary.withOpacity(0.1),
+                                      color:
+                                          ColorConst.primary.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Icon(

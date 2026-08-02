@@ -1,4 +1,3 @@
-
 class CreateKupanRes {
   final bool? success;
   final String? message;
@@ -49,9 +48,8 @@ class KupanData {
       kupanImages: json['kupanImages'] != null
           ? List<String>.from(json['kupanImages'])
           : [],
-      kupanDays: json['kupanDays'] != null
-          ? List<String>.from(json['kupanDays'])
-          : [],
+      kupanDays:
+          json['kupanDays'] != null ? List<String>.from(json['kupanDays']) : [],
       vendorId: json['vendorId'],
       id: json['_id'],
       createdAt: json['createdAt'],

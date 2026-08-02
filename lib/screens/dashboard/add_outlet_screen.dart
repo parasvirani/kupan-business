@@ -55,7 +55,8 @@ class AddOutletScreen extends StatefulWidget {
 class _AddOutletScreenState extends State<AddOutletScreen> {
   // ── Controllers ───────────────────────────────────────────────────────────
   final DetailsController controller = Get.put(DetailsController());
-  final DashboardController dashboardController = Get.put(DashboardController());
+  final DashboardController dashboardController =
+      Get.put(DashboardController());
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   // ── Local state ───────────────────────────────────────────────────────────
@@ -67,7 +68,15 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
   String? _selectedBusinessType;
 
   // Open days
-  final List<String> weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  final List<String> weekDays = [
+    'Sun',
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat'
+  ];
   final Set<String> selectedDays = {'Sun'}; // Sun pre-selected as per design
 
   // Text controllers for address fields (to mirror the labelled design)
@@ -132,7 +141,8 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
   bool _validate() {
     bool ok = _formKey.currentState!.validate();
     if (_selectedBusinessType == null) ok = false;
-    final totalImages = (controller.images?.length ?? 0) + existingImageUrls.length;
+    final totalImages =
+        (controller.images?.length ?? 0) + existingImageUrls.length;
     if (totalImages == 0) {
       controller.errorMessageOutletImages('Please select at least one image');
       ok = false;
@@ -227,9 +237,15 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
   // ── Time pickers ──────────────────────────────────────────────────────────
   Future<void> _pickTime(BuildContext ctx, bool isOpen) async {
     final init = DateTime(
-      2024, 1, 1,
-      isOpen ? (controller.openTime?.hour ?? 9) : (controller.closeTime?.hour ?? 21),
-      isOpen ? (controller.openTime?.minute ?? 0) : (controller.closeTime?.minute ?? 0),
+      2024,
+      1,
+      1,
+      isOpen
+          ? (controller.openTime?.hour ?? 9)
+          : (controller.closeTime?.hour ?? 21),
+      isOpen
+          ? (controller.openTime?.minute ?? 0)
+          : (controller.closeTime?.minute ?? 0),
     );
     DateTime picked = init;
 
@@ -295,7 +311,8 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
         final url = await dashboardController.uploadImage(f);
         if (url == null) {
           Get.snackbar('Error', 'Image upload failed. Please try again.',
-              backgroundColor: Colors.red, colorText: Colors.white,
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
               snackPosition: SnackPosition.BOTTOM);
           return;
         }
@@ -307,7 +324,8 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
 
       if (widget.isEditMode && widget.outletData != null) {
         final myOutletsController = Get.find<MyOutletsController>();
-        await myOutletsController.updateBusiness(widget.outletData!.id ?? '', payload);
+        await myOutletsController.updateBusiness(
+            widget.outletData!.id ?? '', payload);
       } else {
         final apiService = ApiService();
         final response = await apiService.addBusiness(payload);
@@ -317,17 +335,20 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
           await MyOutletsController.refreshOutlets();
           Get.back();
           Get.snackbar('Success', 'Outlet added successfully!',
-              backgroundColor: Colors.green, colorText: Colors.white,
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
               snackPosition: SnackPosition.BOTTOM);
         } else {
           Get.snackbar('Error', data['message'] ?? 'Failed to add outlet',
-              backgroundColor: Colors.red, colorText: Colors.white,
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
               snackPosition: SnackPosition.BOTTOM);
         }
       }
     } catch (e) {
       Get.snackbar('Error', 'Something went wrong: $e',
-          backgroundColor: Colors.red, colorText: Colors.white,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);
     } finally {
       controller.isLoadingOutlet.value = false;
@@ -440,8 +461,10 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
               controller: _outletNameCtrl,
               hint: 'Enter your name',
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Please enter outlet name';
-                if (v.trim().length < 2) return 'At least 2 characters required';
+                if (v == null || v.trim().isEmpty)
+                  return 'Please enter outlet name';
+                if (v.trim().length < 2)
+                  return 'At least 2 characters required';
                 return null;
               },
             ),
@@ -468,22 +491,28 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
         Row(
           children: [
             // Existing + local image thumbnails
-            ...List.generate(localImages.length, (i) => _buildThumb(
-              child: Image.file(File(localImages[i].path), fit: BoxFit.cover),
-              onRemove: () => setState(() {
-                controller.images?.removeAt(i);
-                controller.update();
-              }),
-            )),
-            ...List.generate(existingImageUrls.length, (i) => _buildThumb(
-              child: Image.network(
-                existingImageUrls[i],
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                const Icon(Icons.broken_image, color: _hintColor),
-              ),
-              onRemove: () => setState(() => existingImageUrls.removeAt(i)),
-            )),
+            ...List.generate(
+                localImages.length,
+                (i) => _buildThumb(
+                      child: Image.file(File(localImages[i].path),
+                          fit: BoxFit.cover),
+                      onRemove: () => setState(() {
+                        controller.images?.removeAt(i);
+                        controller.update();
+                      }),
+                    )),
+            ...List.generate(
+                existingImageUrls.length,
+                (i) => _buildThumb(
+                      child: Image.network(
+                        existingImageUrls[i],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.broken_image, color: _hintColor),
+                      ),
+                      onRemove: () =>
+                          setState(() => existingImageUrls.removeAt(i)),
+                    )),
 
             // Upload button (show if < 4 images)
             if (totalCount < 4)
@@ -516,12 +545,13 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
         // Error message
         Obx(() => controller.errorMessageOutletImages.isNotEmpty
             ? Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Text(
-            controller.errorMessageOutletImages.value,
-            style: const TextStyle(color: Colors.red, fontSize: 12, fontFamily: _font),
-          ),
-        )
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  controller.errorMessageOutletImages.value,
+                  style: const TextStyle(
+                      color: Colors.red, fontSize: 12, fontFamily: _font),
+                ),
+              )
             : const SizedBox()),
 
         // Add image count
@@ -599,7 +629,8 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Colors.red),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         filled: true,
         fillColor: Colors.white,
       ),
@@ -611,13 +642,13 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       ),
       items: businessTypes
           .map((t) => DropdownMenuItem(
-        value: t,
-        child: Text(t[0].toUpperCase() + t.substring(1)),
-      ))
+                value: t,
+                child: Text(t[0].toUpperCase() + t.substring(1)),
+              ))
           .toList(),
       onChanged: (v) => setState(() => _selectedBusinessType = v),
       validator: (v) =>
-      (v == null || v.isEmpty) ? 'Please select business type' : null,
+          (v == null || v.isEmpty) ? 'Please select business type' : null,
     );
   }
 
@@ -635,67 +666,72 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
           // Use current location
           _isFetchingLocation
               ? Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              SizedBox(width: 8),
-              Text('Getting current location...',
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF2E7D32),
-                      fontFamily: _font,
-                      fontWeight: FontWeight.w600)),
-            ],
-          )
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 8),
+                    Text('Getting current location...',
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF2E7D32),
+                            fontFamily: _font,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                )
               : GestureDetector(
-            onTap: () async {
-              setState(() => _isFetchingLocation = true);
-              try {
-                await controller.getCurrentLocation();
-                if (mounted) {
-                  setState(() {
-                    _address1Ctrl.text = controller.addressLine1Controller.text;
-                    _address2Ctrl.text = controller.addressLine2Controller.text;
-                    _landmarkCtrl.text = controller.landmarkController.text;
-                    _zipCtrl.text = controller.zipCodeController.text;
-                  });
-                }
-              } catch (e) {
-                Get.snackbar('Error', e.toString().replaceFirst('Exception: ', ''));
-              } finally {
-                if (mounted) setState(() => _isFetchingLocation = false);
-              }
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF2E7D32), width: 2),
+                  onTap: () async {
+                    setState(() => _isFetchingLocation = true);
+                    try {
+                      await controller.getCurrentLocation();
+                      if (mounted) {
+                        setState(() {
+                          _address1Ctrl.text =
+                              controller.addressLine1Controller.text;
+                          _address2Ctrl.text =
+                              controller.addressLine2Controller.text;
+                          _landmarkCtrl.text =
+                              controller.landmarkController.text;
+                          _zipCtrl.text = controller.zipCodeController.text;
+                        });
+                      }
+                    } catch (e) {
+                      Get.snackbar('Error',
+                          e.toString().replaceFirst('Exception: ', ''));
+                    } finally {
+                      if (mounted) setState(() => _isFetchingLocation = false);
+                    }
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: const Color(0xFF2E7D32), width: 2),
+                        ),
+                        child: const Icon(Icons.my_location,
+                            size: 12, color: Color(0xFF2E7D32)),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Use current location',
+                        style: TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontSize: 15,
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.my_location,
-                      size: 12, color: Color(0xFF2E7D32)),
                 ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Use current location',
-                  style: TextStyle(
-                    color: Color(0xFF2E7D32),
-                    fontSize: 15,
-                    fontFamily: _font,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
 
           // Address Line 1
@@ -705,7 +741,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
               controller: _address1Ctrl,
               hint: 'Address line 1',
               validator: (v) =>
-              (v == null || v.isEmpty) ? 'Please enter address' : null,
+                  (v == null || v.isEmpty) ? 'Please enter address' : null,
             ),
           ),
           const SizedBox(height: 14),
@@ -897,7 +933,8 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
                   const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () => setState(() => selectedDays.remove(day)),
-                    child: const Icon(Icons.close, size: 14, color: Colors.white),
+                    child:
+                        const Icon(Icons.close, size: 14, color: Colors.white),
                   ),
                 ],
               ],
@@ -914,7 +951,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       color: _pageBg,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       child: Obx(
-            () => SizedBox(
+        () => SizedBox(
           height: 54,
           child: ElevatedButton(
             onPressed: controller.isLoadingOutlet.value ? null : _onGetStarted,
@@ -929,20 +966,20 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
             ),
             child: controller.isLoadingOutlet.value
                 ? const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                  color: Colors.white, strokeWidth: 2.5),
-            )
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2.5),
+                  )
                 : const Text(
-              'Get Started',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                fontFamily: _font,
-                letterSpacing: 0.3,
-              ),
-            ),
+                    'Get Started',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: _font,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -1070,7 +1107,7 @@ class _InputField extends StatelessWidget {
         filled: true,
         fillColor: Colors.white,
         contentPadding:
-        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: _borderColor),
@@ -1191,7 +1228,9 @@ class _TimeTile extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: (errorText?.isNotEmpty ?? false) ? Colors.red : _borderColor,
+                color: (errorText?.isNotEmpty ?? false)
+                    ? Colors.red
+                    : _borderColor,
                 width: 1.4,
               ),
             ),

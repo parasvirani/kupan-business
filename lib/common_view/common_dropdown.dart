@@ -13,15 +13,14 @@ class CommonDropdown extends StatefulWidget {
   final String? Function(String?)? validator;
   ValueChanged<String?> onChanged;
 
-  CommonDropdown({
-    super.key,
-    required this.value,
-    required this.hintText,
-    this.prefixIcon,
-    required this.items,
-    required this.onChanged,
-    this.validator
-  });
+  CommonDropdown(
+      {super.key,
+      required this.value,
+      required this.hintText,
+      this.prefixIcon,
+      required this.items,
+      required this.onChanged,
+      this.validator});
 
   @override
   State<CommonDropdown> createState() => _CommonDropdownState();
@@ -33,7 +32,8 @@ class _CommonDropdownState extends State<CommonDropdown> {
     return DropdownButtonFormField<String>(
       value: widget.value,
       icon: SvgPicture.asset(ImageConst.icDown),
-      style: TextStyle(fontSize: size(16),
+      style: TextStyle(
+          fontSize: size(16),
           color: ColorConst.dark,
           fontWeight: FontWeight.w500,
           fontFamily: 'Inter'),
@@ -46,7 +46,8 @@ class _CommonDropdownState extends State<CommonDropdown> {
           fontWeight: FontWeight.w500,
           fontSize: size(14),
         ),
-        hintStyle: TextStyle(fontSize: size(16),
+        hintStyle: TextStyle(
+            fontSize: size(16),
             color: ColorConst.dark,
             fontWeight: FontWeight.w500,
             fontFamily: 'Inter'),
@@ -57,20 +58,16 @@ class _CommonDropdownState extends State<CommonDropdown> {
         prefixIcon: widget.prefixIcon,
         errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(size(8)),
-            borderSide: BorderSide(color: Colors.red)
-        ),
+            borderSide: BorderSide(color: Colors.red)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(size(8)),
         ),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(size(8)),
-            borderSide: BorderSide(color: ColorConst.border)
-        ),
+            borderSide: BorderSide(color: ColorConst.border)),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(size(8)),
-            borderSide: BorderSide(color: ColorConst.primary)
-        ),
-
+            borderSide: BorderSide(color: ColorConst.primary)),
       ),
       items: widget.items.map((String item) {
         return DropdownMenuItem<String>(
@@ -81,6 +78,7 @@ class _CommonDropdownState extends State<CommonDropdown> {
       onChanged: widget.onChanged,
     );
   }
+
   String capitalize(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1);

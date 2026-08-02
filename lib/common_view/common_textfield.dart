@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kupan_business/common_view/common_text.dart';
 
 import '../const/color_const.dart';
 import '../utils/utils.dart';
@@ -48,9 +47,8 @@ class CommonTextfield extends StatelessWidget {
       validator: validator,
       minLines: minLines,
       maxLines: maxLines,
-      textCapitalization: isUpperCase
-          ? TextCapitalization.characters
-          : TextCapitalization.none,
+      textCapitalization:
+          isUpperCase ? TextCapitalization.characters : TextCapitalization.none,
       inputFormatters: [
         if (isNumber) ...[
           FilteringTextInputFormatter.digitsOnly,
@@ -117,9 +115,9 @@ class CommonTextfield extends StatelessWidget {
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue,
-      TextEditingValue newValue,
-      ) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     return TextEditingValue(
       text: newValue.text.toUpperCase(),
       selection: newValue.selection,

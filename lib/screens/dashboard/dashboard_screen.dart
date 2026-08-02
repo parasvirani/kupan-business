@@ -93,7 +93,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         vertical: size(7),
                       ),
                       decoration: BoxDecoration(
-                        color: isSelected ? ColorConst.black : Colors.transparent,
+                        color:
+                            isSelected ? ColorConst.black : Colors.transparent,
                         borderRadius: BorderRadius.circular(size(10)),
                       ),
                       child: Column(
@@ -113,7 +114,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             items[index]['label'] as String,
                             style: TextStyle(
                               fontSize: size(9),
-                              color: isSelected ? Colors.white : ColorConst.grey,
+                              color:
+                                  isSelected ? Colors.white : ColorConst.grey,
                               fontWeight: FontWeight.w700,
                               fontFamily: 'Urbanist',
                             ),

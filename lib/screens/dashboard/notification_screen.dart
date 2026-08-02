@@ -101,8 +101,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         leading: IconButton(
           icon: SvgPicture.asset(
             ImageConst.ic_back,
-            colorFilter:
-                const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
           onPressed: () => Get.back(),
         ),
@@ -200,8 +199,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     : ListView.separated(
                         padding: EdgeInsets.all(size(16)),
                         itemCount: _notifications.length,
-                        separatorBuilder: (_, __) =>
-                            SizedBox(height: size(10)),
+                        separatorBuilder: (_, __) => SizedBox(height: size(10)),
                         itemBuilder: (_, index) =>
                             _buildNotificationItem(_notifications[index]),
                       ),
@@ -404,7 +402,5 @@ class _NotifConfig {
   final Color bgColor;
 
   _NotifConfig(
-      {required this.icon,
-      required this.iconColor,
-      required this.bgColor});
+      {required this.icon, required this.iconColor, required this.bgColor});
 }

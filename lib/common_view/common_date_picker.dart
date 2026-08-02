@@ -16,8 +16,7 @@ class CommonDatePicker extends StatelessWidget {
       required this.value,
       required this.hintText,
       required this.onTap,
-        this.isError = false
-      });
+      this.isError = false});
 
   @override
   Widget build(BuildContext context) {

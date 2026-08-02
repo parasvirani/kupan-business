@@ -108,7 +108,6 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
   static const Color _grey = Color(0xFF9E9E9E);
   static const Color _labelGrey = Color(0xFF6B6B6B);
   static const Color _borderColor = Color(0xFFE8E8E8);
-  static const Color _fillColor = Color(0xFFFAFAFA);
   static const Color _primary = Color(0xFF1A1A1A);
   static const Color _white = Colors.white;
   static const String _fontFamily = 'Inter';
@@ -124,20 +123,43 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
 
+  // One-time prefill state (edit path only).
+  bool _prefilled = false;
+  Worker? _prefillWorker;
+
   @override
   void initState() {
     super.initState();
-    _phoneCtrl.text = widget.mobileNumber;
 
-    // If editing, pre-fill from dashboardController
     if (widget.isEdit && widget.dashboardController != null) {
-      // TODO: populate fields from dashboardController
-      // e.g. _nameCtrl.text = widget.dashboardController!.userName.value;
+      // Edit path: pre-fill from the loaded user. Run once now (in case the
+      // record is already cached) and again when getUser() completes.
+      _prefill();
+      _prefillWorker =
+          ever(widget.dashboardController!.userUpdateRes, (_) => _prefill());
+    } else {
+      // First-time details path keeps its original behavior.
+      _phoneCtrl.text = widget.mobileNumber;
     }
+  }
+
+  /// Pre-fills the fields from the loaded user exactly once, without ever
+  /// clobbering what the user has started typing.
+  void _prefill() {
+    if (_prefilled) return;
+    final data = widget.dashboardController?.userUpdateRes.value?.data;
+    if (data == null) return; // wait for the async getUser() to arrive
+
+    _nameCtrl.text = data.name ?? '';
+    // Show the phone as 10 digits (strip the +91). Safe: phone is not sent on save.
+    _phoneCtrl.text = (data.contact ?? '').replaceFirst(RegExp(r'^\+91'), '');
+    _emailCtrl.text = data.sellerInfo?.email ?? ''; // null → stays empty (correct)
+    _prefilled = true;
   }
 
   @override
   void dispose() {
+    _prefillWorker?.dispose();
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
@@ -252,15 +274,16 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
 
     try {
       final apiService = ApiService();
-      
+
       // Step 1: Upload image if selected and get URL
       String? imageUrl;
       if (_pickedImage != null) {
         print("Uploading image...");
         try {
           final imageFile = File(_pickedImage!.path);
-          final uploadResponse = await apiService.uploadImage(imageFile: imageFile);
-          
+          final uploadResponse =
+              await apiService.uploadImage(imageFile: imageFile);
+
           if (uploadResponse.statusCode == 200) {
             final uploadData = jsonDecode(uploadResponse.body);
             // Backend returns: { "data": ["https://cloudinary-url..."] }
@@ -274,7 +297,8 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
               throw Exception('No image URL in upload response');
             }
           } else {
-            throw Exception('Image upload failed (${uploadResponse.statusCode})');
+            throw Exception(
+                'Image upload failed (${uploadResponse.statusCode})');
           }
         } catch (e) {
           print("Image upload error: $e");
@@ -294,11 +318,11 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
         'name': name,
         'email': email,
       };
-      
+
       if (imageUrl != null && imageUrl.isNotEmpty) {
         updateData['profilePic'] = imageUrl;
       }
-      
+
       final referral = _referralCtrl.text.trim();
       if (referral.isNotEmpty) {
         updateData['referralCode'] = referral;
@@ -313,7 +337,7 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
         try {
           final responseData = jsonDecode(updateResponse.body);
           print("User update response: $responseData");
-          
+
           if (responseData is Map && responseData['success'] == true) {
             print("✓ User updated successfully");
             ScaffoldMessenger.of(context).showSnackBar(
@@ -321,7 +345,9 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
             );
             widget.onSuccess();
           } else {
-            final message = responseData is Map ? (responseData['message'] ?? 'Update failed') : 'Update failed';
+            final message = responseData is Map
+                ? (responseData['message'] ?? 'Update failed')
+                : 'Update failed';
             throw Exception(message);
           }
         } catch (e) {
@@ -331,10 +357,13 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
       } else {
         try {
           final errorData = jsonDecode(updateResponse.body);
-          final message = errorData is Map ? (errorData['message'] ?? 'Update failed') : 'Update failed';
+          final message = errorData is Map
+              ? (errorData['message'] ?? 'Update failed')
+              : 'Update failed';
           throw Exception(message);
         } catch (e) {
-          throw Exception('Update failed with status ${updateResponse.statusCode}: $e');
+          throw Exception(
+              'Update failed with status ${updateResponse.statusCode}: $e');
         }
       }
     } catch (e) {
@@ -381,7 +410,6 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
             hint: 'Enter your email address',
             inputType: TextInputType.emailAddress,
           ),
-
           const SizedBox(height: 36),
           _buildContinueButton(),
           const SizedBox(height: 32),
@@ -417,16 +445,16 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
               child: ClipOval(
                 child: _pickedImage != null
                     ? Image.file(
-                  File(_pickedImage!.path),
-                  fit: BoxFit.cover,
-                  width: 110,
-                  height: 110,
-                )
+                        File(_pickedImage!.path),
+                        fit: BoxFit.cover,
+                        width: 110,
+                        height: 110,
+                      )
                     : const Icon(
-                  Icons.person_outline_rounded,
-                  size: 52,
-                  color: Color(0xFFBDBDBD),
-                ),
+                        Icons.person_outline_rounded,
+                        size: 52,
+                        color: Color(0xFFBDBDBD),
+                      ),
               ),
             ),
           ),
@@ -547,22 +575,22 @@ class _PersonalInfoFormState extends State<_PersonalInfoForm> {
         ),
         child: _isLoading
             ? const SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(
-            color: Colors.white,
-            strokeWidth: 2.5,
-          ),
-        )
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
             : const Text(
-          'Continue',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.3,
-            fontFamily: _fontFamily,
-          ),
-        ),
+                'Continue',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                  fontFamily: _fontFamily,
+                ),
+              ),
       ),
     );
   }

@@ -100,8 +100,8 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
                             child: OutlinedButton(
                               onPressed: () => Navigator.of(ctx).pop(),
                               style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: size(11)),
+                                padding:
+                                    EdgeInsets.symmetric(vertical: size(11)),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8)),
                               ),
@@ -122,8 +122,8 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                                 elevation: 0,
-                                padding: EdgeInsets.symmetric(
-                                    vertical: size(11)),
+                                padding:
+                                    EdgeInsets.symmetric(vertical: size(11)),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8)),
                               ),
@@ -171,8 +171,8 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
         return RefreshIndicator(
           onRefresh: () => controller.getOutlets(),
           child: GridView.builder(
-            padding: EdgeInsets.fromLTRB(
-                size(16), size(16), size(16), size(100)),
+            padding:
+                EdgeInsets.fromLTRB(size(16), size(16), size(16), size(100)),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: size(12),
@@ -459,11 +459,10 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
           SizedBox(height: size(20)),
           ElevatedButton(
             onPressed: controller.getOutlets,
-            style: ElevatedButton.styleFrom(
-                backgroundColor: ColorConst.primary),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: ColorConst.primary),
             child: const Text('Retry',
-                style:
-                    TextStyle(color: Colors.white, fontFamily: 'Urbanist')),
+                style: TextStyle(color: Colors.white, fontFamily: 'Urbanist')),
           ),
         ],
       ),
@@ -476,8 +475,7 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.store_outlined,
-              size: 72,
-              color: ColorConst.grey.withValues(alpha: 0.4)),
+              size: 72, color: ColorConst.grey.withValues(alpha: 0.4)),
           SizedBox(height: size(16)),
           Text('No Outlets Yet',
               style: TextStyle(
@@ -497,8 +495,7 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
             onPressed: () => Get.to(() => const AddOutletScreen()),
             icon: const Icon(Icons.add, color: Colors.white),
             label: const Text('Add Outlet',
-                style:
-                    TextStyle(color: Colors.white, fontFamily: 'Urbanist')),
+                style: TextStyle(color: Colors.white, fontFamily: 'Urbanist')),
             style: ElevatedButton.styleFrom(
               backgroundColor: ColorConst.primary,
               padding: EdgeInsets.symmetric(

@@ -74,6 +74,7 @@ class RedemptionsController extends GetxController {
   int get totalRedemptionsCount {
     final current = currentRedemptions;
     if (current == null) return 0;
-    return current.data.fold<int>(0, (sum, item) => sum + item.totalRedemptions);
+    return current.data
+        .fold<int>(0, (sum, item) => sum + item.totalRedemptions);
   }
 }

@@ -1,4 +1,3 @@
-
 class ImageConst {
   static String splash = "assets/images/splash.png";
   static String intro1 = "assets/images/intro1.svg";

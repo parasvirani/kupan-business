@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kupan_business/services/secure_store.dart';
 import 'package:get/get.dart';
 import 'package:kupan_business/controllers/dashboard_controller.dart';
 import 'package:kupan_business/models/redemptions_res.dart';
@@ -7,7 +8,6 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../common_view/common_text.dart';
 import '../../const/color_const.dart';
-import '../../const/string_const.dart';
 import '../../utils/utils.dart';
 
 class RedemptionsDetailScreen extends StatefulWidget {
@@ -28,7 +28,7 @@ class _RedemptionsDetailScreenState extends State<RedemptionsDetailScreen> {
   }
 
   Future<void> _refresh() async {
-    final vendorId = dashboardController.box.read(StringConst.USER_ID) ?? '';
+    final vendorId = SecureStore.i.userId;
     if (vendorId.isNotEmpty) {
       await dashboardController.fetchAllRedemptionRanges(vendorId: vendorId);
     }
@@ -59,205 +59,205 @@ class _RedemptionsDetailScreenState extends State<RedemptionsDetailScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
-          padding: EdgeInsets.all(size(20)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Redemption Count Card
-              Obx(
-                () => Container(
-                  padding: EdgeInsets.all(size(16)),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        ColorConst.primary.withOpacity(0.1),
-                        ColorConst.primary.withOpacity(0.05),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+            padding: EdgeInsets.all(size(20)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Redemption Count Card
+                Obx(
+                  () => Container(
+                    padding: EdgeInsets.all(size(16)),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          ColorConst.primary.withOpacity(0.1),
+                          ColorConst.primary.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(size(12)),
+                      border: Border.all(
+                        color: ColorConst.primary.withOpacity(0.3),
+                        width: 1,
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(size(12)),
-                    border: Border.all(
-                      color: ColorConst.primary.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: size(60),
-                        height: size(60),
-                        decoration: BoxDecoration(
-                          color: ColorConst.primary.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            dashboardController.todayRedemptionCount.value
-                                .toString(),
-                            style: TextStyle(
-                              fontSize: size(24),
-                              fontWeight: FontWeight.bold,
-                              color: ColorConst.primary,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: size(60),
+                          height: size(60),
+                          decoration: BoxDecoration(
+                            color: ColorConst.primary.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              dashboardController.todayRedemptionCount.value
+                                  .toString(),
+                              style: TextStyle(
+                                fontSize: size(24),
+                                fontWeight: FontWeight.bold,
+                                color: ColorConst.primary,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: size(16)),
+                        SizedBox(width: size(16)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CommonText(
+                                text: 'Total Redemptions',
+                                fontSize: size(12),
+                                color: ColorConst.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              SizedBox(height: size(4)),
+                              CommonText(
+                                text:
+                                    '${dashboardController.selectedRedemptionRange.value.toUpperCase()} PERIOD',
+                                fontSize: size(13),
+                                color: ColorConst.dark,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: size(20)),
+
+                // Range Filter Buttons
+                CommonText(
+                  text: 'Filter by Range',
+                  fontSize: size(14),
+                  color: ColorConst.dark,
+                  fontWeight: FontWeight.w600,
+                ),
+                SizedBox(height: size(12)),
+                Obx(
+                  () => Row(
+                    children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CommonText(
-                              text: 'Total Redemptions',
-                              fontSize: size(12),
-                              color: ColorConst.grey,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            SizedBox(height: size(4)),
-                            CommonText(
-                              text:
-                                  '${dashboardController.selectedRedemptionRange.value.toUpperCase()} PERIOD',
-                              fontSize: size(13),
-                              color: ColorConst.dark,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ],
+                        child: _buildRangeButton(
+                          label: 'Weekly',
+                          value: 'weekly',
+                          isSelected: dashboardController
+                                  .selectedRedemptionRange.value ==
+                              'weekly',
+                          onTap: () =>
+                              dashboardController.setRedemptionRange('weekly'),
+                        ),
+                      ),
+                      SizedBox(width: size(12)),
+                      Expanded(
+                        child: _buildRangeButton(
+                          label: 'Monthly',
+                          value: 'monthly',
+                          isSelected: dashboardController
+                                  .selectedRedemptionRange.value ==
+                              'monthly',
+                          onTap: () =>
+                              dashboardController.setRedemptionRange('monthly'),
+                        ),
+                      ),
+                      SizedBox(width: size(12)),
+                      Expanded(
+                        child: _buildRangeButton(
+                          label: 'All Time',
+                          value: 'all',
+                          isSelected: dashboardController
+                                  .selectedRedemptionRange.value ==
+                              'all',
+                          onTap: () =>
+                              dashboardController.setRedemptionRange('all'),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              SizedBox(height: size(20)),
+                SizedBox(height: size(24)),
 
-              // Range Filter Buttons
-              CommonText(
-                text: 'Filter by Range',
-                fontSize: size(14),
-                color: ColorConst.dark,
-                fontWeight: FontWeight.w600,
-              ),
-              SizedBox(height: size(12)),
-              Obx(
-                () => Row(
-                  children: [
-                    Expanded(
-                      child: _buildRangeButton(
-                        label: 'Weekly',
-                        value: 'weekly',
-                        isSelected:
-                            dashboardController.selectedRedemptionRange.value ==
-                                'weekly',
-                        onTap: () =>
-                            dashboardController.setRedemptionRange('weekly'),
-                      ),
-                    ),
-                    SizedBox(width: size(12)),
-                    Expanded(
-                      child: _buildRangeButton(
-                        label: 'Monthly',
-                        value: 'monthly',
-                        isSelected:
-                            dashboardController.selectedRedemptionRange.value ==
-                                'monthly',
-                        onTap: () =>
-                            dashboardController.setRedemptionRange('monthly'),
-                      ),
-                    ),
-                    SizedBox(width: size(12)),
-                    Expanded(
-                      child: _buildRangeButton(
-                        label: 'All Time',
-                        value: 'all',
-                        isSelected:
-                            dashboardController.selectedRedemptionRange.value ==
-                                'all',
-                        onTap: () =>
-                            dashboardController.setRedemptionRange('all'),
-                      ),
-                    ),
-                  ],
+                // Redemptions List
+                CommonText(
+                  text: 'Kupan Details',
+                  fontSize: size(14),
+                  color: ColorConst.dark,
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              SizedBox(height: size(24)),
+                SizedBox(height: size(12)),
+                Obx(
+                  () {
+                    var currentRedemptions = _getCurrentRedemptions();
 
-              // Redemptions List
-              CommonText(
-                text: 'Kupan Details',
-                fontSize: size(14),
-                color: ColorConst.dark,
-                fontWeight: FontWeight.w600,
-              ),
-              SizedBox(height: size(12)),
-              Obx(
-                () {
-                  var currentRedemptions = _getCurrentRedemptions();
+                    if (dashboardController.isLoadingRedemptions.value) {
+                      return Shimmer.fromColors(
+                        baseColor: Colors.grey.shade300,
+                        highlightColor: Colors.grey.shade100,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: 3,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: EdgeInsets.only(bottom: size(12)),
+                              height: size(120),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(size(12)),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }
 
-                  if (dashboardController.isLoadingRedemptions.value) {
-                    return Shimmer.fromColors(
-                      baseColor: Colors.grey.shade300,
-                      highlightColor: Colors.grey.shade100,
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: 3,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            margin: EdgeInsets.only(bottom: size(12)),
-                            height: size(120),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(size(12)),
-                            ),
-                          );
-                        },
-                      ),
+                    if (dashboardController
+                        .errorMessageRedemptions.value.isNotEmpty) {
+                      return Container(
+                        height: size(150),
+                        alignment: Alignment.center,
+                        child: CommonText(
+                          text:
+                              dashboardController.errorMessageRedemptions.value,
+                          color: Colors.red,
+                          fontSize: size(14),
+                        ),
+                      );
+                    }
+
+                    if (currentRedemptions == null ||
+                        currentRedemptions.data.isEmpty) {
+                      return Container(
+                        height: size(150),
+                        alignment: Alignment.center,
+                        child: CommonText(
+                          text: 'No redemptions for this period',
+                          color: ColorConst.grey,
+                          fontSize: size(14),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: currentRedemptions.data.length,
+                      itemBuilder: (context, index) {
+                        final item = currentRedemptions.data[index];
+                        return _buildRedemptionCard(item);
+                      },
                     );
-                  }
-
-                  if (dashboardController
-                      .errorMessageRedemptions.value.isNotEmpty) {
-                    return Container(
-                      height: size(150),
-                      alignment: Alignment.center,
-                      child: CommonText(
-                        text: dashboardController
-                            .errorMessageRedemptions.value,
-                        color: Colors.red,
-                        fontSize: size(14),
-                      ),
-                    );
-                  }
-
-                  if (currentRedemptions == null ||
-                      currentRedemptions.data.isEmpty) {
-                    return Container(
-                      height: size(150),
-                      alignment: Alignment.center,
-                      child: CommonText(
-                        text: 'No redemptions for this period',
-                        color: ColorConst.grey,
-                        fontSize: size(14),
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: currentRedemptions.data.length,
-                    itemBuilder: (context, index) {
-                      final item = currentRedemptions.data[index];
-                      return _buildRedemptionCard(item);
-                    },
-                  );
-                },
-              ),
-            ],
+                  },
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

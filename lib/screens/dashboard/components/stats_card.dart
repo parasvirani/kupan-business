@@ -23,13 +23,9 @@ class StatsCard extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: size(20)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-            colors: [
-          backgroundColor1,
-          backgroundColor2
-        ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter
-        ),
+            colors: [backgroundColor1, backgroundColor2],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter),
         borderRadius: BorderRadius.circular(size(8)),
       ),
       child: Column(

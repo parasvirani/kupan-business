@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:kupan_business/controllers/dashboard_controller.dart';
-import 'package:shimmer/shimmer.dart';
 
 import '../../common_view/common_text.dart';
 import '../../const/color_const.dart';
@@ -28,23 +27,28 @@ class _ProfileViewState extends State<ProfileView> {
   final List<Map<String, String>> _faqItems = [
     {
       'q': 'What is a Kupan?',
-      'a': 'A Kupan is a digital coupon or offer that you create for your customers. Customers can browse and redeem Kupans through the Kupan app.',
+      'a':
+          'A Kupan is a digital coupon or offer that you create for your customers. Customers can browse and redeem Kupans through the Kupan app.',
     },
     {
       'q': 'How do I create a Kupan?',
-      'a': 'Go to "My Kupans" from the bottom navigation, then tap the + button. Fill in the offer details, set daily limits, and publish your Kupan.',
+      'a':
+          'Go to "My Kupans" from the bottom navigation, then tap the + button. Fill in the offer details, set daily limits, and publish your Kupan.',
     },
     {
       'q': 'How do customers redeem Kupans?',
-      'a': 'Customers redeem Kupans by showing the redemption code at your outlet. You can verify redemptions through the Kupan Business app.',
+      'a':
+          'Customers redeem Kupans by showing the redemption code at your outlet. You can verify redemptions through the Kupan Business app.',
     },
     {
       'q': 'Can I pause or cancel a Kupan?',
-      'a': "Yes, you can pause or cancel any active Kupan from the \"My Kupans\" section. Paused Kupans won't be visible to customers.",
+      'a':
+          "Yes, you can pause or cancel any active Kupan from the \"My Kupans\" section. Paused Kupans won't be visible to customers.",
     },
     {
       'q': 'How do I manage my outlets?',
-      'a': 'Navigate to "My Outlets" from the bottom navigation to add, edit, or remove outlet locations associated with your business.',
+      'a':
+          'Navigate to "My Outlets" from the bottom navigation to add, edit, or remove outlet locations associated with your business.',
     },
   ];
 
@@ -54,14 +58,18 @@ class _ProfileViewState extends State<ProfileView> {
       key: _scaffoldKey,
       backgroundColor: ColorConst.white,
       appBar: AppBar(
-        backgroundColor: ColorConst.white,
+        backgroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
             onPressed: () {
               _scaffoldKey.currentState?.openDrawer();
             },
-            icon: SvgPicture.asset(ImageConst.ic_menu)),
+            icon: SvgPicture.asset(
+              ImageConst.ic_menu,
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            )),
         centerTitle: true,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -69,14 +77,18 @@ class _ProfileViewState extends State<ProfileView> {
             CommonText(
               text: 'Profile',
               fontSize: size(20),
-              color: ColorConst.dark,
+              color: ColorConst.white,
               fontWeight: FontWeight.w700,
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: SvgPicture.asset(ImageConst.ic_notification),
+            icon: SvgPicture.asset(
+              ImageConst.ic_notification,
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+            ),
             onPressed: () {
               Get.toNamed(AppRoutes.notification);
             },
@@ -99,18 +111,26 @@ class _ProfileViewState extends State<ProfileView> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                Container(
+                  Container(
                     width: size(80),
                     height: size(80),
                     decoration: BoxDecoration(
                       color: Color(0xFF7FB3D3),
                       shape: BoxShape.circle,
                     ),
-                    child: (dashboardController.userUpdateRes.value?.data?.profilePic ?? "").isNotEmpty ? ClipOval(child: Image.network(dashboardController.userUpdateRes.value?.data?.profilePic ?? "")) : Icon(
-                      Icons.person,
-                      size: 60,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
+                    child: (dashboardController
+                                    .userUpdateRes.value?.data?.profilePic ??
+                                "")
+                            .isNotEmpty
+                        ? ClipOval(
+                            child: Image.network(dashboardController
+                                    .userUpdateRes.value?.data?.profilePic ??
+                                ""))
+                        : Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
                   ),
                   SizedBox(
                     width: size(16),
@@ -244,8 +264,8 @@ class _ProfileViewState extends State<ProfileView> {
             });
           },
           child: Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: size(20), vertical: size(15)),
+            padding:
+                EdgeInsets.symmetric(horizontal: size(20), vertical: size(15)),
             child: Row(
               children: [
                 Expanded(
@@ -270,8 +290,7 @@ class _ProfileViewState extends State<ProfileView> {
           secondChild: Container(
             width: double.infinity,
             color: const Color(0xFFF9F9F9),
-            padding: EdgeInsets.fromLTRB(
-                size(20), size(4), size(20), size(16)),
+            padding: EdgeInsets.fromLTRB(size(20), size(4), size(20), size(16)),
             child: Text(
               item['a']!,
               style: TextStyle(

@@ -9,7 +9,6 @@ import 'package:kupan_business/utils/utils.dart';
 
 import '../../../models/kupans_list_res.dart';
 
-
 class RestaurantCard extends StatelessWidget {
   final KupanData deal;
   RestaurantCard({Key? key, required this.deal}) : super(key: key);
@@ -60,14 +59,16 @@ class RestaurantCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CommonText(
-                    text : dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessName ?? "",
+                    text: dashboardController.userUpdateRes.value?.data
+                            ?.sellerInfo?.businessName ??
+                        "",
                     fontSize: size(12),
                     color: ColorConst.textGrey,
                     fontWeight: FontWeight.w500,
                   ),
                   SizedBox(height: size(8)),
                   CommonText(
-                    text : deal.title ?? "",
+                    text: deal.title ?? "",
                     fontSize: size(14),
                     maxLines: 2,
                     color: ColorConst.black,
@@ -75,7 +76,7 @@ class RestaurantCard extends StatelessWidget {
                   ),
                   SizedBox(height: size(8)),
                   CommonText(
-                    text : "Limited time deals",
+                    text: "Limited time deals",
                     fontSize: size(12),
                     color: ColorConst.textGrey,
                     fontWeight: FontWeight.w400,

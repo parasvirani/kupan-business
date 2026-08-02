@@ -1,4 +1,3 @@
-
 class Days {
   String? day;
   bool isSelected;

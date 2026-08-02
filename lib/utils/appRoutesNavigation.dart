@@ -23,7 +23,6 @@ class AppPage {
       page: () => const SplashScreen(),
       binding: null,
     ),
-
     GetPage(
       preventDuplicates: true,
       name: AppRoutes.login,
@@ -39,7 +38,7 @@ class AppPage {
     GetPage(
       preventDuplicates: true,
       name: AppRoutes.personalinfo,
-      page: () =>  UserDetailsScreen(),
+      page: () => UserDetailsScreen(),
       binding: null,
     ),
     GetPage(
@@ -84,6 +83,5 @@ class AppPage {
       page: () => const NotificationScreen(),
       binding: null,
     ),
-
   ];
 }

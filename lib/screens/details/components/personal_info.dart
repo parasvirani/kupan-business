@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:kupan_business/services/api_exception.dart';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
@@ -22,7 +23,7 @@ class PersonalInfo extends StatefulWidget {
   bool isEdit;
   Function()? onTap;
 
-  PersonalInfo({super.key, this.mobileNumber, this.onTap, this.isEdit =false});
+  PersonalInfo({super.key, this.mobileNumber, this.onTap, this.isEdit = false});
 
   @override
   State<PersonalInfo> createState() => _PersonalInfoState();
@@ -34,7 +35,6 @@ class _PersonalInfoState extends State<PersonalInfo> {
 
   final _fromKey = GlobalKey<FormState>();
 
-
   @override
   void initState() {
     // TODO: implement initState
@@ -44,32 +44,59 @@ class _PersonalInfoState extends State<PersonalInfo> {
     });
   }
 
-  getDetails () {
+  getDetails() {
     if (widget.isEdit) {
       // print("Dashboard Controller : ${dashboardController.userUpdateRes.value?.data?.contact ?? ""}");
-      detailsController.nameController.text = dashboardController.userUpdateRes.value?.data?.name ?? "";
-      detailsController.phoneController.text = (dashboardController.userUpdateRes.value?.data?.contact ?? "").replaceFirst("+91", "");
+      detailsController.nameController.text =
+          dashboardController.userUpdateRes.value?.data?.name ?? "";
+      detailsController.phoneController.text =
+          (dashboardController.userUpdateRes.value?.data?.contact ?? "")
+              .replaceFirst("+91", "");
 
-      detailsController.outletNameController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletName ?? "";
-      detailsController.selectedBusinessType = dashboardController.userUpdateRes.value?.data?.sellerInfo?.businessType ?? "";
-      detailsController.addressLine1Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address ?? "";
-      detailsController.addressLine2Controller.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.address2 ?? "";
-      detailsController.landmarkController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.landmark ?? "";
-      detailsController.updateStateByName(dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.state ?? "", cityName: dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.city ?? "");
-      detailsController.zipCodeController.text = dashboardController.userUpdateRes.value?.data?.sellerInfo?.location?.pincode ?? "";
-      final apiDays = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletDay ?? [];
+      detailsController.outletNameController.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.outletName ??
+          "";
+      detailsController.selectedBusinessType = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.businessType ??
+          "";
+      detailsController.addressLine1Controller.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.location?.address ??
+          "";
+      detailsController.addressLine2Controller.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.location?.address2 ??
+          "";
+      detailsController.landmarkController.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.location?.landmark ??
+          "";
+      detailsController.updateStateByName(
+          dashboardController
+                  .userUpdateRes.value?.data?.sellerInfo?.location?.state ??
+              "",
+          cityName: dashboardController
+                  .userUpdateRes.value?.data?.sellerInfo?.location?.city ??
+              "");
+      detailsController.zipCodeController.text = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.location?.pincode ??
+          "";
+      final apiDays = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.outletDay ??
+          [];
 
       for (var day in detailsController.daysList) {
         day.isSelected = apiDays.contains(day.day);
       }
       detailsController.daysList.refresh();
 
-      String apiTime = dashboardController.userUpdateRes.value?.data?.sellerInfo?.outletTime ?? "9 AM - 9 PM";
+      String apiTime = dashboardController
+              .userUpdateRes.value?.data?.sellerInfo?.outletTime ??
+          "9 AM - 9 PM";
       final parts = apiTime.split('-');
 
       if (parts.length == 2) {
-        detailsController.startTime = detailsController.parseTime(parts[0].trim());
-        detailsController.endTime = detailsController.parseTime(parts[1].trim());
+        detailsController.startTime =
+            detailsController.parseTime(parts[0].trim());
+        detailsController.endTime =
+            detailsController.parseTime(parts[1].trim());
       }
     } else {
       detailsController.phoneController.text = widget.mobileNumber ?? "";
@@ -102,13 +129,26 @@ class _PersonalInfoState extends State<PersonalInfo> {
                             color: Color(0xFF7FB3D3),
                             shape: BoxShape.circle,
                           ),
-                          child: detailsController.imageFile != null ? ClipOval(
-                              child: Image.file(File(detailsController.imageFile!.path))) : (dashboardController.userUpdateRes.value?.data?.profilePic ?? "").isNotEmpty ? ClipOval(
-                              child: Image.network(dashboardController.userUpdateRes.value?.data?.profilePic ?? "")) :  Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Colors.white.withOpacity(0.8),
-                          ),
+                          child: detailsController.imageFile != null
+                              ? ClipOval(
+                                  child: Image.file(
+                                      File(detailsController.imageFile!.path)))
+                              : (dashboardController.userUpdateRes.value?.data
+                                              ?.profilePic ??
+                                          "")
+                                      .isNotEmpty
+                                  ? ClipOval(
+                                      child: Image.network(dashboardController
+                                              .userUpdateRes
+                                              .value
+                                              ?.data
+                                              ?.profilePic ??
+                                          ""))
+                                  : Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: Colors.white.withOpacity(0.8),
+                                    ),
                         ),
                         Positioned(
                           bottom: 0,
@@ -175,13 +215,12 @@ class _PersonalInfoState extends State<PersonalInfo> {
 
                   SizedBox(height: 16),
 
-
                   // Continue Button
                   Obx(
-                    ()=> Container(
+                    () => Container(
                       width: Get.width,
                       child: CommonButton(
-                        isLoading: detailsController.isLoading.value,
+                          isLoading: detailsController.isLoading.value,
                           onPressed: () {
                             if (_fromKey.currentState!.validate()) {
                               if (widget.isEdit) {
@@ -236,19 +275,22 @@ class _PersonalInfoState extends State<PersonalInfo> {
             widget.onTap!();
           }
         } else {
-          detailsController.errorMessage.value = userUpdateRes.value?.message ?? 'Update failed';
+          detailsController.errorMessage.value =
+              userUpdateRes.value?.message ?? 'Update failed';
         }
       } else {
         try {
           final error = jsonDecode(response.body);
-          detailsController.errorMessage.value = error['message'] ?? 'Update failed';
+          detailsController.errorMessage.value =
+              error['message'] ?? 'Update failed';
         } catch (e) {
-          detailsController.errorMessage.value = 'Update failed: ${response.statusCode}';
+          detailsController.errorMessage.value =
+              'Update failed: ${response.statusCode}';
         }
       }
     } catch (e) {
       print("PersonalInfo::$e");
-      detailsController.errorMessage.value = "Error: ${e.toString()}";
+      detailsController.errorMessage.value = mapError(e).userMessage;
     } finally {
       detailsController.isLoading.value = false;
     }
@@ -287,33 +329,33 @@ class _PersonalInfoState extends State<PersonalInfo> {
   void _showPickerOptions() {
     showCupertinoModalPopup(
       context: context,
-      builder: (context) =>
-          CupertinoActionSheet(
-            title: Text('Select Image'),
-            actions: [
-              CupertinoActionSheetAction(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-                child: CommonText(
-                  text: 'Choose from Gallery', color: Colors.black,),
-              ),
-              CupertinoActionSheetAction(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-                child: CommonText(text: 'Take a Photo', color: Colors.black),
-              ),
-            ],
-            cancelButton: CupertinoActionSheetAction(
-              onPressed: () => Navigator.pop(context),
-              isDefaultAction: true,
-              child: CommonText(text: 'Cancel', color: Colors.red),
+      builder: (context) => CupertinoActionSheet(
+        title: Text('Select Image'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickImage(ImageSource.gallery);
+            },
+            child: CommonText(
+              text: 'Choose from Gallery',
+              color: Colors.black,
             ),
           ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickImage(ImageSource.camera);
+            },
+            child: CommonText(text: 'Take a Photo', color: Colors.black),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          isDefaultAction: true,
+          child: CommonText(text: 'Cancel', color: Colors.red),
+        ),
+      ),
     );
   }
-
 }

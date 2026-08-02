@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:kupan_business/services/api_exception.dart';
+import 'package:kupan_business/services/secure_store.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -6,7 +8,6 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:kupan_business/models/verify_otp_res.dart';
 
-import '../const/string_const.dart';
 import '../models/user_login_model.dart';
 import '../services/api_service.dart';
 import '../utils/appRoutesStrings.dart';
@@ -38,24 +39,25 @@ class LoginController extends GetxController {
         loginResponse.value = UserLoginResponse.fromJson(data);
         // print("OTP: ${loginResponse.value?.otp}");
         if (loginResponse.value?.success == true) {
-          Get.toNamed(AppRoutes.otp, arguments: {"mobile_number" : mobileNumber});
+          Get.toNamed(AppRoutes.otp,
+              arguments: {"mobile_number": mobileNumber});
         } else {
           errorMessage.value = loginResponse.value?.message ?? 'Login failed';
         }
-
       } else {
         final error = jsonDecode(response.body);
         errorMessage.value = error['message'] ?? 'Login failed';
       }
     } catch (e) {
       print("Login::$e");
-      errorMessage.value = "Error: ${e.toString()}";
+      errorMessage.value = mapError(e).userMessage;
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> verifyOtp(String mobileNumber, String otp, String verificationId) async {
+  Future<void> verifyOtp(
+      String mobileNumber, String otp, String verificationId) async {
     isOtpLoading.value = true;
     errorOtpMessage.value = '';
     otpResponse.value = null;
@@ -67,11 +69,11 @@ class LoginController extends GetxController {
         smsCode: otp.trim(),
       );
 
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
 
       // Step 2: ID Token lo
       String? idToken = await userCredential.user?.getIdToken();
-      print("ID Token:::$idToken");
 
       if (idToken == null) {
         errorOtpMessage.value = 'Failed to get firebase token';
@@ -82,7 +84,6 @@ class LoginController extends GetxController {
       http.Response response = await _apiService.verifyOtp(idToken, "vendor");
 
       if (response.statusCode == 200) {
-        print("VerifyOtp Response Body: ${response.body}");
         dynamic data;
         try {
           data = jsonDecode(response.body);
@@ -107,19 +108,17 @@ class LoginController extends GetxController {
           // Persist token & user info if available
           try {
             if (otpResponse.value?.data?.token != null) {
-              print("Writing token...");
-              box.write(StringConst.TOKEN, otpResponse.value?.data?.token);
-              print("✓ Token written");
+              await SecureStore.i.setToken(otpResponse.value?.data?.token);
             }
             final String? userId = otpResponse.value?.data?.user?.id;
             final String? userName = otpResponse.value?.data?.user?.name;
             print("userId=$userId, userName=$userName");
             if (userId != null) {
-              box.write(StringConst.USER_ID, userId);
+              await SecureStore.i.setUserId(userId);
               print("✓ User ID written");
             }
             if (userName != null) {
-              box.write(StringConst.USER_NAME, userName);
+              await SecureStore.i.setUserName(userName);
               print("✓ User name written");
             }
           } catch (e, st) {
@@ -141,7 +140,8 @@ class LoginController extends GetxController {
             return;
           }
         } else {
-          errorOtpMessage.value = otpResponse.value?.message ?? 'Verification failed';
+          errorOtpMessage.value =
+              otpResponse.value?.message ?? 'Verification failed';
         }
       } else {
         print("VerifyOtp Error Status: ${response.statusCode}");
@@ -149,16 +149,16 @@ class LoginController extends GetxController {
           final error = jsonDecode(response.body);
           errorOtpMessage.value = error['message'] ?? 'Login failed';
         } catch (e) {
-          errorOtpMessage.value = 'Verification failed (${response.statusCode})';
+          errorOtpMessage.value =
+              'Verification failed (${response.statusCode})';
         }
       }
-
     } on FirebaseAuthException catch (e) {
       print("FirebaseAuthException:::$e");
       errorOtpMessage.value = e.message ?? 'Wrong OTP';
     } catch (e) {
       print("VerifyOtp:::$e");
-      errorOtpMessage.value = "Error: ${e.toString()}";
+      errorOtpMessage.value = mapError(e).userMessage;
     } finally {
       isOtpLoading.value = false;
     }
@@ -173,7 +173,6 @@ class LoginController extends GetxController {
       http.Response response = await _apiService.verifyOtp(idToken, "vendor");
 
       if (response.statusCode == 200) {
-        print("VerifyOtpWithToken Response Body: ${response.body}");
         dynamic data;
         try {
           data = jsonDecode(response.body);
@@ -197,19 +196,17 @@ class LoginController extends GetxController {
           print("✓ OTP verification successful");
           try {
             if (otpResponse.value?.data?.token != null) {
-              print("Writing token...");
-              box.write(StringConst.TOKEN, otpResponse.value?.data?.token);
-              print("✓ Token written");
+              await SecureStore.i.setToken(otpResponse.value?.data?.token);
             }
             final String? userId = otpResponse.value?.data?.user?.id;
             final String? userName = otpResponse.value?.data?.user?.name;
             print("userId=$userId, userName=$userName");
             if (userId != null) {
-              box.write(StringConst.USER_ID, userId);
+              await SecureStore.i.setUserId(userId);
               print("✓ User ID written");
             }
             if (userName != null) {
-              box.write(StringConst.USER_NAME, userName);
+              await SecureStore.i.setUserName(userName);
               print("✓ User name written");
             }
           } catch (e, st) {
@@ -221,7 +218,8 @@ class LoginController extends GetxController {
           try {
             print("Navigating to details screen...");
             // Get mobile number from Firebase user
-            final String? phoneNumber = FirebaseAuth.instance.currentUser?.phoneNumber;
+            final String? phoneNumber =
+                FirebaseAuth.instance.currentUser?.phoneNumber;
             if (phoneNumber == null || phoneNumber.isEmpty) {
               errorOtpMessage.value = 'Phone number not found';
               return;
@@ -236,7 +234,8 @@ class LoginController extends GetxController {
             return;
           }
         } else {
-          errorOtpMessage.value = otpResponse.value?.message ?? 'Verification failed';
+          errorOtpMessage.value =
+              otpResponse.value?.message ?? 'Verification failed';
         }
       } else {
         print("VerifyOtpWithToken Error Status: ${response.statusCode}");
@@ -244,12 +243,13 @@ class LoginController extends GetxController {
           final error = jsonDecode(response.body);
           errorOtpMessage.value = error['message'] ?? 'Login failed';
         } catch (e) {
-          errorOtpMessage.value = 'Verification failed (${response.statusCode})';
+          errorOtpMessage.value =
+              'Verification failed (${response.statusCode})';
         }
       }
     } catch (e) {
       print("verifyOtpWithToken:::$e");
-      errorOtpMessage.value = "Error: ${e.toString()}";
+      errorOtpMessage.value = mapError(e).userMessage;
     } finally {
       isOtpLoading.value = false;
     }

@@ -92,8 +92,7 @@ BuyerInfo _$BuyerInfoFromJson(Map<String, dynamic> json) => BuyerInfo(
       id: json['_id'] as String?,
     );
 
-Map<String, dynamic> _$BuyerInfoToJson(BuyerInfo instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$BuyerInfoToJson(BuyerInfo instance) => <String, dynamic>{
       'birthdate': instance.birthdate,
       'location': instance.location,
       '_id': instance.id,

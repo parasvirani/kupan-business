@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:kupan_business/services/api_exception.dart';
+import 'package:kupan_business/services/secure_store.dart';
 import 'dart:io';
 
 import 'package:country_state_city/country_state_city.dart' as country;
@@ -7,14 +9,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:kupan_business/const/string_const.dart';
 import 'package:kupan_business/controllers/dashboard_controller.dart';
 import '../models/Days.dart';
 import '../models/user_update_res.dart';
-import '../models/verify_otp_res.dart';
 import '../services/api_service.dart';
 import '../utils/appRoutesStrings.dart';
 import 'my_outlets_controller.dart';
@@ -47,7 +46,6 @@ class DetailsController extends GetxController {
   TimeOfDay? openTime;
   TimeOfDay? closeTime;
 
-  final ImagePicker _picker = ImagePicker();
   RxList<File>? images = <File>[].obs;
   RxString errorMessageOutletImages = "".obs;
 
@@ -97,7 +95,6 @@ class DetailsController extends GetxController {
     return TimeOfDay.fromDateTime(dateTime);
   }
 
-
   getStarted(bool isEdit) async {
     isLoading.value = true;
     errorMessage.value = '';
@@ -122,7 +119,12 @@ class DetailsController extends GetxController {
         "businessName": businessController.text,
         "businessType": selectedBusinessType?.toLowerCase(),
         "outletContact": outletContactController.text,
-        "outletImages": images?.map((element) => element.path,).toList() ?? [],
+        "outletImages": images
+                ?.map(
+                  (element) => element.path,
+                )
+                .toList() ??
+            [],
         "outletName": outletNameController.text,
         "address": addressLine1Controller.text,
         "address2": addressLine2Controller.text,
@@ -130,8 +132,10 @@ class DetailsController extends GetxController {
         "state": selectedState?.name,
         "city": selectedCity?.name,
         "pincode": zipCodeController.text,
-        "outletOpenTime": openTime != null ? openTime!.format(Get.context!) : "",
-        "outletCloseTime": closeTime != null ? closeTime!.format(Get.context!) : "",
+        "outletOpenTime":
+            openTime != null ? openTime!.format(Get.context!) : "",
+        "outletCloseTime":
+            closeTime != null ? closeTime!.format(Get.context!) : "",
         "role": "vendor",
         "lat": lat.value,
         "long": long.value,
@@ -139,23 +143,20 @@ class DetailsController extends GetxController {
 
       http.Response response = await _apiService.updateUser(map);
 
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         userUpdateRes.value = UserUpdateRes.fromJson(data);
 
         if (userUpdateRes.value!.success!) {
-
-          box.write(StringConst.USER_ID, userUpdateRes.value?.data?.id);
-          box.write(StringConst.USER_NAME, userUpdateRes.value?.data?.name);
+          await SecureStore.i.setUserId(userUpdateRes.value?.data?.id);
+          await SecureStore.i.setUserName(userUpdateRes.value?.data?.name);
           if (isEdit) {
             dashboardController.getUser();
             Get.back();
           } else {
             Get.offAllNamed(AppRoutes.dashboard);
           }
-
         } else {
           errorMessage.value = userUpdateRes.value!.message!;
         }
@@ -165,7 +166,7 @@ class DetailsController extends GetxController {
       }
     } catch (e) {
       print("Login::$e");
-      errorMessage.value = "Error: ${e.toString()}";
+      errorMessage.value = mapError(e).userMessage;
     } finally {
       isLoading.value = false;
     }
@@ -197,8 +198,9 @@ class DetailsController extends GetxController {
         userUpdateRes.value = UserUpdateRes.fromJson(data);
 
         if (userUpdateRes.value?.success ?? false) {
-          box.write(StringConst.USER_ID, userUpdateRes.value?.data?.id ?? "");
-          box.write(StringConst.USER_NAME, userUpdateRes.value?.data?.name ?? "");
+          await SecureStore.i.setUserId(userUpdateRes.value?.data?.id ?? "");
+          await SecureStore.i
+              .setUserName(userUpdateRes.value?.data?.name ?? "");
           Get.offAllNamed(AppRoutes.dashboard);
         } else {
           errorMessage.value = userUpdateRes.value?.message ?? 'Update failed';
@@ -213,7 +215,7 @@ class DetailsController extends GetxController {
       }
     } catch (e) {
       print("PersonalInfo::$e");
-      errorMessage.value = "Error: ${e.toString()}";
+      errorMessage.value = mapError(e).userMessage;
     } finally {
       isLoading.value = false;
     }
@@ -266,7 +268,7 @@ class DetailsController extends GetxController {
     // Load cities for this state
     var cityList =
         await country.getStateCities(state.countryCode, state.isoCode);
-    
+
     // Update the cities RxList so the UI can observe changes
     cities(cityList);
 
@@ -343,7 +345,7 @@ class DetailsController extends GetxController {
     long(longitude);
     Placemark place = placemarks[0];
 
-                String address = """
+    String address = """
     Address Line 1: ${place.street}
     Address Line 1: ${place.thoroughfare}
     Landmark: ${place.subLocality}
@@ -352,8 +354,8 @@ class DetailsController extends GetxController {
     Zip Code: ${place.postalCode}
     Country: ${place.country}
     """;
-                print("=====address=====${jsonEncode(place)}");
-                print(address);
+    print("=====address=====${jsonEncode(place)}");
+    print(address);
     print("=====address=====");
     addressLine1Controller.text = place.thoroughfare ?? "";
     landmarkController.text = place.subLocality ?? "";
@@ -412,7 +414,8 @@ class DetailsController extends GetxController {
         "businessName": businessController.text,
         "businessType": selectedBusinessType,
         "outletName": outletNameController.text,
-        "outletTime": "${openTime?.format(Get.context!)} - ${closeTime?.format(Get.context!)}",
+        "outletTime":
+            "${openTime?.format(Get.context!)} - ${closeTime?.format(Get.context!)}",
         "outletImages": uploadedImageUrls,
         "outletNumber": outletContactController.text,
         "email": box.read("userEmail") ?? "", // You may need to adjust this
@@ -451,8 +454,6 @@ class DetailsController extends GetxController {
           } catch (e) {
             print("Error refreshing outlets: $e");
           }
-
-
         } else {
           errorMessageOutlet.value = data['message'] ?? 'Failed to add outlet';
           Get.snackbar('Error', errorMessageOutlet.value);
@@ -468,7 +469,7 @@ class DetailsController extends GetxController {
       }
     } catch (e) {
       print("Error submitting outlet: $e");
-      errorMessageOutlet.value = "Error: ${e.toString()}";
+      errorMessageOutlet.value = mapError(e).userMessage;
       Get.snackbar('Error', errorMessageOutlet.value);
     } finally {
       isLoadingOutlet.value = false;

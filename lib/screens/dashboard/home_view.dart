@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kupan_business/services/secure_store.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:kupan_business/controllers/dashboard_controller.dart';
@@ -10,7 +11,6 @@ import 'package:kupan_business/screens/dashboard/redemptions_detail_screen.dart'
 
 import '../../const/color_const.dart';
 import '../../const/image_const.dart';
-import '../../const/string_const.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
 
@@ -25,7 +25,8 @@ class _HomeViewState extends State<HomeView> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   DashboardController dashboardController = Get.find();
-  final MyOutletsController myOutletsController = Get.put(MyOutletsController());
+  final MyOutletsController myOutletsController =
+      Get.put(MyOutletsController());
 
   @override
   void initState() {
@@ -34,7 +35,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _loadKupans() {
-    final vendorId = dashboardController.box.read(StringConst.USER_ID) ?? '';
+    final vendorId = SecureStore.i.userId;
     if (vendorId.isNotEmpty) {
       dashboardController.getVendorKupans(vendorId: vendorId);
       dashboardController.fetchAllRedemptionRanges(vendorId: vendorId);
@@ -155,8 +156,10 @@ class _HomeViewState extends State<HomeView> {
               label: 'Total Coupons',
             ),
             _statCard(
-              count: (dashboardController.allTimeRedemptions.value?.data.length ?? 0)
-                  .toString(),
+              count:
+                  (dashboardController.allTimeRedemptions.value?.data.length ??
+                          0)
+                      .toString(),
               label: 'Visited Coupon',
             ),
             GestureDetector(
@@ -176,16 +179,16 @@ class _HomeViewState extends State<HomeView> {
     return Row(
       children: [
         Container(
-            width: 2,
-           
-             decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(size(10)),
-            ),
+          width: 2,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(size(10)),
           ),
+        ),
         Expanded(
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: size(12), vertical: size(14)),
+            padding:
+                EdgeInsets.symmetric(horizontal: size(12), vertical: size(14)),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
@@ -340,7 +343,6 @@ class _HomeViewState extends State<HomeView> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(size(12)),
-                  
                     child: imageUrl != null
                         ? Image.network(
                             imageUrl,
@@ -364,13 +366,15 @@ class _HomeViewState extends State<HomeView> {
                       left: 0,
                       right: 60,
                       child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: size(8), vertical: size(4)),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: size(8), vertical: size(4)),
                         decoration: BoxDecoration(
-                         color: Colors.black,
+                          color: Colors.black,
                           borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(size(12)),
-                            topRight: Radius.circular(size(12),)
-                          ),
+                              bottomLeft: Radius.circular(size(12)),
+                              topRight: Radius.circular(
+                                size(12),
+                              )),
                         ),
                         child: Text(
                           outletName,

@@ -1,5 +1,6 @@
-
 import 'dart:convert';
+import 'package:kupan_business/services/api_exception.dart';
+import 'package:kupan_business/services/secure_store.dart';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -8,7 +9,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:kupan_business/const/string_const.dart';
 import 'package:kupan_business/utils/appRoutesStrings.dart';
 
 import '../models/Days.dart';
@@ -75,7 +75,7 @@ class DashboardController extends GetxController {
   var errorMessageRedemptions = ''.obs;
   var dailyRedemptions = Rxn<RedemptionsResponse>();
   RxInt todayRedemptionCount = 0.obs;
-  
+
   // Redemption ranges
   var weeklyRedemptions = Rxn<RedemptionsResponse>();
   var monthlyRedemptions = Rxn<RedemptionsResponse>();
@@ -94,7 +94,7 @@ class DashboardController extends GetxController {
     getUser();
     fetchCurrentLocation();
     _registerFcmToken();
-    String vendorId = box.read(StringConst.USER_ID) ?? '';
+    String vendorId = SecureStore.i.userId;
     if (vendorId.isNotEmpty) {
       getVendorKupans(vendorId: vendorId);
       fetchAllRedemptionRanges(vendorId: vendorId);
@@ -163,7 +163,6 @@ class DashboardController extends GetxController {
       http.Response response = await _apiService.getUser();
 
       print("📍 Response Status: ${response.statusCode}");
-      print("📍 Response Body (first 500 chars): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
 
       // print("User add successfully ${response.body}");
       if (response.statusCode == 200) {
@@ -189,9 +188,12 @@ class DashboardController extends GetxController {
               }
             }
 
-            final address = location?.address ?? rawLocation?['address']?.toString();
-            final address2 = location?.address2 ?? rawLocation?['address2']?.toString();
-            final landmark = location?.landmark ?? rawLocation?['landmark']?.toString();
+            final address =
+                location?.address ?? rawLocation?['address']?.toString();
+            final address2 =
+                location?.address2 ?? rawLocation?['address2']?.toString();
+            final landmark =
+                location?.landmark ?? rawLocation?['landmark']?.toString();
             final city = location?.city ?? rawLocation?['city']?.toString();
             final state = location?.state ?? rawLocation?['state']?.toString();
 
@@ -214,31 +216,33 @@ class DashboardController extends GetxController {
         // Try to parse error response
         try {
           // Check if response is HTML (error page)
-          if (response.body.startsWith('<!DOCTYPE') || response.body.startsWith('<html')) {
+          if (response.body.startsWith('<!DOCTYPE') ||
+              response.body.startsWith('<html')) {
             print("❌ Server returned HTML error page");
-            errorMessage.value = 'Server error (${response.statusCode}): Please try again later';
+            errorMessage.value =
+                'Server error (${response.statusCode}): Please try again later';
           } else {
             // Try to parse as JSON
             final error = jsonDecode(response.body);
-            errorMessage.value = error['message'] ?? 'Login failed (${response.statusCode})';
+            errorMessage.value =
+                error['message'] ?? 'Login failed (${response.statusCode})';
           }
         } catch (e) {
           print("❌ Error Response Parse Error: $e");
-          errorMessage.value = 'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
+          errorMessage.value =
+              'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
         }
       }
     } catch (e) {
       print("Login::$e");
-      errorMessage.value = "Error: ${e.toString()}";
+      errorMessage.value = mapError(e).userMessage;
     } finally {
       isLoading(false);
     }
   }
 
   logoutUser() async {
-    await box.remove(StringConst.TOKEN);
-    await box.remove(StringConst.USER_NAME);
-    await box.remove(StringConst.USER_ID);
+    await SecureStore.i.clearSession();
     Get.offAllNamed(AppRoutes.login);
   }
 
@@ -273,7 +277,7 @@ class DashboardController extends GetxController {
       print("✅ Uploaded URLs: $uploadedUrls");
 
       // ✅ Step 3: Get vendorId and businessId
-      String vendorId = box.read(StringConst.USER_ID) ?? '';
+      String vendorId = SecureStore.i.userId;
       String businessId = selectedOutletId.value;
 
       print("📋 DEBUG - Vendor ID: $vendorId");
@@ -296,7 +300,6 @@ class DashboardController extends GetxController {
       http.Response response = await _apiService.createKupan(map);
 
       print("📍 Response Status Code: ${response.statusCode}");
-      print("📍 Response Body: ${response.body}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         try {
@@ -305,7 +308,7 @@ class DashboardController extends GetxController {
 
           if (createKupanRes.value!.success!) {
             // Refresh kupan list after successful creation
-            String vendorId = box.read(StringConst.USER_ID) ?? '';
+            String vendorId = SecureStore.i.userId;
             if (vendorId.isNotEmpty) {
               getKupanByVendor(vendorId: vendorId, limit: 10);
             }
@@ -330,15 +333,17 @@ class DashboardController extends GetxController {
       } else {
         try {
           final error = jsonDecode(response.body);
-          errorMessageCreateKupan.value = error['message'] ?? 'Failed to create kupan (${response.statusCode})';
+          errorMessageCreateKupan.value = error['message'] ??
+              'Failed to create kupan (${response.statusCode})';
         } catch (e) {
           print("❌ Error Response Parse Error: $e");
-          errorMessageCreateKupan.value = 'Server error: ${response.statusCode}. Please try again.';
+          errorMessageCreateKupan.value =
+              'Server error: ${response.statusCode}. Please try again.';
         }
       }
     } catch (e) {
       print("❌ Error: $e");
-      errorMessageCreateKupan.value = "Error: ${e.toString()}";
+      errorMessageCreateKupan.value = mapError(e).userMessage;
     } finally {
       isLoadingCreateKupan.value = false;
     }
@@ -351,8 +356,8 @@ class DashboardController extends GetxController {
         return null;
       }
 
-
-      http.Response response = await _apiService.uploadImage(imageFile: imageFile);
+      http.Response response =
+          await _apiService.uploadImage(imageFile: imageFile);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['data'] != null && data['data'].isNotEmpty) {
@@ -379,7 +384,6 @@ class DashboardController extends GetxController {
       http.Response response = await _apiService.getKupan();
 
       print("📍 Response Status: ${response.statusCode}");
-      print("📍 Response Body (first 500 chars): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         try {
@@ -392,7 +396,8 @@ class DashboardController extends GetxController {
             kupanList.refresh();
             print("✅ Kupans loaded: ${kupanList.length}");
           } else {
-            errorMessageGetKupan.value = kupansListRes.value!.message ?? 'Unknown error';
+            errorMessageGetKupan.value =
+                kupansListRes.value!.message ?? 'Unknown error';
           }
         } catch (parseError) {
           print("❌ JSON Parse Error: $parseError");
@@ -402,22 +407,26 @@ class DashboardController extends GetxController {
         // Try to parse error response
         try {
           // Check if response is HTML (error page)
-          if (response.body.startsWith('<!DOCTYPE') || response.body.startsWith('<html')) {
+          if (response.body.startsWith('<!DOCTYPE') ||
+              response.body.startsWith('<html')) {
             print("❌ Server returned HTML error page");
-            errorMessageGetKupan.value = 'Server error (${response.statusCode}): Please try again later';
+            errorMessageGetKupan.value =
+                'Server error (${response.statusCode}): Please try again later';
           } else {
             // Try to parse as JSON
             final error = jsonDecode(response.body);
-            errorMessageGetKupan.value = error['message'] ?? 'Failed to fetch kupans (${response.statusCode})';
+            errorMessageGetKupan.value = error['message'] ??
+                'Failed to fetch kupans (${response.statusCode})';
           }
         } catch (e) {
           print("❌ Error Response Parse Error: $e");
-          errorMessageGetKupan.value = 'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
+          errorMessageGetKupan.value =
+              'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
         }
       }
     } catch (e) {
       print("❌ Error: $e");
-      errorMessageGetKupan.value = "Error: ${e.toString()}";
+      errorMessageGetKupan.value = mapError(e).userMessage;
     } finally {
       isLoadingGetKupan(false);
     }
@@ -432,7 +441,8 @@ class DashboardController extends GetxController {
     errorMessageGetKupan.value = '';
 
     try {
-      print("📋 Fetching kupans - VendorId: $vendorId, BusinessId: $businessId, Limit: $limit");
+      print(
+          "📋 Fetching kupans - VendorId: $vendorId, BusinessId: $businessId, Limit: $limit");
 
       http.Response response = await _apiService.getKupanWithFilters(
         vendorId: vendorId,
@@ -441,7 +451,6 @@ class DashboardController extends GetxController {
       );
 
       print("📍 Response Status: ${response.statusCode}");
-      print("📍 Response Body (first 500 chars): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         try {
@@ -454,7 +463,8 @@ class DashboardController extends GetxController {
             kupanList.refresh();
             print("✅ Kupans loaded: ${kupanList.length}");
           } else {
-            errorMessageGetKupan.value = kupansListRes.value!.message ?? 'Unknown error';
+            errorMessageGetKupan.value =
+                kupansListRes.value!.message ?? 'Unknown error';
           }
         } catch (parseError) {
           print("❌ JSON Parse Error: $parseError");
@@ -464,22 +474,26 @@ class DashboardController extends GetxController {
         // Try to parse error response
         try {
           // Check if response is HTML (error page)
-          if (response.body.startsWith('<!DOCTYPE') || response.body.startsWith('<html')) {
+          if (response.body.startsWith('<!DOCTYPE') ||
+              response.body.startsWith('<html')) {
             print("❌ Server returned HTML error page");
-            errorMessageGetKupan.value = 'Server error (${response.statusCode}): Please try again later';
+            errorMessageGetKupan.value =
+                'Server error (${response.statusCode}): Please try again later';
           } else {
             // Try to parse as JSON
             final error = jsonDecode(response.body);
-            errorMessageGetKupan.value = error['message'] ?? 'Failed to fetch kupans (${response.statusCode})';
+            errorMessageGetKupan.value = error['message'] ??
+                'Failed to fetch kupans (${response.statusCode})';
           }
         } catch (e) {
           print("❌ Error Response Parse Error: $e");
-          errorMessageGetKupan.value = 'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
+          errorMessageGetKupan.value =
+              'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
         }
       }
     } catch (e) {
       print("❌ Error: $e");
-      errorMessageGetKupan.value = "Error: ${e.toString()}";
+      errorMessageGetKupan.value = mapError(e).userMessage;
     } finally {
       isLoadingGetKupan(false);
     }
@@ -493,7 +507,8 @@ class DashboardController extends GetxController {
     errorMessageGetKupan.value = '';
 
     try {
-      print("📋 Fetching kupans by vendor - VendorId: $vendorId, Limit: $limit");
+      print(
+          "📋 Fetching kupans by vendor - VendorId: $vendorId, Limit: $limit");
 
       http.Response response = await _apiService.getKupanByVendor(
         vendorId: vendorId,
@@ -501,7 +516,6 @@ class DashboardController extends GetxController {
       );
 
       print("📍 Response Status: ${response.statusCode}");
-      print("📍 Response Body (first 500 chars): ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}");
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         try {
@@ -514,7 +528,8 @@ class DashboardController extends GetxController {
             kupanList.refresh();
             print("✅ Kupans loaded: ${kupanList.length}");
           } else {
-            errorMessageGetKupan.value = kupansListRes.value!.message ?? 'Unknown error';
+            errorMessageGetKupan.value =
+                kupansListRes.value!.message ?? 'Unknown error';
           }
         } catch (parseError) {
           print("❌ JSON Parse Error: $parseError");
@@ -524,28 +539,31 @@ class DashboardController extends GetxController {
         // Try to parse error response
         try {
           // Check if response is HTML (error page)
-          if (response.body.startsWith('<!DOCTYPE') || response.body.startsWith('<html')) {
+          if (response.body.startsWith('<!DOCTYPE') ||
+              response.body.startsWith('<html')) {
             print("❌ Server returned HTML error page");
-            errorMessageGetKupan.value = 'Server error (${response.statusCode}): Please try again later';
+            errorMessageGetKupan.value =
+                'Server error (${response.statusCode}): Please try again later';
           } else {
             // Try to parse as JSON
             final error = jsonDecode(response.body);
-            errorMessageGetKupan.value = error['message'] ?? 'Failed to fetch kupans (${response.statusCode})';
+            errorMessageGetKupan.value = error['message'] ??
+                'Failed to fetch kupans (${response.statusCode})';
           }
         } catch (e) {
           print("❌ Error Response Parse Error: $e");
-          errorMessageGetKupan.value = 'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
+          errorMessageGetKupan.value =
+              'Server error (${response.statusCode}): ${response.statusCode == 500 ? 'Internal server error' : 'Please try again'}';
         }
       }
     } catch (e) {
       print("❌ Error: $e");
-      errorMessageGetKupan.value = "Error: ${e.toString()}";
+      errorMessageGetKupan.value = mapError(e).userMessage;
     } finally {
       isLoadingGetKupan(false);
     }
   }
 
- 
   // ------------------------------------------------------------------
   // GET VENDOR KUPANS via /kupan/vendor/:id (flat list, new endpoint)
   // ------------------------------------------------------------------
@@ -562,22 +580,25 @@ class DashboardController extends GetxController {
         if (data['success'] == true && data['data'] is List) {
           kupanList.clear();
           kupanList.addAll(
-            (data['data'] as List).map((x) => KupanData.fromJson(x as Map<String, dynamic>)),
+            (data['data'] as List)
+                .map((x) => KupanData.fromJson(x as Map<String, dynamic>)),
           );
           kupanList.refresh();
         } else {
-          errorMessageGetKupan.value = data['message'] ?? 'Failed to load kupans';
+          errorMessageGetKupan.value =
+              data['message'] ?? 'Failed to load kupans';
         }
       } else {
         try {
           final error = jsonDecode(response.body);
-          errorMessageGetKupan.value = error['message'] ?? 'Failed to load kupans (${response.statusCode})';
+          errorMessageGetKupan.value = error['message'] ??
+              'Failed to load kupans (${response.statusCode})';
         } catch (_) {
           errorMessageGetKupan.value = 'Server error: ${response.statusCode}';
         }
       }
     } catch (e) {
-      errorMessageGetKupan.value = "Error: ${e.toString()}";
+      errorMessageGetKupan.value = mapError(e).userMessage;
     } finally {
       isLoadingGetKupan(false);
     }
@@ -668,7 +689,7 @@ class DashboardController extends GetxController {
           print("  - ${item.title}: ${item.totalRedemptions}");
           totalCount += item.totalRedemptions.toInt();
         }
-        
+
         // Store the response based on range
         if (range == 'weekly') {
           weeklyRedemptions.value = response;
@@ -680,15 +701,16 @@ class DashboardController extends GetxController {
           allTimeRedemptions.value = response;
           allTimeCount.value = totalCount;
         }
-        
+
         print("✅ $range Redemptions loaded: $totalCount");
       } else {
-        errorMessageRedemptions.value = response?.message ?? 'Failed to fetch $range redemptions';
+        errorMessageRedemptions.value =
+            response?.message ?? 'Failed to fetch $range redemptions';
         print("❌ $range Response not successful: ${response?.message}");
       }
     } catch (e) {
       print("❌ Error fetching $range redemptions: $e");
-      errorMessageRedemptions.value = "Error: ${e.toString()}";
+      errorMessageRedemptions.value = mapError(e).userMessage;
     } finally {
       isLoadingRedemptions.value = false;
     }
@@ -696,7 +718,7 @@ class DashboardController extends GetxController {
 
   void setRedemptionRange(String range) {
     selectedRedemptionRange.value = range;
-    
+
     // Update today's count based on selected range
     if (range == 'weekly') {
       todayRedemptionCount.value = weeklyCount.value;
@@ -705,7 +727,7 @@ class DashboardController extends GetxController {
     } else if (range == 'allTime') {
       todayRedemptionCount.value = allTimeCount.value;
     }
-    
+
     print("🔀 Redemption range changed to: $range");
   }
 
@@ -732,18 +754,21 @@ class DashboardController extends GetxController {
         }
         todayRedemptionCount.value = totalCount;
         print("✅ Redemptions loaded: $totalCount");
-      } else if (response != null && response.success && response.data.isEmpty) {
+      } else if (response != null &&
+          response.success &&
+          response.data.isEmpty) {
         print("⚠️  Response successful but no data found");
         todayRedemptionCount.value = 0;
         dailyRedemptions.value = response;
       } else {
-        errorMessageRedemptions.value = response?.message ?? 'Failed to fetch redemptions';
+        errorMessageRedemptions.value =
+            response?.message ?? 'Failed to fetch redemptions';
         print("❌ Response not successful: ${response?.message}");
         todayRedemptionCount.value = 0;
       }
     } catch (e) {
       print("❌ Error fetching redemptions: $e");
-      errorMessageRedemptions.value = "Error: ${e.toString()}";
+      errorMessageRedemptions.value = mapError(e).userMessage;
       todayRedemptionCount.value = 0;
     } finally {
       isLoadingRedemptions.value = false;

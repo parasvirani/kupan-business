@@ -1,4 +1,3 @@
-
 import 'package:json_annotation/json_annotation.dart';
 part 'verify_otp_res.g.dart';
 
@@ -11,7 +10,8 @@ class VerifyOtpRes {
 
   VerifyOtpRes({this.success, this.message, this.statusCode, this.data});
 
-  factory VerifyOtpRes.fromJson(Map<String, dynamic> json) => _$VerifyOtpResFromJson(json);
+  factory VerifyOtpRes.fromJson(Map<String, dynamic> json) =>
+      _$VerifyOtpResFromJson(json);
 
   Map<String, dynamic> toJson() => _$VerifyOtpResToJson(this);
 }
@@ -21,10 +21,10 @@ class UserData {
   User? user;
   String? token;
 
-
   UserData({this.user, this.token});
 
-  factory UserData.fromJson(Map<String, dynamic> json) => _$UserDataFromJson(json);
+  factory UserData.fromJson(Map<String, dynamic> json) =>
+      _$UserDataFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserDataToJson(this);
 }
@@ -40,7 +40,6 @@ class User {
   String? profilePic;
   String? createdAt;
   String? updatedAt;
-
 
   User(
       {this.sellerInfo,
@@ -63,10 +62,10 @@ class SellerInfo {
   List<String>? outletImages;
   Location? location;
 
-
   SellerInfo({this.businessName, this.outletImages, this.location});
 
-  factory SellerInfo.fromJson(Map<String, dynamic> json) => _$SellerInfoFromJson(json);
+  factory SellerInfo.fromJson(Map<String, dynamic> json) =>
+      _$SellerInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$SellerInfoToJson(this);
 }
@@ -77,10 +76,10 @@ class Location {
   double? lat;
   double? long;
 
-
   Location({this.city, this.lat, this.long});
 
-  factory Location.fromJson(Map<String, dynamic> json) => _$LocationFromJson(json);
+  factory Location.fromJson(Map<String, dynamic> json) =>
+      _$LocationFromJson(json);
 
   Map<String, dynamic> toJson() => _$LocationToJson(this);
 }

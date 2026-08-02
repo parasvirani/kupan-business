@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:share_plus/share_plus.dart';
 import 'package:kupan_business/common_view/common_text.dart';
 import 'package:kupan_business/const/color_const.dart';
 import 'package:kupan_business/controllers/dashboard_controller.dart';
@@ -19,7 +23,6 @@ class OutletDetailsScreen extends StatefulWidget {
 }
 
 class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
-
   SellerBusiness sellerBusiness = Get.arguments as SellerBusiness;
   final PageController _controller = PageController();
   final MyOutletsController outletsController = Get.find<MyOutletsController>();
@@ -89,7 +92,9 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                 ),
               ),
             ),
-            SizedBox(height: size(10),),
+            SizedBox(
+              height: size(10),
+            ),
             Center(
               child: SmoothPageIndicator(
                 controller: _controller,
@@ -102,7 +107,9 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                 ),
               ),
             ),
-            SizedBox(height: size(20),),
+            SizedBox(
+              height: size(20),
+            ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: size(20)),
               child: Column(
@@ -130,15 +137,19 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4,),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          border: Border.all(color: ColorConst.border, width: 1),
+                          border:
+                              Border.all(color: ColorConst.border, width: 1),
                           borderRadius: BorderRadius.circular(size(4)),
                         ),
                         child: Row(
                           children: [
-                             Icon(
+                            Icon(
                               Icons.star,
                               color: ColorConst.primary,
                               size: size(12),
@@ -195,7 +206,8 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                               ),
                               const SizedBox(height: 2),
                               CommonText(
-                                text: "${sellerBusiness.location?.address}, ${sellerBusiness.location?.city}, ${sellerBusiness.location?.state}, ${sellerBusiness.location?.pincode}",
+                                text:
+                                    "${sellerBusiness.location?.address}, ${sellerBusiness.location?.city}, ${sellerBusiness.location?.state}, ${sellerBusiness.location?.pincode}",
                                 fontSize: size(14),
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black,
@@ -257,7 +269,7 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                         'Add Coupons',
                         Icons.add_circle_outline,
                         ColorConst.primary,
-                            () {
+                        () {
                           _navigateToAddKupan();
                         },
                       ),
@@ -266,7 +278,7 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                         'Edit \nOutlet',
                         Icons.edit_outlined,
                         const Color(0xFF3B82F6),
-                            () {
+                        () {
                           _navigateToEditOutlet();
                         },
                       ),
@@ -275,7 +287,7 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                         'Remove Outlet',
                         Icons.delete_outline,
                         const Color(0xFFEF4444),
-                            () {
+                        () {
                           _showRemoveConfirmation();
                         },
                       ),
@@ -284,7 +296,7 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                         'QR \nCode',
                         Icons.qr_code_2,
                         const Color(0xFF8B5CF6),
-                            () {
+                        () {
                           _showQRCodeDialog();
                         },
                       ),
@@ -530,12 +542,10 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     );
   }
 
-
-
   void _showQRCodeDialog() {
     // Get kupanId from arguments or use outlet id
     String kupanId = sellerBusiness.id ?? '';
-    
+
     if (kupanId.isEmpty) {
       Get.snackbar('Error', 'Outlet ID not found');
       return;
@@ -610,7 +620,8 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                               ),
                             ],
                           )
-                        else if (outletsController.errorMessageQR.value.isNotEmpty)
+                        else if (outletsController
+                            .errorMessageQR.value.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -660,7 +671,8 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                               ),
                               const SizedBox(height: 12),
                               CommonText(
-                                text: '${sellerBusiness.outletName ?? "Outlet"}',
+                                text:
+                                    '${sellerBusiness.outletName ?? "Outlet"}',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black87,
@@ -708,8 +720,10 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                           child: InkWell(
                             onTap: () {
                               if (outletsController.qrCodeUrl.value != null &&
-                                  outletsController.qrCodeUrl.value!.isNotEmpty) {
-                                _shareQRCode(outletsController.qrCodeUrl.value!);
+                                  outletsController
+                                      .qrCodeUrl.value!.isNotEmpty) {
+                                _shareQRCode(
+                                    outletsController.qrCodeUrl.value!);
                               }
                             },
                             child: Container(
@@ -752,19 +766,41 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     );
   }
 
-  void _shareQRCode(String qrUrl) {
-    // Share the QR code URL
-    // You can use share_plus package for native sharing
-    // For now, just copy to clipboard
-    if (qrUrl.isNotEmpty) {
-      // Option 1: Copy to clipboard
-      // Clipboard.setData(ClipboardData(text: qrUrl));
-      // Get.snackbar('Success', 'QR code URL copied to clipboard');
-      
-      // Option 2: Open URL in browser or share
-      Get.snackbar('Share', 'QR Code URL: $qrUrl');
-      // You can implement native share using share_plus package
-      // share(qrUrl, subject: 'QR Code for ${sellerBusiness.outletName}');
+  Future<void> _shareQRCode(String qrUrl) async {
+    // Guard: nothing to share while the QR is still generating / URL is empty.
+    if (qrUrl.isEmpty) return;
+
+    // Brief loading overlay so a slow download doesn't feel like a dead tap.
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      // Download the QR PNG from Cloudinary to a temp file, then share the image.
+      final res = await http.get(Uri.parse(qrUrl));
+      if (res.statusCode != 200) {
+        throw Exception('HTTP ${res.statusCode}');
+      }
+
+      final file = File(
+        '${Directory.systemTemp.path}/qr_${sellerBusiness.id ?? 'outlet'}.png',
+      );
+      await file.writeAsBytes(res.bodyBytes);
+
+      // Close the loader before the system share sheet appears.
+      if (Get.isDialogOpen ?? false) Get.back();
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'QR Code for ${sellerBusiness.outletName ?? ''}\n$qrUrl',
+      );
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      Get.snackbar(
+        'Share failed',
+        'Could not share the QR code. Please try again.',
+      );
     }
   }
 
@@ -772,7 +808,8 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     // Set the selected outlet ID before navigating
     DashboardController dashboardController = Get.find<DashboardController>();
     dashboardController.selectedOutletId.value = sellerBusiness.id ?? '';
-    dashboardController.selectedOutletName.value = sellerBusiness.outletName ?? '';
+    dashboardController.selectedOutletName.value =
+        sellerBusiness.outletName ?? '';
 
     // Show confirmation snackbar
     // Get.snackbar(
@@ -785,8 +822,9 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     //   icon: const Icon(Icons.check_circle, color: Colors.white),
     // );
 
-    // Navigate to Add Kupan screen and handle return
-    Get.toNamed(AppRoutes.addKupan)?.then((_) {
+    // Navigate to Add Kupan screen and handle return.
+    // 'fromOutlet' tells the screen to lock the outlet to this one.
+    Get.toNamed(AppRoutes.addKupan, arguments: {'fromOutlet': true})?.then((_) {
       // When returning from add coupon screen, refresh the kupans list
       _loadOutletKupans();
     });
@@ -802,13 +840,12 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     //   },
     // );
 
-      Get.to(
-            () => AddOutletScreen(
-          isEditMode: true,
-          outletData: sellerBusiness,
-        ),
-      );
-
+    Get.to(
+      () => AddOutletScreen(
+        isEditMode: true,
+        outletData: sellerBusiness,
+      ),
+    );
   }
 
   void _showRemoveConfirmation() {
@@ -853,7 +890,8 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                       ),
                       const SizedBox(height: 12),
                       CommonText(
-                        text: 'Are you sure you want to remove ${sellerBusiness.outletName}? This action cannot be undone.',
+                        text:
+                            'Are you sure you want to remove ${sellerBusiness.outletName}? This action cannot be undone.',
                         fontSize: 14,
                         color: Colors.grey.shade600,
                         textAlign: TextAlign.center,

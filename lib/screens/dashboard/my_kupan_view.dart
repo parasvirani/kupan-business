@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:kupan_business/services/secure_store.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -11,7 +12,6 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../const/color_const.dart';
 import '../../const/image_const.dart';
-import '../../const/string_const.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
 
@@ -44,8 +44,7 @@ class _MyKupanViewState extends State<MyKupanView> {
   }
 
   Future<void> _refresh() async {
-    final vendorId =
-        dashboardController.box.read(StringConst.USER_ID) ?? '';
+    final vendorId = SecureStore.i.userId;
     if (vendorId.isNotEmpty) {
       await dashboardController.getVendorKupans(vendorId: vendorId);
       await dashboardController.fetchTodayRedemptionsByKupan(
@@ -138,8 +137,7 @@ class _MyKupanViewState extends State<MyKupanView> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: kupans.length,
                   separatorBuilder: (_, __) => SizedBox(height: size(12)),
-                  itemBuilder: (context, index) =>
-                      _kupanCard(kupans[index]),
+                  itemBuilder: (context, index) => _kupanCard(kupans[index]),
                 );
               }),
             ),
@@ -213,8 +211,7 @@ class _MyKupanViewState extends State<MyKupanView> {
   Widget _buildFilterTabs() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.symmetric(
-          horizontal: size(16), vertical: size(12)),
+      padding: EdgeInsets.symmetric(horizontal: size(16), vertical: size(12)),
       child: Row(
         children: List.generate(_filters.length, (index) {
           final isSelected = _selectedFilterIndex == index;
@@ -249,9 +246,7 @@ class _MyKupanViewState extends State<MyKupanView> {
                   style: TextStyle(
                     fontSize: size(12),
                     fontWeight: FontWeight.w600,
-                    color: isSelected
-                        ? Colors.white
-                        : const Color(0xFF1A1A1A),
+                    color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
                     fontFamily: 'Urbanist',
                   ),
                 ),
@@ -264,9 +259,8 @@ class _MyKupanViewState extends State<MyKupanView> {
   }
 
   Widget _kupanCard(KupanData kupan) {
-    final imageUrl = kupan.kupanImages?.isNotEmpty == true
-        ? kupan.kupanImages![0]
-        : null;
+    final imageUrl =
+        kupan.kupanImages?.isNotEmpty == true ? kupan.kupanImages![0] : null;
 
     final address =
         kupan.getOutletAddress() ?? _getAddressFromOutlets(kupan.businessId);
@@ -520,8 +514,8 @@ class _MyKupanViewState extends State<MyKupanView> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text('Cancel',
-                style: TextStyle(
-                    fontFamily: 'Urbanist', color: ColorConst.dark)),
+                style:
+                    TextStyle(fontFamily: 'Urbanist', color: ColorConst.dark)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -536,8 +530,7 @@ class _MyKupanViewState extends State<MyKupanView> {
                   borderRadius: BorderRadius.circular(size(8))),
             ),
             child: const Text('Delete',
-                style: TextStyle(
-                    fontFamily: 'Urbanist', color: Colors.white)),
+                style: TextStyle(fontFamily: 'Urbanist', color: Colors.white)),
           ),
         ],
       ),

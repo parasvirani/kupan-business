@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:kupan_business/services/api_exception.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -32,7 +33,6 @@ class MyOutletsController extends GetxController {
   var errorMessageOutletKupans = ''.obs;
   RxList<KupanData> outletKupanList = <KupanData>[].obs;
 
-
   @override
   void onInit() {
     super.onInit();
@@ -46,7 +46,6 @@ class MyOutletsController extends GetxController {
     try {
       http.Response response = await _apiService.getBusinessOutlets();
       print("Response Status: ${response.statusCode}");
-      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -97,13 +96,15 @@ class MyOutletsController extends GetxController {
                 outletsList.clear();
               }
             } else {
-              errorMessage.value = message.isNotEmpty ? message : 'Failed to fetch outlets';
+              errorMessage.value =
+                  message.isNotEmpty ? message : 'Failed to fetch outlets';
               print("API Error: ${errorMessage.value}");
             }
           } catch (parseError) {
             print("Parse Error: $parseError");
             print("Stack trace: ${StackTrace.current}");
-            errorMessage.value = "Failed to parse response: ${parseError.toString()}";
+            errorMessage.value =
+                "Failed to parse response: ${parseError.toString()}";
           }
         } else {
           errorMessage.value = 'Invalid response format';
@@ -119,7 +120,7 @@ class MyOutletsController extends GetxController {
       }
     } catch (e) {
       print("Error fetching outlets::$e");
-      errorMessage.value = "Error: ${e.toString()}";
+      errorMessage.value = mapError(e).userMessage;
     } finally {
       isLoading(false);
     }
@@ -131,7 +132,6 @@ class MyOutletsController extends GetxController {
       print("Attempting to delete business with ID: $businessId");
       http.Response response = await _apiService.deleteBusiness(businessId);
       print("Delete Response Status: ${response.statusCode}");
-      print("Delete Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -200,12 +200,13 @@ class MyOutletsController extends GetxController {
     }
   }
 
-  Future<void> updateBusiness(String businessId, Map<String, dynamic> businessData) async {
+  Future<void> updateBusiness(
+      String businessId, Map<String, dynamic> businessData) async {
     try {
       print("Attempting to update business with ID: $businessId");
-      http.Response response = await _apiService.updateBusiness(businessId, businessData);
+      http.Response response =
+          await _apiService.updateBusiness(businessId, businessData);
       print("Update Response Status: ${response.statusCode}");
-      print("Update Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -291,7 +292,7 @@ class MyOutletsController extends GetxController {
 
     selectedOutletId.value = value;
     final selected = outletsList.firstWhere(
-          (o) => o.id == value,
+      (o) => o.id == value,
     );
 
     selectedOutletName.value = selected.outletName ?? '';
@@ -310,7 +311,6 @@ class MyOutletsController extends GetxController {
           await _apiService.generateQRCode(kupanId: kupanId);
 
       print("📍 Response Status: ${response.statusCode}");
-      print("📍 Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         try {
@@ -321,7 +321,8 @@ class MyOutletsController extends GetxController {
             qrCodeUrl.value = qrRes.data?.qrUrl;
             print("✅ QR Code generated: ${qrCodeUrl.value}");
           } else {
-            errorMessageQR.value = qrRes.message ?? 'Failed to generate QR code';
+            errorMessageQR.value =
+                qrRes.message ?? 'Failed to generate QR code';
           }
         } catch (parseError) {
           print("❌ JSON Parse Error: $parseError");
@@ -348,7 +349,7 @@ class MyOutletsController extends GetxController {
       }
     } catch (e) {
       print("❌ Error: $e");
-      errorMessageQR.value = "Error: ${e.toString()}";
+      errorMessageQR.value = mapError(e).userMessage;
     } finally {
       isLoadingQR(false);
     }
@@ -362,8 +363,7 @@ class MyOutletsController extends GetxController {
     try {
       print("📋 Fetching kupans for outlet - BusinessId: $businessId");
 
-      http.Response response =
-          await _apiService.getKupanWithFilters(
+      http.Response response = await _apiService.getKupanWithFilters(
         vendorId: '', // Will use logged-in user's ID
         businessId: businessId,
         limit: 20,
@@ -389,7 +389,8 @@ class MyOutletsController extends GetxController {
           }
         } catch (parseError) {
           print("❌ JSON Parse Error: $parseError");
-          errorMessageOutletKupans.value = 'Invalid response format from server';
+          errorMessageOutletKupans.value =
+              'Invalid response format from server';
         }
       } else {
         // Try to parse error response
@@ -412,7 +413,7 @@ class MyOutletsController extends GetxController {
       }
     } catch (e) {
       print("❌ Error: $e");
-      errorMessageOutletKupans.value = "Error: ${e.toString()}";
+      errorMessageOutletKupans.value = mapError(e).userMessage;
     } finally {
       isLoadingOutletKupans(false);
     }

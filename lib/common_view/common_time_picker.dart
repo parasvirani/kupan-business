@@ -16,8 +16,7 @@ class CommonTimePicker extends StatelessWidget {
       required this.value,
       required this.hintText,
       required this.onTap,
-        this.isError = false
-      });
+      this.isError = false});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +30,10 @@ class CommonTimePicker extends StatelessWidget {
         ),
         child: Row(
           children: [
-            SvgPicture.asset(ImageConst.icTime, width: size(24),),
+            SvgPicture.asset(
+              ImageConst.icTime,
+              width: size(24),
+            ),
             const SizedBox(width: 12),
             Text(
               value != null ? value!.format(context) : hintText,

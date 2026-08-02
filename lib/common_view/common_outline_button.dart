@@ -17,23 +17,21 @@ class CommonOutlineButton extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: size(10), vertical: size(5)),
         decoration: BoxDecoration(
-          color: ColorConst.white,
-          borderRadius: BorderRadius.circular(
-            size(8),
-          ),
-          border: Border.all(
-            color: ColorConst.grey.withAlpha(30),
-            width: size(1),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: ColorConst.black.withAlpha(5),
-              offset: Offset(0, 4),
-              blurRadius: size(4),
-              spreadRadius: size(0)
-            )
-          ]
-        ),
+            color: ColorConst.white,
+            borderRadius: BorderRadius.circular(
+              size(8),
+            ),
+            border: Border.all(
+              color: ColorConst.grey.withAlpha(30),
+              width: size(1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                  color: ColorConst.black.withAlpha(5),
+                  offset: Offset(0, 4),
+                  blurRadius: size(4),
+                  spreadRadius: size(0))
+            ]),
         child: CommonText(
           text: text,
           color: Colors.grey,

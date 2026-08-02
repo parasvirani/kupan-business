@@ -10,7 +10,8 @@ class UserBusinessesRes {
 
   UserBusinessesRes({this.success, this.message, this.statusCode, this.data});
 
-  factory UserBusinessesRes.fromJson(Map<String, dynamic> json) => _$UserBusinessesResFromJson(json);
+  factory UserBusinessesRes.fromJson(Map<String, dynamic> json) =>
+      _$UserBusinessesResFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserBusinessesResToJson(this);
 }
@@ -38,7 +39,8 @@ class UserBusinessData {
     this.updatedAt,
   });
 
-  factory UserBusinessData.fromJson(Map<String, dynamic> json) => _$UserBusinessDataFromJson(json);
+  factory UserBusinessData.fromJson(Map<String, dynamic> json) =>
+      _$UserBusinessDataFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserBusinessDataToJson(this);
 }
@@ -70,7 +72,8 @@ class SellerBusiness {
     this.location,
   });
 
-  factory SellerBusiness.fromJson(Map<String, dynamic> json) => _$SellerBusinessFromJson(json);
+  factory SellerBusiness.fromJson(Map<String, dynamic> json) =>
+      _$SellerBusinessFromJson(json);
 
   Map<String, dynamic> toJson() => _$SellerBusinessToJson(this);
 }
@@ -93,8 +96,8 @@ class BusinessLocation {
     this.address,
   });
 
-  factory BusinessLocation.fromJson(Map<String, dynamic> json) => _$BusinessLocationFromJson(json);
+  factory BusinessLocation.fromJson(Map<String, dynamic> json) =>
+      _$BusinessLocationFromJson(json);
 
   Map<String, dynamic> toJson() => _$BusinessLocationToJson(this);
 }
-

@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:kupan_business/services/secure_store.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
-import '../common_view/common_text.dart';
-import '../const/color_const.dart';
 import '../const/image_const.dart';
-import '../const/string_const.dart';
 import '../utils/appRoutesStrings.dart';
-import '../utils/utils.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,7 +14,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   final box = GetStorage();
 
   @override
@@ -29,21 +25,16 @@ class _SplashScreenState extends State<SplashScreen> {
 
   getData() async {
     await Future.delayed(Duration(seconds: 3));
-    String? token = box.read(StringConst.TOKEN);
+    String? token = SecureStore.i.token;
     if (token?.isNotEmpty ?? false) {
       Get.offNamed(AppRoutes.dashboard);
     } else {
       Get.offNamed(AppRoutes.login);
     }
-
-
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final responsiveSize = (value) => screenWidth / (375 / value); // 375 is standard width base
-
     return Scaffold(
       body: Stack(
         children: [

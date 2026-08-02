@@ -1,4 +1,3 @@
-
 import 'package:json_annotation/json_annotation.dart';
 part 'user_update_res.g.dart';
 
@@ -11,7 +10,8 @@ class UserUpdateRes {
 
   UserUpdateRes({this.success, this.message, this.statusCode, this.data});
 
-  factory UserUpdateRes.fromJson(Map<String, dynamic> json) => _$UserUpdateResFromJson(json);
+  factory UserUpdateRes.fromJson(Map<String, dynamic> json) =>
+      _$UserUpdateResFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserUpdateResToJson(this);
 }
@@ -38,7 +38,8 @@ class UserUpdateData {
       this.createdAt,
       this.updatedAt});
 
-  factory UserUpdateData.fromJson(Map<String, dynamic> json) => _$UserUpdateDataFromJson(json);
+  factory UserUpdateData.fromJson(Map<String, dynamic> json) =>
+      _$UserUpdateDataFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserUpdateDataToJson(this);
 }
@@ -70,13 +71,14 @@ class UserUpdateSellerInfo {
       this.outletImages,
       this.location});
 
-  factory UserUpdateSellerInfo.fromJson(Map<String, dynamic> json) => _$UserUpdateSellerInfoFromJson(json);
+  factory UserUpdateSellerInfo.fromJson(Map<String, dynamic> json) =>
+      _$UserUpdateSellerInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserUpdateSellerInfoToJson(this);
 }
 
 @JsonSerializable()
-class UserUpdateLocation{
+class UserUpdateLocation {
   double? lat;
   double? long;
   String? city;
@@ -96,7 +98,8 @@ class UserUpdateLocation{
       this.address2,
       this.landmark});
 
-  factory UserUpdateLocation.fromJson(Map<String, dynamic> json) => _$UserUpdateLocationFromJson(json);
+  factory UserUpdateLocation.fromJson(Map<String, dynamic> json) =>
+      _$UserUpdateLocationFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserUpdateLocationToJson(this);
 }

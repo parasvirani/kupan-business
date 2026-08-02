@@ -24,7 +24,8 @@ class KupansListRes {
         );
       }
       // Prioritized format: data.upPriority.kupans + data.downPriority.kupans
-      else if (dataMap['upPriority'] != null || dataMap['downPriority'] != null) {
+      else if (dataMap['upPriority'] != null ||
+          dataMap['downPriority'] != null) {
         final upKupans = (dataMap['upPriority']?['kupans'] as List?) ?? [];
         final downKupans = (dataMap['downPriority']?['kupans'] as List?) ?? [];
         kupanList = [...upKupans, ...downKupans]
@@ -110,9 +111,8 @@ class KupanData {
       kupanImages: json['kupanImages'] != null
           ? List<String>.from(json['kupanImages'])
           : [],
-      kupanDays: json['kupanDays'] != null
-          ? List<String>.from(json['kupanDays'])
-          : [],
+      kupanDays:
+          json['kupanDays'] != null ? List<String>.from(json['kupanDays']) : [],
       vendorId: json['vendorId'],
       // Support both 'businessId' and 'outletId' (service-mapped)
       businessId:
@@ -209,7 +209,8 @@ class KupanData {
 
   /// Get outlet address from vendorId's sellerBusinesses
   String? getOutletAddress() {
-    if (outletAddress != null && outletAddress!.isNotEmpty) return outletAddress;
+    if (outletAddress != null && outletAddress!.isNotEmpty)
+      return outletAddress;
 
     if (vendorId is Map<String, dynamic>) {
       final vendorMap = vendorId as Map<String, dynamic>;
@@ -228,7 +229,8 @@ class KupanData {
             final loc = matchingBusiness['location'];
             if (loc is Map<String, dynamic>) {
               final parts = <String>[];
-              if (loc['address'] != null && loc['address'].toString().isNotEmpty) {
+              if (loc['address'] != null &&
+                  loc['address'].toString().isNotEmpty) {
                 parts.add(loc['address'].toString());
               }
               if (loc['city'] != null && loc['city'].toString().isNotEmpty) {

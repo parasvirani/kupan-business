@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android <= 11 (fullBackupContent). Exclude flutter_secure_storage's
+     EncryptedSharedPreferences: the AES master key lives in the AndroidKeyStore
+     and is NOT backed up, so a restored blob is undecryptable on a new device. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml"/>
+</full-backup-content>

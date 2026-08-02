@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
 import '../utils/appRoutesStrings.dart';
+import '../utils/phone_utils.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -24,16 +25,18 @@ class _LoginScreenState extends State<LoginScreen> {
     // setState(() => _isLoading = true);
     controller.isLoading(true);
 
+    final phone = normalizePhone(_phoneController.text);
+
     await _auth.verifyPhoneNumber(
-      phoneNumber: '+91${_phoneController.text.trim()}',
+      phoneNumber: phone,
       timeout: const Duration(seconds: 60),
 
       // ✅ Auto OTP verify (Android only)
       verificationCompleted: (PhoneAuthCredential credential) async {
-        UserCredential userCredential = await _auth.signInWithCredential(credential);
+        UserCredential userCredential =
+            await _auth.signInWithCredential(credential);
         // _goToHome();
         String? idToken = await userCredential.user?.getIdToken();
-        print("Auto Verified - ID Token:::$idToken");
 
         if (idToken != null) {
           // Step 3: Direct backend call karo — verificationId ni zaroorat nathi
@@ -54,7 +57,10 @@ class _LoginScreenState extends State<LoginScreen> {
       // 📩 OTP sent — OTP screen pe jao
       codeSent: (String verificationId, int? resendToken) {
         controller.isLoading(false);
-        Get.toNamed(AppRoutes.otp, arguments: {"mobile_number" : '+91${_phoneController.text.trim()}', "verificationId": verificationId});
+        Get.toNamed(AppRoutes.otp, arguments: {
+          "mobile_number": phone,
+          "verificationId": verificationId
+        });
         // Navigator.push(
         //   context,
         //   MaterialPageRoute(
@@ -264,21 +270,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // ── Send OTP button ──────────────────────────────────────
                   Obx(
-                        () => SizedBox(
+                    () => SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
                         onPressed: controller.isLoading.value
                             ? null
                             : () {
-                          if (_formKey.currentState!.validate()) {
-                            _sendOTP();
-                          }
-                        },
+                                if (_formKey.currentState!.validate()) {
+                                  _sendOTP();
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF111827),
                           disabledBackgroundColor:
-                          const Color(0xFF111827).withOpacity(0.5),
+                              const Color(0xFF111827).withOpacity(0.5),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -287,23 +293,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: controller.isLoading.value
                             ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
                             : const Text(
-                          'Send to Otp',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            fontFamily: 'Inter',
-                            letterSpacing: 0.2,
-                          ),
-                        ),
+                                'Send to Otp',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  fontFamily: 'Inter',
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
                       ),
                     ),
                   ),
