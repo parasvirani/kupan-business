@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 import '../const/image_const.dart';
+import '../controllers/approval_controller.dart';
 import '../utils/appRoutesStrings.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -25,11 +26,22 @@ class _SplashScreenState extends State<SplashScreen> {
 
   getData() async {
     await Future.delayed(Duration(seconds: 3));
-    String? token = SecureStore.i.token;
-    if (token?.isNotEmpty ?? false) {
-      Get.offNamed(AppRoutes.dashboard);
-    } else {
+    String token = SecureStore.i.token;
+    if (token.isEmpty) {
       Get.offNamed(AppRoutes.login);
+      return;
+    }
+
+    // Logged-in vendor: route by account approval status.
+    // Fail-OPEN — if the status check errors (network/server), fall through to
+    // the dashboard. Security isn't weakened: the backend gate still 403s every
+    // vendor write for an unapproved account, and the waiting screen's Refresh
+    // self-corrects a mis-route.
+    final status = await ApprovalController().checkStatus();
+    if (status == 'pending' || status == 'rejected') {
+      Get.offNamed(AppRoutes.waitingApproval);
+    } else {
+      Get.offNamed(AppRoutes.dashboard);
     }
   }
 

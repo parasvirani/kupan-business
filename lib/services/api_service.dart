@@ -31,6 +31,10 @@ class ApiService {
 
   Future<http.Response> getUser() => _api.get("/users/me");
 
+  // Vendor account approval status for the waiting-for-approval screen.
+  Future<http.Response> getApprovalStatus() =>
+      _api.get("/users/approval-status");
+
   Future<http.Response> createKupan(Map<String, dynamic> map) {
     return _api.post("/kupan/create", body: map);
   }

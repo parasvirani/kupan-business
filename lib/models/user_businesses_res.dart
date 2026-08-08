@@ -56,6 +56,7 @@ class SellerBusiness {
   List<String>? outletDay;
   String? outletTime;
   List<String>? outletImages;
+  String? logo;
   String? outletNumber;
   BusinessLocation? location;
 
@@ -68,6 +69,7 @@ class SellerBusiness {
     this.outletDay,
     this.outletTime,
     this.outletImages,
+    this.logo,
     this.outletNumber,
     this.location,
   });

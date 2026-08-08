@@ -64,6 +64,7 @@ SellerBusiness _$SellerBusinessFromJson(Map<String, dynamic> json) =>
       outletImages: (json['outletImages'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      logo: json['logo'] as String?,
       outletNumber: json['outletNumber'] as String?,
       location: json['location'] == null
           ? null
@@ -80,6 +81,7 @@ Map<String, dynamic> _$SellerBusinessToJson(SellerBusiness instance) =>
       'outletDay': instance.outletDay,
       'outletTime': instance.outletTime,
       'outletImages': instance.outletImages,
+      'logo': instance.logo,
       'outletNumber': instance.outletNumber,
       'location': instance.location,
     };

@@ -250,7 +250,8 @@ class _AddKupanViewState extends State<AddKupanView> {
         kupanDays: selectedDays,
       );
 
-      _showSuccess('Coupon updated successfully');
+      _showSuccess(
+          'Edit sent for admin review. Your changes go live after approval.');
 
       final vendorId = dc.selectedOutletId.value;
       if (k is KupanData && vendorId.isNotEmpty) {

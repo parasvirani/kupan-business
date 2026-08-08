@@ -11,6 +11,7 @@ import '../screens/details/details_screen.dart';
 import '../screens/otp_screen.dart';
 import '../screens/personal_info.dart';
 import '../screens/splash_screen.dart';
+import '../screens/waiting_approval_screen.dart';
 import 'appRoutesStrings.dart';
 
 class AppPage {
@@ -45,6 +46,12 @@ class AppPage {
       preventDuplicates: true,
       name: AppRoutes.details,
       page: () => const DetailsScreen(),
+      binding: null,
+    ),
+    GetPage(
+      preventDuplicates: true,
+      name: AppRoutes.waitingApproval,
+      page: () => const WaitingApprovalScreen(),
       binding: null,
     ),
     GetPage(

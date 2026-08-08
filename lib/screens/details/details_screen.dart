@@ -55,7 +55,17 @@ class _DetailsScreenState extends State<DetailsScreen> {
         mobileNumber: args?['mobile_number'] ?? '',
         dashboardController: dashboardController,
         onSuccess: () {
-          Get.toNamed(AppRoutes.dashboard, arguments: {"initialIndex": 1});
+          final isEdit = args?['isEdit'] == true;
+          final isResubmit = args?['resubmit'] == true;
+          if (isEdit && !isResubmit) {
+            // Existing approved vendor edited their profile → back into the app.
+            Get.toNamed(AppRoutes.dashboard, arguments: {"initialIndex": 1});
+          } else {
+            // Fresh signup, or a rejected vendor resubmitting: the account is
+            // pending admin approval, so route to the waiting screen. It checks
+            // status on load and forwards to the dashboard if already approved.
+            Get.offAllNamed(AppRoutes.waitingApproval);
+          }
         },
       ),
     );

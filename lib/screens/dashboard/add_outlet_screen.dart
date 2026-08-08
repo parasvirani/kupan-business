@@ -61,6 +61,10 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
 
   // ── Local state ───────────────────────────────────────────────────────────
   List<String> existingImageUrls = [];
+  // Outlet logo: either a freshly picked local file, or an existing remote URL
+  // (edit mode). Only one is set at a time.
+  File? _logoFile;
+  String? _existingLogoUrl;
   bool _isFetchingLocation = false;
 
   // Business type options
@@ -101,6 +105,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       _landmarkCtrl.text = o.location?.address ?? '';
       _zipCtrl.text = o.location?.pincode ?? '';
       existingImageUrls = o.outletImages ?? [];
+      _existingLogoUrl = (o.logo != null && o.logo!.isNotEmpty) ? o.logo : null;
 
       if (o.location?.state != null) {
         try {
@@ -234,6 +239,61 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     }
   }
 
+  // ── Logo picker ───────────────────────────────────────────────────────────
+  void _showLogoPicker() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (_) => CupertinoActionSheet(
+        title: const Text('Select Logo'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickLogo(ImageSource.gallery);
+            },
+            child: const Text('Choose from Gallery'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickLogo(ImageSource.camera);
+            },
+            child: const Text('Take a Photo'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          isDefaultAction: true,
+          child: const Text('Cancel', style: TextStyle(color: Colors.red)),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickLogo(ImageSource source) async {
+    final picked = await ImagePicker().pickImage(source: source);
+    if (picked == null) return;
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: picked.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Logo',
+          toolbarColor: Colors.blue,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(title: 'Crop Logo', aspectRatioLockEnabled: true),
+      ],
+    );
+    if (cropped != null) {
+      setState(() {
+        _logoFile = File(cropped.path);
+        _existingLogoUrl = null; // replacing any previous logo
+      });
+    }
+  }
+
   // ── Time pickers ──────────────────────────────────────────────────────────
   Future<void> _pickTime(BuildContext ctx, bool isOpen) async {
     final init = DateTime(
@@ -320,7 +380,21 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       }
 
       final finalImages = [...existingImageUrls, ...uploadedUrls];
-      final payload = _buildPayload(finalImages);
+
+      // Upload the logo if a new one was picked; otherwise keep the existing URL.
+      String? logoUrl = _existingLogoUrl;
+      if (_logoFile != null) {
+        logoUrl = await dashboardController.uploadImage(_logoFile!);
+        if (logoUrl == null) {
+          Get.snackbar('Error', 'Logo upload failed. Please try again.',
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM);
+          return;
+        }
+      }
+
+      final payload = _buildPayload(finalImages, logoUrl);
 
       if (widget.isEditMode && widget.outletData != null) {
         final myOutletsController = Get.find<MyOutletsController>();
@@ -355,7 +429,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     }
   }
 
-  Map<String, dynamic> _buildPayload(List<String> images) {
+  Map<String, dynamic> _buildPayload(List<String> images, String? logo) {
     final openStr = controller.openTime?.format(Get.context!) ?? '';
     final closeStr = controller.closeTime?.format(Get.context!) ?? '';
     final lat = controller.lat.value != 0.0
@@ -370,6 +444,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       'businessType': _selectedBusinessType,
       'outletTime': '$openStr - $closeStr',
       'outletImages': images,
+      'logo': logo ?? '',
       'outletDays': selectedDays.toList(),
       'location': {
         'address': _address1Ctrl.text.trim(),
@@ -450,6 +525,13 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
           _SectionLabel('OUTLET INFO'),
           const SizedBox(height: 14),
 
+          // Logo picker
+          _buildLabeledField(
+            label: 'OUTLET LOGO',
+            child: _buildLogoPicker(),
+          ),
+          const SizedBox(height: 16),
+
           // Image thumbnails row
           _buildImageRow(),
           const SizedBox(height: 16),
@@ -478,6 +560,95 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLogoPicker() {
+    final hasLogo = _logoFile != null ||
+        (_existingLogoUrl != null && _existingLogoUrl!.isNotEmpty);
+
+    Widget preview;
+    if (_logoFile != null) {
+      preview = Image.file(_logoFile!, fit: BoxFit.cover);
+    } else if (_existingLogoUrl != null && _existingLogoUrl!.isNotEmpty) {
+      preview = Image.network(
+        _existingLogoUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            const Icon(Icons.broken_image, color: _hintColor),
+      );
+    } else {
+      preview = const SizedBox();
+    }
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 84,
+          height: 84,
+          child: hasLogo
+              ? Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(width: 84, height: 84, child: preview),
+                    ),
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: GestureDetector(
+                        onTap: () => setState(() {
+                          _logoFile = null;
+                          _existingLogoUrl = null;
+                        }),
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.cancel,
+                              color: Colors.red, size: 22),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : GestureDetector(
+                  onTap: _showLogoPicker,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: _borderColor, width: 1.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_a_photo_outlined, color: _dark, size: 24),
+                        SizedBox(height: 4),
+                        Text('Add Logo',
+                            style: TextStyle(
+                                color: _labelColor,
+                                fontSize: 10,
+                                fontFamily: _font)),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            hasLogo
+                ? 'Tap ✕ to remove, or add a new one after removing.'
+                : 'Add a square logo for your outlet (optional).',
+            style: const TextStyle(
+                color: _labelColor, fontSize: 12, fontFamily: _font),
+          ),
+        ),
+      ],
     );
   }
 

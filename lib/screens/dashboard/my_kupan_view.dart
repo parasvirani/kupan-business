@@ -8,6 +8,7 @@ import 'package:kupan_business/controllers/dashboard_controller.dart';
 import 'package:kupan_business/controllers/my_outlets_controller.dart';
 import 'package:kupan_business/models/kupans_list_res.dart';
 import 'package:kupan_business/screens/dashboard/add_kupan_view.dart';
+import 'package:kupan_business/screens/dashboard/kupan_details_screen.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../const/color_const.dart';
@@ -137,7 +138,15 @@ class _MyKupanViewState extends State<MyKupanView> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: kupans.length,
                   separatorBuilder: (_, __) => SizedBox(height: size(12)),
-                  itemBuilder: (context, index) => _kupanCard(kupans[index]),
+                  itemBuilder: (context, index) => GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () async {
+                      final r = await Get.to(
+                          () => KupanDetailsScreen(kupan: kupans[index]));
+                      if (r == true) _refresh();
+                    },
+                    child: _kupanCard(kupans[index]),
+                  ),
                 );
               }),
             ),
@@ -258,6 +267,57 @@ class _MyKupanViewState extends State<MyKupanView> {
     );
   }
 
+  /// Small pill showing the kupan's review/lifecycle status.
+  /// Precedence: Cancelled → Paused → Approved (verified) → Pending.
+  Widget _statusBadge(KupanData kupan) {
+    late final String label;
+    late final Color color;
+    if (kupan.isCancelled == true) {
+      label = 'Cancelled';
+      color = const Color(0xFFEF4444); // red
+    } else if (kupan.isPaused == true) {
+      label = 'Paused';
+      color = const Color(0xFFF59E0B); // amber
+    } else if (kupan.isVerified == true) {
+      label = 'Approved';
+      color = const Color(0xFF12B76A); // green
+    } else {
+      label = 'Pending';
+      color = const Color(0xFFF59E0B); // amber/yellow
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: size(8), vertical: size(4)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(size(20)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: size(6),
+            height: size(6),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: size(5)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: size(11),
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              fontFamily: 'Urbanist',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _kupanCard(KupanData kupan) {
     final imageUrl =
         kupan.kupanImages?.isNotEmpty == true ? kupan.kupanImages![0] : null;
@@ -304,6 +364,12 @@ class _MyKupanViewState extends State<MyKupanView> {
                           errorBuilder: (_, __, ___) => _placeholderImage(),
                         )
                       : _placeholderImage(),
+                ),
+                // Status badge (top-left): Pending / Approved / Paused / Cancelled
+                Positioned(
+                  top: size(7),
+                  left: size(9),
+                  child: _statusBadge(kupan),
                 ),
                 // Delete + edit overlay buttons
                 Positioned(

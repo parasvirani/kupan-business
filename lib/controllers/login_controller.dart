@@ -11,6 +11,7 @@ import 'package:kupan_business/models/verify_otp_res.dart';
 import '../models/user_login_model.dart';
 import '../services/api_service.dart';
 import '../utils/appRoutesStrings.dart';
+import 'approval_controller.dart';
 
 class LoginController extends GetxController {
   final ApiService _apiService = ApiService();
@@ -127,13 +128,9 @@ class LoginController extends GetxController {
             return;
           }
 
-          // Navigate to details screen for profile completion
+          // Route based on whether the profile is already complete.
           try {
-            print("Navigating to details screen...");
-            Get.offAllNamed(AppRoutes.details, arguments: {
-              "isEdit": false,
-              "mobile_number": mobileNumber,
-            });
+            await _routeAfterLogin(mobileNumber);
           } catch (e, st) {
             print("NavigationError:: $e\n$st");
             errorOtpMessage.value = 'Navigation failed';
@@ -161,6 +158,30 @@ class LoginController extends GetxController {
       errorOtpMessage.value = mapError(e).userMessage;
     } finally {
       isOtpLoading.value = false;
+    }
+  }
+
+  /// Decides where to send the user after a successful OTP verification:
+  ///  - No profile name yet (new user)  → details/profile screen to complete it.
+  ///  - Has a name (returning user)      → into the app, routed by approval
+  ///    status (same rule as splash): approved → dashboard, else waiting screen.
+  Future<void> _routeAfterLogin(String mobileNumber) async {
+    final String name = otpResponse.value?.data?.user?.name?.trim() ?? '';
+
+    if (name.isEmpty) {
+      Get.offAllNamed(AppRoutes.details, arguments: {
+        "isEdit": false,
+        "mobile_number": mobileNumber,
+      });
+      return;
+    }
+
+    // Returning user with a completed profile → gate by approval status.
+    final status = await ApprovalController().checkStatus();
+    if (status == 'pending' || status == 'rejected') {
+      Get.offAllNamed(AppRoutes.waitingApproval);
+    } else {
+      Get.offAllNamed(AppRoutes.dashboard);
     }
   }
 
@@ -216,18 +237,11 @@ class LoginController extends GetxController {
           }
 
           try {
-            print("Navigating to details screen...");
-            // Get mobile number from Firebase user
-            final String? phoneNumber =
-                FirebaseAuth.instance.currentUser?.phoneNumber;
-            if (phoneNumber == null || phoneNumber.isEmpty) {
-              errorOtpMessage.value = 'Phone number not found';
-              return;
-            }
-            Get.offAllNamed(AppRoutes.details, arguments: {
-              "isEdit": false,
-              "mobile_number": phoneNumber,
-            });
+            // Get mobile number from Firebase user (used only if the profile
+            // is incomplete and we route to the details screen).
+            final String phoneNumber =
+                FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
+            await _routeAfterLogin(phoneNumber);
           } catch (e, st) {
             print("NavigationError:: $e\n$st");
             errorOtpMessage.value = 'Navigation failed';

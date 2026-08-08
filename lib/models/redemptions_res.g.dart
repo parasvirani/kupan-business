@@ -31,18 +31,14 @@ RedemptionData _$RedemptionDataFromJson(Map<String, dynamic> json) =>
       latestRedemptionAt: json['latestRedemptionAt'] as String?,
       kupanId: json['kupanId'] as String,
       title: json['title'] as String,
-      kupanImages: (json['kupanImages'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          [],
-      kupanDays: (json['kupanDays'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          [],
-      buyers: (json['buyers'] as List<dynamic>?)
-              ?.map((e) => Buyer.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+      kupanImages: (json['kupanImages'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      kupanDays:
+          (json['kupanDays'] as List<dynamic>).map((e) => e as String).toList(),
+      buyers: (json['buyers'] as List<dynamic>)
+          .map((e) => Buyer.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$RedemptionDataToJson(RedemptionData instance) =>

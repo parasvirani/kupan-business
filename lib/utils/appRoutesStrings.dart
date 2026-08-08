@@ -11,6 +11,7 @@ abstract class AppRoutes {
   static const offerDetails = RoutesPath.offerDetails;
   static const details = RoutesPath.details;
   static const personalinfo = RoutesPath.personalinfo;
+  static const waitingApproval = RoutesPath.waitingApproval;
   static const myOutlets = RoutesPath.myOutlets;
   static const addOutlet = RoutesPath.addOutlet;
   static const addKupan = RoutesPath.addKupan;
@@ -29,6 +30,7 @@ abstract class RoutesPath {
   static const offerDetails = "/offerDetails";
   static const details = "/details";
   static const personalinfo = "/personalinfo";
+  static const waitingApproval = "/waitingApproval";
   static const myOutlets = "/myOutlets";
   static const addOutlet = "/addOutlet";
   static const addKupan = "/addKupan";
