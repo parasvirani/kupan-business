@@ -102,7 +102,16 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       _outletNameCtrl.text = o.outletName ?? '';
       _selectedBusinessType = o.businessType;
       _address1Ctrl.text = o.location?.address ?? '';
-      _landmarkCtrl.text = o.location?.address ?? '';
+      _address2Ctrl.text = o.location?.address2 ?? '';
+      _landmarkCtrl.text = o.location?.landmark ?? '';
+      // Restore the saved open days (replacing the default pre-selection);
+      // dynamic from the outlet data, never hardcoded.
+      final savedDays = o.outletDays;
+      if (savedDays != null && savedDays.isNotEmpty) {
+        selectedDays
+          ..clear()
+          ..addAll(savedDays);
+      }
       _zipCtrl.text = o.location?.pincode ?? '';
       existingImageUrls = o.outletImages ?? [];
       _existingLogoUrl = (o.logo != null && o.logo!.isNotEmpty) ? o.logo : null;
@@ -130,16 +139,31 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
   }
 
   TimeOfDay _parseTime(String s) {
+    // Handles both 12-hour ("10:00 PM", incl. the narrow no-break space Flutter
+    // inserts before AM/PM) and 24-hour ("22:00") strings. The AM/PM meridiem
+    // MUST be applied — otherwise "10:00 PM" collapses to 10:00 AM.
     s = s.trim().toUpperCase();
+    final isPm = s.contains('PM');
+    final isAm = s.contains('AM');
+    final cleaned = s.replaceAll('AM', '').replaceAll('PM', '');
+
     int h = 0, m = 0;
-    if (s.contains(':')) {
-      final p = s.split(':');
-      h = int.parse(p[0]);
+    if (cleaned.contains(':')) {
+      final p = cleaned.split(':');
+      h = int.parse(p[0].replaceAll(RegExp(r'[^\d]'), ''));
       m = int.parse(p[1].replaceAll(RegExp(r'[^\d]'), ''));
     } else {
-      h = int.parse(s.replaceAll(RegExp(r'[^\d]'), ''));
+      h = int.parse(cleaned.replaceAll(RegExp(r'[^\d]'), ''));
     }
-    return TimeOfDay(hour: h, minute: m);
+
+    // 12-hour → 24-hour only when a meridiem is present.
+    if (isPm && h != 12) {
+      h += 12; // 1–11 PM → 13–23
+    }
+    if (isAm && h == 12) {
+      h = 0; // 12 AM → 00
+    }
+    return TimeOfDay(hour: h % 24, minute: m % 60);
   }
 
   // ── Validation ────────────────────────────────────────────────────────────

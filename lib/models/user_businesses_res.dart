@@ -53,7 +53,7 @@ class SellerBusiness {
   String? businessName;
   String? businessType;
   String? outletName;
-  List<String>? outletDay;
+  List<String>? outletDays;
   String? outletTime;
   List<String>? outletImages;
   String? logo;
@@ -66,7 +66,7 @@ class SellerBusiness {
     this.businessName,
     this.businessType,
     this.outletName,
-    this.outletDay,
+    this.outletDays,
     this.outletTime,
     this.outletImages,
     this.logo,
@@ -88,6 +88,8 @@ class BusinessLocation {
   String? pincode;
   String? state;
   String? address;
+  String? address2;
+  String? landmark;
 
   BusinessLocation({
     this.lat,
@@ -96,6 +98,8 @@ class BusinessLocation {
     this.pincode,
     this.state,
     this.address,
+    this.address2,
+    this.landmark,
   });
 
   factory BusinessLocation.fromJson(Map<String, dynamic> json) =>

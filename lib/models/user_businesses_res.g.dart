@@ -57,7 +57,7 @@ SellerBusiness _$SellerBusinessFromJson(Map<String, dynamic> json) =>
       businessName: json['businessName'] as String?,
       businessType: json['businessType'] as String?,
       outletName: json['outletName'] as String?,
-      outletDay: (json['outletDay'] as List<dynamic>?)
+      outletDays: (json['outletDays'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
       outletTime: json['outletTime'] as String?,
@@ -78,7 +78,7 @@ Map<String, dynamic> _$SellerBusinessToJson(SellerBusiness instance) =>
       'businessName': instance.businessName,
       'businessType': instance.businessType,
       'outletName': instance.outletName,
-      'outletDay': instance.outletDay,
+      'outletDays': instance.outletDays,
       'outletTime': instance.outletTime,
       'outletImages': instance.outletImages,
       'logo': instance.logo,
@@ -94,6 +94,8 @@ BusinessLocation _$BusinessLocationFromJson(Map<String, dynamic> json) =>
       pincode: json['pincode'] as String?,
       state: json['state'] as String?,
       address: json['address'] as String?,
+      address2: json['address2'] as String?,
+      landmark: json['landmark'] as String?,
     );
 
 Map<String, dynamic> _$BusinessLocationToJson(BusinessLocation instance) =>
@@ -104,4 +106,6 @@ Map<String, dynamic> _$BusinessLocationToJson(BusinessLocation instance) =>
       'pincode': instance.pincode,
       'state': instance.state,
       'address': instance.address,
+      'address2': instance.address2,
+      'landmark': instance.landmark,
     };
