@@ -254,6 +254,11 @@ class DashboardController extends GetxController {
   Future<void> createKupan() async {
     isLoadingCreateKupan.value = true;
     errorMessageCreateKupan.value = '';
+    // Reset the per-attempt result too (not just the error). The Create screen's
+    // post-await gate keys off `createKupanRes.value?.success` to decide whether
+    // to Get.back() to the previous screen; a stale value from an earlier attempt
+    // must never influence THIS attempt's navigation decision.
+    createKupanRes.value = null;
 
     try {
       // ✅ Step 1: Prepare selected days
