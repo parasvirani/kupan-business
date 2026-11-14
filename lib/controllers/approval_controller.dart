@@ -15,6 +15,7 @@ class ApprovalController extends GetxController {
   /// One of: "pending" | "approved" | "rejected" | "" (unknown / not fetched).
   final status = ''.obs;
   final rejectionReason = ''.obs;
+  final hasVendorProfile = false.obs;
   final isChecking = false.obs;
   final errorMessage = ''.obs;
 
@@ -37,6 +38,7 @@ class ApprovalController extends GetxController {
         if (fetched.isNotEmpty) status.value = fetched;
         rejectionReason.value =
             (payload?['rejectionReason'] ?? '').toString();
+        hasVendorProfile.value = payload?['hasVendorProfile'] == true;
         return status.value;
       }
       errorMessage.value = 'Could not check status (${res.statusCode})';

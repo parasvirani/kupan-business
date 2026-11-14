@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:kupan_business/common_view/common_text.dart';
 import 'package:kupan_business/const/color_const.dart';
@@ -26,6 +29,7 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
   SellerBusiness sellerBusiness = Get.arguments as SellerBusiness;
   final PageController _controller = PageController();
   final MyOutletsController outletsController = Get.find<MyOutletsController>();
+  final GlobalKey _qrStandBoundaryKey = GlobalKey();
 
   @override
   void initState() {
@@ -543,7 +547,6 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
   }
 
   void _showQRCodeDialog() {
-    // Get kupanId from arguments or use outlet id
     String kupanId = sellerBusiness.id ?? '';
 
     if (kupanId.isEmpty) {
@@ -554,208 +557,349 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     // Generate QR code
     outletsController.generateQRCode(kupanId: kupanId);
 
-    // Show dialog
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Obx(
           () => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header with title and close button
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        CommonText(
-                          text: 'QR Code',
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
-                        ),
-                        InkWell(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.black87,
-                              size: 20,
-                            ),
+                  // Paytm-style Countertop Stand card wrapped in RepaintBoundary
+                  RepaintBoundary(
+                    key: _qrStandBoundaryKey,
+                    child: Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxWidth: 340),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.18),
+                            blurRadius: 22,
+                            offset: const Offset(0, 10),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (outletsController.isLoadingQR.value)
-                          Column(
-                            children: [
-                              const CircularProgressIndicator(),
-                              const SizedBox(height: 16),
-                              CommonText(
-                                text: 'Generating QR Code...',
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ],
-                          )
-                        else if (outletsController
-                            .errorMessageQR.value.isNotEmpty)
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 1. Top Paytm-style Header Banner (Kupan Brand Orange Gradient)
                           Container(
-                            padding: const EdgeInsets.all(16),
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.red.shade200,
+                              gradient: LinearGradient(
+                                colors: [ColorConst.primary, const Color(0xFFFF7A00)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
                               ),
                             ),
-                            child: CommonText(
-                              text: outletsController.errorMessageQR.value,
-                              fontSize: 14,
-                              color: Colors.red.shade700,
-                              textAlign: TextAlign.center,
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    'KUPAN DIGITAL QR STAND',
+                                    style: TextStyle(
+                                      color: ColorConst.primary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Scan & Save Instant Discounts',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ],
                             ),
-                          )
-                        else if (outletsController.qrCodeUrl.value != null &&
-                            outletsController.qrCodeUrl.value!.isNotEmpty)
-                          Column(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.grey.shade200,
-                                  ),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    outletsController.qrCodeUrl.value!,
-                                    width: 280,
-                                    height: 280,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        width: 280,
-                                        height: 280,
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.broken_image),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              CommonText(
-                                text:
-                                    '${sellerBusiness.outletName ?? "Outlet"}',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ],
-                          )
-                        else
-                          CommonText(
-                            text: 'No QR code available',
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
                           ),
-                      ],
+
+                          // 2. White Body: Logo + Outlet Name + QR
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Official Horizontal Kupan Logo
+                                Image.asset(
+                                  'assets/icon/kupan_hori.png',
+                                  height: 38,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => Text(
+                                    'KUPAN',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                      color: ColorConst.primary,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+
+                                // Outlet Name badge
+                                Text(
+                                  sellerBusiness.outletName ?? 'Kupan Partner',
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF1F2937),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if ((sellerBusiness.location?.address ?? '').isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    sellerBusiness.location!.address!,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+
+                                const SizedBox(height: 14),
+
+                                // QR Code Container with Kupan Brand Orange border
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: ColorConst.primary.withOpacity(0.35),
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: ColorConst.primary.withOpacity(0.08),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: outletsController.isLoadingQR.value
+                                      ? Container(
+                                          width: 210,
+                                          height: 210,
+                                          alignment: Alignment.center,
+                                          child: const Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              CircularProgressIndicator(strokeWidth: 3),
+                                              SizedBox(height: 12),
+                                              Text(
+                                                'Generating QR Code...',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : outletsController.errorMessageQR.value.isNotEmpty
+                                          ? Container(
+                                              width: 210,
+                                              height: 210,
+                                              alignment: Alignment.center,
+                                              padding: const EdgeInsets.all(12),
+                                              child: Text(
+                                                outletsController.errorMessageQR.value,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.red,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            )
+                                          : (outletsController.qrCodeUrl.value != null &&
+                                                  outletsController.qrCodeUrl.value!.isNotEmpty)
+                                              ? ClipRRect(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  child: Image.network(
+                                                    outletsController.qrCodeUrl.value!,
+                                                    width: 210,
+                                                    height: 210,
+                                                    fit: BoxFit.contain,
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Container(
+                                                        width: 210,
+                                                        height: 210,
+                                                        color: Colors.grey[200],
+                                                        child: const Icon(
+                                                          Icons.broken_image,
+                                                          color: Colors.grey,
+                                                          size: 40,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                )
+                                              : Container(
+                                                  width: 210,
+                                                  height: 210,
+                                                  alignment: Alignment.center,
+                                                  child: const Text('No QR Code'),
+                                                ),
+                                ),
+
+                                const SizedBox(height: 14),
+
+                                // Footer instruction callout (Kupan brand orange accent)
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF4ED),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFFFFD7BE),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.qr_code_scanner_rounded,
+                                        size: 16,
+                                        color: ColorConst.primary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          'Scan with Kupan App to claim coupons',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: ColorConst.primary,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Stand acrylic bottom accent stripe
+                          Container(
+                            height: 6,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [ColorConst.primary, const Color(0xFFFF7A00)],
+                              ),
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(20),
+                                bottomRight: Radius.circular(20),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  const Divider(height: 1),
-                  // Footer with action buttons
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: CommonText(
-                                  text: 'Close',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ),
+
+                  const SizedBox(height: 16),
+
+                  // Action Buttons Below the Stand (Close + Share Stand QR)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.9),
+                          foregroundColor: Colors.black87,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              if (outletsController.qrCodeUrl.value != null &&
-                                  outletsController
-                                      .qrCodeUrl.value!.isNotEmpty) {
-                                _shareQRCode(
-                                    outletsController.qrCodeUrl.value!);
-                              }
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: ColorConst.primary,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.share,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    CommonText(
-                                      text: 'Share',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          elevation: 2,
                         ),
-                      ],
-                    ),
+                        child: const Text(
+                          'Close',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          if (outletsController.qrCodeUrl.value != null &&
+                              outletsController.qrCodeUrl.value!.isNotEmpty) {
+                            _shareStandImage();
+                          }
+                        },
+                        icon: const Icon(Icons.share_rounded, size: 18),
+                        label: const Text(
+                          'Share Stand QR',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ColorConst.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 22,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -764,6 +908,62 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
         );
       },
     );
+  }
+
+  Future<void> _shareStandImage() async {
+    // Show quick progress dialog
+    Get.dialog(
+      const Center(child: CircularProgressIndicator(color: Colors.white)),
+      barrierDismissible: false,
+    );
+
+    try {
+      // 1. Capture the RepaintBoundary as high-DPI image
+      final boundary = _qrStandBoundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        throw Exception('Stand view not ready for capture');
+      }
+
+      // pixelRatio 3.0 gives ultra crisp print/share quality
+      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        throw Exception('Failed to generate PNG bytes');
+      }
+
+      final pngBytes = byteData.buffer.asUint8List();
+
+      // 2. Save to temporary directory
+      final tempDir = await getTemporaryDirectory();
+      final file = File(
+        '${tempDir.path}/kupan_stand_${sellerBusiness.id ?? 'outlet'}.png',
+      );
+      await file.writeAsBytes(pngBytes);
+
+      // Close loading dialog
+      if (Get.isDialogOpen ?? false) Get.back();
+
+      // 3. Share the branded stand image
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text:
+            '${sellerBusiness.outletName ?? "Kupan Outlet"} - Scan to redeem exclusive discounts with Kupan App!\n${outletsController.qrCodeUrl.value ?? ""}',
+      );
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      // Fallback: share raw QR if capture fails
+      if (outletsController.qrCodeUrl.value != null &&
+          outletsController.qrCodeUrl.value!.isNotEmpty) {
+        _shareQRCode(outletsController.qrCodeUrl.value!);
+      } else {
+        Get.snackbar(
+          'Share failed',
+          'Could not share the stand. Please try again.',
+        );
+      }
+    }
   }
 
   Future<void> _shareQRCode(String qrUrl) async {

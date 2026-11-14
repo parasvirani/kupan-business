@@ -112,33 +112,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 36),
 
-                  // ── Logo row: icon + "KUPAN" ─────────────────────────────
+                  // ── Logo: KUPAN ─────────────────────────────
                   Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Replace with your actual SVG/PNG asset
-                        SvgPicture.asset(
-                          'assets/images/kupan_icon.svg',
-                          height: 28,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xFF111827),
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'KUPAN',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF111827),
-                            fontFamily: 'Inter',
-                            letterSpacing: 2.0,
-                          ),
-                        ),
-                      ],
+                    child: Image.asset(
+                      'assets/icon/kupan_hori.png',
+                      width: Get.width * 0.65,
+                      fit: BoxFit.contain,
                     ),
                   ),
 

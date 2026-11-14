@@ -32,12 +32,19 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Logged-in vendor: route by account approval status.
-    // Fail-OPEN — if the status check errors (network/server), fall through to
-    // the dashboard. Security isn't weakened: the backend gate still 403s every
-    // vendor write for an unapproved account, and the waiting screen's Refresh
-    // self-corrects a mis-route.
-    final status = await ApprovalController().checkStatus();
+    // Logged-in vendor: route by profile existence and approval status.
+    final approvalCtrl = ApprovalController();
+    final status = await approvalCtrl.checkStatus();
+    final bool hasProfile = approvalCtrl.hasVendorProfile.value;
+
+    if (!hasProfile) {
+      Get.offNamed(AppRoutes.details, arguments: {
+        "isEdit": false,
+        "mobile_number": "",
+      });
+      return;
+    }
+
     if (status == 'pending' || status == 'rejected') {
       Get.offNamed(AppRoutes.waitingApproval);
     } else {
@@ -57,7 +64,9 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
           Center(
             child: Image.asset(
-              ImageConst.splash_5,
+              ImageConst.kupanLogoWhiteHorizontal,
+              width: Get.width * 0.6,
+              fit: BoxFit.contain,
             ),
           ),
           Positioned(

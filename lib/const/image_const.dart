@@ -51,6 +51,9 @@ class ImageConst {
   static String splash_3 = "assets/images/splash_3.png";
   static String splash_4 = "assets/images/splash_4.png";
   static String splash_5 = "assets/images/splash_5.png";
+  static String kupanLogo = "assets/images/kupan-logo.svg";
+  static String kupanLogoHorizontal = "assets/icon/kupan_hori.png";
+  static String kupanLogoWhiteHorizontal = "assets/icon/kupan_hori_white.png";
   static String ic_location2 = "assets/images/ic_location2.svg";
   static String notification2 = "assets/images/notification2.svg";
 

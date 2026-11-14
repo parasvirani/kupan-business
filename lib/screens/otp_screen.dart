@@ -1,6 +1,7 @@
 // Firebase auth is handled inside the controller; remove direct dependency here
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import '../controllers/login_controller.dart';
@@ -180,24 +181,12 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   Widget _buildLogo() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Kupan bird icon – using a bookmark icon as placeholder.
-        // Replace with: Image.asset('assets/icons/kupan_logo.svg') or SvgPicture
-        const Icon(Icons.bookmark, color: _dark, size: 26),
-        const SizedBox(width: 6),
-        Text(
-          'KUPAN',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: _dark,
-            letterSpacing: 1.5,
-            fontFamily: 'Inter',
-          ),
-        ),
-      ],
+    return Center(
+      child: Image.asset(
+        'assets/icon/kupan_hori.png',
+        width: Get.width * 0.65,
+        fit: BoxFit.contain,
+      ),
     );
   }
 
