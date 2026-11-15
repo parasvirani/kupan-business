@@ -45,28 +45,46 @@ class _DetailsScreenState extends State<DetailsScreen> {
     }
   }
 
+  void _handleBackNavigation() {
+    final bool canPop = Navigator.of(context).canPop();
+    if (canPop) {
+      Navigator.of(context).pop();
+    } else {
+      // If there is no previous route in stack (e.g. redirected after login/OTP or splash),
+      // going back safely routes to the Login screen instead of crashing into a black screen.
+      Get.offAllNamed(AppRoutes.login);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: _buildAppBar(),
-      body: _PersonalInfoForm(
-        isEdit: args?['isEdit'] ?? false,
-        mobileNumber: args?['mobile_number'] ?? '',
-        dashboardController: dashboardController,
-        onSuccess: () {
-          final isEdit = args?['isEdit'] == true;
-          final isResubmit = args?['resubmit'] == true;
-          if (isEdit && !isResubmit) {
-            // Existing approved vendor edited their profile → back into the app.
-            Get.toNamed(AppRoutes.dashboard, arguments: {"initialIndex": 1});
-          } else {
-            // Fresh signup, or a rejected vendor resubmitting: the account is
-            // pending admin approval, so route to the waiting screen. It checks
-            // status on load and forwards to the dashboard if already approved.
-            Get.offAllNamed(AppRoutes.waitingApproval);
-          }
-        },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: _buildAppBar(),
+        body: _PersonalInfoForm(
+          isEdit: args?['isEdit'] ?? false,
+          mobileNumber: args?['mobile_number'] ?? '',
+          dashboardController: dashboardController,
+          onSuccess: () {
+            final isEdit = args?['isEdit'] == true;
+            final isResubmit = args?['resubmit'] == true;
+            if (isEdit && !isResubmit) {
+              // Existing approved vendor edited their profile → back into the app.
+              Get.toNamed(AppRoutes.dashboard, arguments: {"initialIndex": 1});
+            } else {
+              // Fresh signup, or a rejected vendor resubmitting: the account is
+              // pending admin approval, so route to the waiting screen. It checks
+              // status on load and forwards to the dashboard if already approved.
+              Get.offAllNamed(AppRoutes.waitingApproval);
+            }
+          },
+        ),
       ),
     );
   }
@@ -76,7 +94,7 @@ class _DetailsScreenState extends State<DetailsScreen> {
       backgroundColor: Colors.white,
       elevation: 0,
       leading: GestureDetector(
-        onTap: () => Navigator.of(context).pop(),
+        onTap: _handleBackNavigation,
         child: Container(
           margin: const EdgeInsets.all(12),
           decoration: BoxDecoration(

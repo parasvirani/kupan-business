@@ -141,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // ── Subtitle ─────────────────────────────────────────────
                   const Center(
                     child: Text(
-                      'Sign in to unlock exclusive deals and start\nsaving instantly!',
+                      'Connect with more customers and grow your business\nwith exclusive offers.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
