@@ -162,16 +162,13 @@ class LoginController extends GetxController {
   }
 
   /// Decides where to send the user after a successful OTP verification:
-  ///  - Has no vendor profile/outlets yet → details/registration screen to set up business.
-  ///  - Has a vendor profile → routed by approval status: approved → dashboard, else waiting screen.
+  ///  - No profile name yet (new user)  → details/profile screen to complete it.
+  ///  - Has a name (returning user)      → into the app, routed by approval
+  ///    status (same rule as splash): approved → dashboard, else waiting screen.
   Future<void> _routeAfterLogin(String mobileNumber) async {
-    final approvalCtrl = ApprovalController();
-    final status = await approvalCtrl.checkStatus();
-    final bool hasProfile = approvalCtrl.hasVendorProfile.value;
     final String name = otpResponse.value?.data?.user?.name?.trim() ?? '';
 
-    // If new vendor or no business outlet submitted yet, require registration
-    if (!hasProfile || name.isEmpty) {
+    if (name.isEmpty) {
       Get.offAllNamed(AppRoutes.details, arguments: {
         "isEdit": false,
         "mobile_number": mobileNumber,
@@ -179,7 +176,8 @@ class LoginController extends GetxController {
       return;
     }
 
-    // Returning vendor with submitted business details → gate by approval status.
+    // Returning user with a completed profile → gate by approval status.
+    final status = await ApprovalController().checkStatus();
     if (status == 'pending' || status == 'rejected') {
       Get.offAllNamed(AppRoutes.waitingApproval);
     } else {
