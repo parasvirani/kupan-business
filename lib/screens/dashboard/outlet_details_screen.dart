@@ -14,6 +14,7 @@ import 'package:kupan_business/controllers/my_outlets_controller.dart';
 import 'package:kupan_business/models/user_businesses_res.dart';
 import 'package:kupan_business/utils/utils.dart';
 import 'package:kupan_business/utils/appRoutesStrings.dart';
+import 'package:kupan_business/utils/vendor_approval_helper.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'add_outlet_screen.dart';
@@ -1004,7 +1005,12 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
     }
   }
 
-  void _navigateToAddKupan() {
+  void _navigateToAddKupan() async {
+    final isApproved = await VendorApprovalHelper.checkApprovalAndProceed(
+      context: context,
+    );
+    if (!isApproved) return;
+
     // Set the selected outlet ID before navigating
     DashboardController dashboardController = Get.find<DashboardController>();
     dashboardController.selectedOutletId.value = sellerBusiness.id ?? '';

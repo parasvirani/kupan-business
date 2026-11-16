@@ -1,4 +1,5 @@
-// Firebase auth is handled inside the controller; remove direct dependency here
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -43,13 +44,45 @@ class _OtpScreenState extends State<OtpScreen> {
   String _errorMessage = '';
   bool _isLoading = false;
 
+  late String _verificationId;
+  int? _resendToken;
+  int _resendSeconds = 0;
+  Timer? _resendTimer;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   String get _pin => _controllers.map((c) => c.text).join();
 
   bool get _isPinComplete => _pin.length == _otpLength;
   var args = Get.arguments;
 
   @override
+  void initState() {
+    super.initState();
+    _verificationId = (args?['verificationId'] ?? '').toString();
+    _resendToken = args?['resendToken'] as int?;
+    _startResendCooldown();
+  }
+
+  void _startResendCooldown([int seconds = 30]) {
+    _resendTimer?.cancel();
+    setState(() => _resendSeconds = seconds);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      if (_resendSeconds <= 1) {
+        t.cancel();
+        setState(() => _resendSeconds = 0);
+      } else {
+        setState(() => _resendSeconds--);
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    _resendTimer?.cancel();
     for (final c in _controllers) {
       c.dispose();
     }
@@ -88,10 +121,7 @@ class _OtpScreenState extends State<OtpScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final String? verificationId =
-          args != null ? args['verificationId'] : null;
-
-      if (verificationId == null) {
+      if (_verificationId.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content:
@@ -107,7 +137,7 @@ class _OtpScreenState extends State<OtpScreen> {
             ? args['mobile_number']
             : _mobileNumber,
         _pin.trim(),
-        verificationId,
+        _verificationId,
       );
     } catch (e) {
       // Show any unexpected errors
@@ -120,13 +150,58 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
-  void _resendOtp() {
-    // TODO: implement resend logic
+  Future<void> _resendOtp() async {
+    if (_resendSeconds > 0) return;
+    final phone = args != null && args['mobile_number'] != null
+        ? args['mobile_number'].toString()
+        : _mobileNumber;
+
+    if (phone.isEmpty) return;
+
     for (final c in _controllers) {
       c.clear();
     }
     _focusNodes[0].requestFocus();
     setState(() => _errorMessage = '');
+
+    _startResendCooldown(30);
+
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phone,
+      forceResendingToken: _resendToken,
+      timeout: const Duration(seconds: 60),
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        try {
+          final userCredential = await _auth.signInWithCredential(credential);
+          final idToken = await userCredential.user?.getIdToken();
+          if (idToken != null) {
+            await controller.verifyOtpWithToken(idToken);
+          }
+        } catch (_) {}
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Could not resend OTP: ${e.message ?? 'Please try again'}'),
+          ),
+        );
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        if (!mounted) return;
+        setState(() {
+          _verificationId = verificationId;
+          _resendToken = resendToken;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('OTP resent successfully')),
+        );
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        _verificationId = verificationId;
+      },
+    );
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -287,12 +362,14 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
         ),
         GestureDetector(
-          onTap: _resendOtp,
+          onTap: _resendSeconds > 0 ? null : _resendOtp,
           child: Text(
-            ' Resend OTP',
-            style: const TextStyle(
+            _resendSeconds > 0
+                ? ' Resend in ${_resendSeconds}s'
+                : ' Resend OTP',
+            style: TextStyle(
               fontSize: 14,
-              color: _dark,
+              color: _resendSeconds > 0 ? _grey : _dark,
               fontWeight: FontWeight.w700,
               fontFamily: 'Inter',
             ),

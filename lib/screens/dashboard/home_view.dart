@@ -11,6 +11,7 @@ import 'package:kupan_business/screens/dashboard/redemptions_detail_screen.dart'
 
 import '../../const/color_const.dart';
 import '../../const/image_const.dart';
+import '../../controllers/approval_controller.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
 
@@ -27,14 +28,20 @@ class _HomeViewState extends State<HomeView> {
   DashboardController dashboardController = Get.find();
   final MyOutletsController myOutletsController =
       Get.put(MyOutletsController());
+  late final ApprovalController approvalController;
 
   @override
   void initState() {
     super.initState();
+    approvalController = Get.isRegistered<ApprovalController>()
+        ? Get.find<ApprovalController>()
+        : Get.put(ApprovalController());
+    approvalController.checkStatus();
     _loadKupans();
   }
 
   void _loadKupans() {
+    approvalController.checkStatus();
     final vendorId = SecureStore.i.userId;
     if (vendorId.isNotEmpty) {
       dashboardController.getVendorKupans(vendorId: vendorId);
@@ -60,6 +67,7 @@ class _HomeViewState extends State<HomeView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildReviewBanner(),
               SizedBox(height: size(20)),
               _buildStatsGrid(),
               SizedBox(height: size(24)),
@@ -466,4 +474,75 @@ class _HomeViewState extends State<HomeView> {
       ),
     );
   }
+
+  Widget _buildReviewBanner() {
+    return Obx(() {
+      final status = approvalController.status.value.toLowerCase();
+      // Show only when not yet approved
+      if (status.isEmpty || status == 'approved') {
+        return const SizedBox.shrink();
+      }
+
+      final isPending = status == 'pending';
+      final bgColor = isPending ? const Color(0xFFFFFBEB) : const Color(0xFFFEF2F2);
+      final borderColor = isPending ? const Color(0xFFFDE68A) : const Color(0xFFFECACA);
+      final iconColor = isPending ? const Color(0xFFD97706) : const Color(0xFFDC2626);
+      final textColor = isPending ? const Color(0xFF92400E) : const Color(0xFF991B1B);
+
+      return Container(
+        width: double.infinity,
+        margin: EdgeInsets.fromLTRB(size(16), size(12), size(16), 0),
+        padding: EdgeInsets.symmetric(horizontal: size(14), vertical: size(12)),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              isPending ? Icons.info_outline : Icons.error_outline,
+              color: iconColor,
+              size: size(20),
+            ),
+            SizedBox(width: size(10)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isPending
+                        ? 'Under Review: Your Account'
+                        : 'Account Action Required',
+                    style: TextStyle(
+                      fontSize: size(13),
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                      fontFamily: 'Urbanist',
+                    ),
+                  ),
+                  SizedBox(height: size(3)),
+                  Text(
+                    isPending
+                        ? 'Your account is under review by the Kupan team. You will be able to create coupons once verified.'
+                        : (approvalController.rejectionReason.value.isNotEmpty
+                            ? approvalController.rejectionReason.value
+                            : 'Your application was rejected. Please contact support.'),
+                    style: TextStyle(
+                      fontSize: size(11.5),
+                      color: textColor.withOpacity(0.9),
+                      fontFamily: 'Urbanist',
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
 }
+

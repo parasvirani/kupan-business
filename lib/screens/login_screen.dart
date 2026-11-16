@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
@@ -59,14 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
         controller.isLoading(false);
         Get.toNamed(AppRoutes.otp, arguments: {
           "mobile_number": phone,
-          "verificationId": verificationId
+          "verificationId": verificationId,
+          "resendToken": resendToken,
         });
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (_) => OTPScreen(verificationId: verificationId),
-        //   ),
-        // );
       },
 
       codeAutoRetrievalTimeout: (String verificationId) {},
@@ -173,6 +169,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
+                    maxLength: 10,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w400,
@@ -180,23 +181,49 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontFamily: 'Inter',
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Enter your phone number',
+                      counterText: '',
+                      hintText: '98765 43210',
                       hintStyle: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
                         color: Color(0xFFD1D5DB),
                         fontFamily: 'Inter',
                       ),
-                      prefixIcon: const Padding(
-                        padding: EdgeInsets.only(left: 14, right: 10),
-                        child: Icon(
-                          Icons.phone_outlined,
-                          color: Color(0xFF9CA3AF),
-                          size: 20,
+                      prefixIcon: Container(
+                        padding: const EdgeInsets.only(left: 14, right: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.phone_outlined,
+                              color: Color(0xFF9CA3AF),
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              '+91',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF111827),
+                                fontFamily: 'Inter',
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            SizedBox(
+                              height: 18,
+                              child: VerticalDivider(
+                                color: Color(0xFFD1D5DB),
+                                thickness: 1.2,
+                                width: 1,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                          ],
                         ),
                       ),
                       prefixIconConstraints: const BoxConstraints(
-                        minWidth: 48,
+                        minWidth: 90,
                         minHeight: 48,
                       ),
                       filled: true,

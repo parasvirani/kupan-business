@@ -35,7 +35,7 @@ class ApiClient {
   static ApiClient instance = ApiClient();
 
   static const String baseUrl = "https://kupan-backend.vercel.app/api/v1";
-  static const Duration _timeout = Duration(seconds: 20);
+  static const Duration _timeout = Duration(seconds: 60);
 
   /// Bundled Google Trust Services roots used as the pinned trust anchors.
   static const List<String> _rootAssets = [

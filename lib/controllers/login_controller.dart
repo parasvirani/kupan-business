@@ -162,13 +162,16 @@ class LoginController extends GetxController {
   }
 
   /// Decides where to send the user after a successful OTP verification:
-  ///  - No profile name yet (new user)  → details/profile screen to complete it.
-  ///  - Has a name (returning user)      → into the app, routed by approval
-  ///    status (same rule as splash): approved → dashboard, else waiting screen.
+  ///  - No vendor profile / outlet registered yet (or no name) → details screen to complete setup.
+  ///  - Has a vendor profile → routed by approval status: approved → dashboard, else waiting screen.
   Future<void> _routeAfterLogin(String mobileNumber) async {
+    final approvalCtrl = ApprovalController();
+    final status = await approvalCtrl.checkStatus();
+    final bool hasProfile = approvalCtrl.hasVendorProfile.value;
     final String name = otpResponse.value?.data?.user?.name?.trim() ?? '';
 
-    if (name.isEmpty) {
+    // If new vendor or no business outlet submitted yet, require registration
+    if (!hasProfile || name.isEmpty) {
       Get.offAllNamed(AppRoutes.details, arguments: {
         "isEdit": false,
         "mobile_number": mobileNumber,
@@ -176,13 +179,9 @@ class LoginController extends GetxController {
       return;
     }
 
-    // Returning user with a completed profile → gate by approval status.
-    final status = await ApprovalController().checkStatus();
-    if (status == 'pending' || status == 'rejected') {
-      Get.offAllNamed(AppRoutes.waitingApproval);
-    } else {
-      Get.offAllNamed(AppRoutes.dashboard);
-    }
+    // Once outlet is submitted, vendor has access to the dashboard.
+    // Creating coupons is gated by approval status.
+    Get.offAllNamed(AppRoutes.dashboard);
   }
 
   // Auto-verification mate alag method

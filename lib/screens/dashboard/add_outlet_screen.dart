@@ -27,6 +27,7 @@ import '../../controllers/details_controller.dart';
 import '../../controllers/my_outlets_controller.dart';
 import '../../models/user_businesses_res.dart';
 import '../../services/api_service.dart';
+import '../../utils/appRoutesStrings.dart';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const Color _dark = Color(0xFF1A1A1A);
@@ -166,6 +167,17 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     return TimeOfDay(hour: h % 24, minute: m % 60);
   }
 
+  void _showNotification(String message, {bool isError = true}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   // ── Validation ────────────────────────────────────────────────────────────
   bool _validate() {
     bool ok = _formKey.currentState!.validate();
@@ -245,9 +257,10 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop Image',
-          toolbarColor: Colors.blue,
+          toolbarColor: const Color(0xFF1A1A1A),
           toolbarWidgetColor: Colors.white,
           lockAspectRatio: true,
+          hideBottomControls: false,
         ),
         IOSUiSettings(title: 'Crop Image', aspectRatioLockEnabled: true),
       ],
@@ -303,9 +316,10 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop Logo',
-          toolbarColor: Colors.blue,
+          toolbarColor: const Color(0xFF1A1A1A),
           toolbarWidgetColor: Colors.white,
           lockAspectRatio: true,
+          hideBottomControls: false,
         ),
         IOSUiSettings(title: 'Crop Logo', aspectRatioLockEnabled: true),
       ],
@@ -394,10 +408,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       for (final f in controller.images ?? []) {
         final url = await dashboardController.uploadImage(f);
         if (url == null) {
-          Get.snackbar('Error', 'Image upload failed. Please try again.',
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM);
+          _showNotification('Image upload failed. Please try again.');
           return;
         }
         uploadedUrls.add(url);
@@ -410,10 +421,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       if (_logoFile != null) {
         logoUrl = await dashboardController.uploadImage(_logoFile!);
         if (logoUrl == null) {
-          Get.snackbar('Error', 'Logo upload failed. Please try again.',
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM);
+          _showNotification('Logo upload failed. Please try again.');
           return;
         }
       }
@@ -431,23 +439,94 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
         if (response.statusCode == 200 && data['success'] == true) {
           controller.images?.clear();
           await MyOutletsController.refreshOutlets();
-          Get.back();
-          Get.snackbar('Success', 'Outlet added successfully!',
-              backgroundColor: Colors.green,
-              colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM);
+
+          final isFirstTime = Get.arguments is Map && Get.arguments['isFirstTime'] == true;
+
+          if (isFirstTime) {
+            // Show verification dialog informing vendor about 24-hour review
+            await Get.dialog(
+              Dialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.verified_user_outlined,
+                          color: Color(0xFFD97706),
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Outlet Submitted!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Inter',
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Your outlet has been submitted successfully. Your account is under review and will be verified by the Kupan team within 24 hours.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF4B5563),
+                          fontFamily: 'Inter',
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A1A1A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            Get.back(); // close dialog
+                            Get.offAllNamed(AppRoutes.dashboard);
+                          },
+                          child: const Text(
+                            'Got it',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Inter',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              barrierDismissible: false,
+            );
+          } else {
+            Get.back();
+            _showNotification('Outlet added successfully!', isError: false);
+          }
         } else {
-          Get.snackbar('Error', data['message'] ?? 'Failed to add outlet',
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM);
+          _showNotification(data['message'] ?? 'Failed to add outlet');
         }
       }
     } catch (e) {
-      Get.snackbar('Error', 'Something went wrong: $e',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM);
+      _showNotification('Something went wrong: $e');
     } finally {
       controller.isLoadingOutlet.value = false;
     }
@@ -483,13 +562,23 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     };
   }
 
+  void _handleBackNavigation() {
+    Navigator.of(context).pop();
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _pageBg,
-      appBar: _buildAppBar(),
-      body: Form(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        backgroundColor: _pageBg,
+        appBar: _buildAppBar(),
+        body: Form(
         key: _formKey,
         child: Stack(
           children: [
@@ -515,7 +604,8 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   // ── AppBar ────────────────────────────────────────────────────────────────
@@ -524,7 +614,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
       backgroundColor: _pageBg,
       elevation: 0,
       leading: GestureDetector(
-        onTap: () => Navigator.pop(context),
+        onTap: _handleBackNavigation,
         child: Container(
           margin: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -566,6 +656,10 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
             child: _InputField(
               controller: _outletNameCtrl,
               hint: 'Enter your name',
+              textCapitalization: TextCapitalization.characters,
+              inputFormatters: [
+                UpperCaseTextFormatter(),
+              ],
               validator: (v) {
                 if (v == null || v.trim().isEmpty)
                   return 'Please enter outlet name';
@@ -1037,16 +1131,70 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
           _SectionLabel('OPEN DAYS'),
           const SizedBox(height: 16),
 
-          // Select open days label
-          const Text(
-            'SELECT OPEN DAYS',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: _labelColor,
-              letterSpacing: 0.6,
-              fontFamily: _font,
-            ),
+          // Select open days label & All Days checkbox
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'SELECT OPEN DAYS',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: _labelColor,
+                  letterSpacing: 0.6,
+                  fontFamily: _font,
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    if (selectedDays.length == weekDays.length) {
+                      selectedDays.clear();
+                    } else {
+                      selectedDays.addAll(weekDays);
+                    }
+                  });
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: Checkbox(
+                          value: selectedDays.length == weekDays.length,
+                          activeColor: _primaryBlack,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          onChanged: (val) {
+                            setState(() {
+                              if (val == true) {
+                                selectedDays.addAll(weekDays);
+                              } else {
+                                selectedDays.clear();
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'All Days Open',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _dark,
+                          fontFamily: _font,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
 
@@ -1264,11 +1412,23 @@ class _SectionLabel extends StatelessWidget {
 }
 
 /// Reusable plain text input field
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
+    );
+  }
+}
+
 class _InputField extends StatelessWidget {
   const _InputField({
     required this.controller,
     required this.hint,
     this.inputType = TextInputType.text,
+    this.textCapitalization = TextCapitalization.none,
     this.inputFormatters,
     this.validator,
   });
@@ -1276,6 +1436,7 @@ class _InputField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final TextInputType inputType;
+  final TextCapitalization textCapitalization;
   final List<TextInputFormatter>? inputFormatters;
   final FormFieldValidator<String>? validator;
 
@@ -1284,6 +1445,7 @@ class _InputField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: inputType,
+      textCapitalization: textCapitalization,
       inputFormatters: inputFormatters,
       validator: validator,
       style: const TextStyle(

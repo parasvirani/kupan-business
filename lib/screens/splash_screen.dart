@@ -32,13 +32,22 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Logged-in vendor: route by account approval status.
-    final status = await ApprovalController().checkStatus();
-    if (status == 'pending' || status == 'rejected') {
-      Get.offNamed(AppRoutes.waitingApproval);
-    } else {
-      Get.offNamed(AppRoutes.dashboard);
+    // Logged-in vendor: route by profile existence and approval status.
+    final approvalCtrl = ApprovalController();
+    final status = await approvalCtrl.checkStatus();
+    final bool hasProfile = approvalCtrl.hasVendorProfile.value;
+
+    if (!hasProfile) {
+      Get.offNamed(AppRoutes.details, arguments: {
+        "isEdit": false,
+        "mobile_number": "",
+      });
+      return;
     }
+
+    // Once outlet is registered, vendor always accesses dashboard.
+    // Coupon creation is gated by approval status.
+    Get.offNamed(AppRoutes.dashboard);
   }
 
   @override

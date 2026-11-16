@@ -78,10 +78,9 @@ class _DetailsScreenState extends State<DetailsScreen> {
               // Existing approved vendor edited their profile → back into the app.
               Get.toNamed(AppRoutes.dashboard, arguments: {"initialIndex": 1});
             } else {
-              // Fresh signup, or a rejected vendor resubmitting: the account is
-              // pending admin approval, so route to the waiting screen. It checks
-              // status on load and forwards to the dashboard if already approved.
-              Get.offAllNamed(AppRoutes.waitingApproval);
+              // Fresh signup, or adding initial vendor info:
+              // Push to Add Outlet screen so going back pops back to Details with filled data intact!
+              Get.toNamed(AppRoutes.addOutlet, arguments: {"isFirstTime": true});
             }
           },
         ),

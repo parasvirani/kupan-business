@@ -15,6 +15,7 @@ import '../../const/color_const.dart';
 import '../../const/image_const.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
+import '../../utils/vendor_approval_helper.dart';
 
 class MyKupanView extends StatefulWidget {
   const MyKupanView({super.key});
@@ -76,6 +77,11 @@ class _MyKupanViewState extends State<MyKupanView> {
       appBar: _buildAppBar(),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          final isApproved = await VendorApprovalHelper.checkApprovalAndProceed(
+            context: context,
+          );
+          if (!isApproved) return;
+
           final result = await Get.to(() => AddKupanView());
           if (result != null) _refresh();
         },
