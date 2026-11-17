@@ -6,6 +6,7 @@ import 'package:kupan_business/controllers/dashboard_controller.dart';
 import 'package:kupan_business/controllers/my_outlets_controller.dart';
 import 'package:kupan_business/models/kupans_list_res.dart';
 import 'package:kupan_business/screens/dashboard/add_kupan_view.dart';
+import 'package:kupan_business/screens/dashboard/kupan_details_screen.dart';
 import 'package:kupan_business/screens/dashboard/components/main_drawer.dart';
 import 'package:kupan_business/screens/dashboard/redemptions_detail_screen.dart';
 
@@ -14,6 +15,7 @@ import '../../const/image_const.dart';
 import '../../controllers/approval_controller.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
+import '../../widgets/notification_icon_button.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -127,18 +129,8 @@ class _HomeViewState extends State<HomeView> {
           ],
         ),
       ),
-      actions: [
-        Padding(
-          padding: EdgeInsets.only(right: size(8)),
-          child: IconButton(
-            icon: SvgPicture.asset(
-              ImageConst.notification2,
-              colorFilter:
-                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
-            onPressed: () => Get.toNamed(AppRoutes.notification),
-          ),
-        ),
+      actions: const [
+        NotificationIconButton(),
       ],
     );
   }
@@ -331,7 +323,7 @@ class _HomeViewState extends State<HomeView> {
 
     return GestureDetector(
       onTap: () async {
-        final result = await Get.to(() => AddKupanView(kupanToEdit: coupon));
+        final result = await Get.to(() => KupanDetailsScreen(kupan: coupon));
         if (result == true) _loadKupans();
       },
       child: Container(

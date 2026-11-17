@@ -18,6 +18,7 @@ import 'package:kupan_business/utils/vendor_approval_helper.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'add_outlet_screen.dart';
+import 'kupan_details_screen.dart';
 
 class OutletDetailsScreen extends StatefulWidget {
   const OutletDetailsScreen({super.key});
@@ -60,7 +61,9 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
           },
         ),
         title: CommonText(
-          text: 'Cafe Street',
+          text: sellerBusiness.outletName?.isNotEmpty == true
+              ? sellerBusiness.outletName!
+              : 'Outlet Details',
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: Colors.black,
@@ -393,15 +396,23 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
           itemCount: outletsController.outletKupanList.length,
           itemBuilder: (context, index) {
             final kupan = outletsController.outletKupanList[index];
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                children: [
+            return InkWell(
+              onTap: () async {
+                final result = await Get.to(() => KupanDetailsScreen(kupan: kupan));
+                if (result == true) {
+                  outletsController.getOutletKupans(businessId: sellerBusiness.id ?? '');
+                }
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
                   // Coupon Image
                   ClipRRect(
                     borderRadius: const BorderRadius.only(
@@ -479,11 +490,12 @@ class _OutletDetailsScreenState extends State<OutletDetailsScreen> {
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
-    );
+            ),
+          );
+        },
+      );
+    },
+  );
   }
 
   Widget _buildCompactActionButton(

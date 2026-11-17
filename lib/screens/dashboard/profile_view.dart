@@ -8,6 +8,7 @@ import '../../const/color_const.dart';
 import '../../const/image_const.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
+import 'components/help_and_support_sheet.dart';
 import 'components/main_drawer.dart';
 
 class ProfileView extends StatefulWidget {
@@ -203,22 +204,19 @@ class _ProfileViewState extends State<ProfileView> {
               ),
             ),
             _menu(
-              text: "Invite friends",
-              onTap: () {},
-            ),
-            Divider(
-              color: ColorConst.divider,
-            ),
-            _menu(
               text: "Help & Support",
-              onTap: () {},
+              onTap: () {
+                HelpAndSupportSheet.show(context);
+              },
             ),
             Divider(
               color: ColorConst.divider,
             ),
             _menu(
               text: "Terms & Condition",
-              onTap: () {},
+              onTap: () {
+                Get.toNamed(AppRoutes.termsAndConditions);
+              },
             ),
             Divider(
               color: ColorConst.divider,

@@ -55,7 +55,7 @@ class VendorApprovalHelper {
               Text(
                 isRejected
                     ? 'Verification Rejected'
-                    : 'Verification Pending',
+                    : 'Business Verification Pending',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -67,10 +67,10 @@ class VendorApprovalHelper {
               Text(
                 isRejected
                     ? (reason.isNotEmpty
-                        ? 'તમારું એકાઉન્ટ રીજેક્ટ કરવામાં આવ્યું છે: $reason\nકૃપા કરીને વિગતો સુધારીને ફરીથી સબમિટ કરો.'
-                        : 'તમારું એકાઉન્ટ રીજેક્ટ થયેલ છે. કૃપા કરીને સપોર્ટનો સંપર્ક કરો.')
+                        ? 'Your account has been rejected: $reason\nPlease correct the details and submit again.'
+                        : 'Your account has been rejected. Please contact support.')
                     : (customMessage ??
-                        'તમારું વેરિફિકેશન પેન્ડિંગમાં છે. કુપન ટીમ દ્વારા એકાઉન્ટ એપ્રૂવ થયા પછી જ તમે કૂપન એડ કરી શકશો.'),
+                        'Your business verification is currently under review by the KUPAN team. You will be able to add and manage coupons once your business is approved.'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,

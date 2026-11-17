@@ -69,7 +69,6 @@ class _KupanDetailsScreenState extends State<KupanDetailsScreen> {
     final address = kupan.getOutletAddress() ?? kupan.outletAddress ?? '';
     final outletName = kupan.getOutletName() ?? kupan.outletName ?? '';
     final days = kupan.kupanDays ?? [];
-    final todayCount = dashboardController.todayRedemptionsByKupan[kupan.id] ?? 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -153,10 +152,6 @@ class _KupanDetailsScreenState extends State<KupanDetailsScreen> {
                     _infoRow(Icons.store_outlined, 'Outlet', outletName),
                   if (address.isNotEmpty)
                     _infoRow(Icons.location_on_outlined, 'Address', address),
-                  _infoRow(Icons.confirmation_num_outlined, 'Daily limit',
-                      '${kupan.dailyLimit ?? 10} per day'),
-                  _infoRow(Icons.today_outlined, 'Redeemed today',
-                      '$todayCount'),
                 ],
               ),
             ),
@@ -207,30 +202,66 @@ class _KupanDetailsScreenState extends State<KupanDetailsScreen> {
               ),
             ),
 
-            // Pending-review note after an edit
+            // Pending-review note after an edit or new creation
             if (kupan.isVerified != true &&
                 kupan.isCancelled != true &&
                 kupan.isPaused != true) ...[
               SizedBox(height: size(14)),
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(size(12)),
+                padding: EdgeInsets.all(size(14)),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(size(10)),
+                  borderRadius: BorderRadius.circular(size(12)),
                   border: Border.all(color: const Color(0xFFF59E0B)),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.info_outline,
-                        color: Color(0xFFB45309), size: 20),
-                    SizedBox(width: size(8)),
-                    Expanded(
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: Color(0xFFB45309), size: 22),
+                        SizedBox(width: size(8)),
+                        Expanded(
+                          child: Text(
+                            'Coupon Approval Pending',
+                            style: TextStyle(
+                              fontSize: size(14.5),
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF92400E),
+                              fontFamily: 'Urbanist',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: size(8)),
+                    Text(
+                      'Your coupon has been submitted successfully and is currently awaiting review by the KUPAN admin team. Once approved, it will become visible to customers in the KUPAN app.',
+                      style: TextStyle(
+                        fontSize: size(12.5),
+                        color: const Color(0xFF92400E),
+                        fontFamily: 'Urbanist',
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: size(10)),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: size(10),
+                        vertical: size(4),
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFDE68A),
+                        borderRadius: BorderRadius.circular(size(6)),
+                      ),
                       child: Text(
-                        'This coupon is pending admin approval and isn’t visible to customers yet.',
+                        'Status: Awaiting Kupan Approval',
                         style: TextStyle(
-                          fontSize: size(12.5),
-                          color: const Color(0xFF92400E),
+                          fontSize: size(11.5),
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF78350F),
                           fontFamily: 'Urbanist',
                         ),
                       ),

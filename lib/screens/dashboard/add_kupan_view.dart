@@ -15,6 +15,7 @@ import '../../models/kupans_list_res.dart';
 import '../../models/redemptions_res.dart';
 import '../../services/redemptions_service.dart';
 import '../../utils/utils.dart';
+import '../../common_view/common_textfield.dart';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const Color _pageBg = Color(0xFFF5F5F5);
@@ -196,6 +197,100 @@ class _AddKupanViewState extends State<AddKupanView> {
     }
   }
 
+  Future<void> _showApprovalPendingDialog() async {
+    await Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFEF3C7),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.access_time_filled_rounded,
+                  color: Color(0xFFD97706),
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Coupon Approval Pending',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Urbanist',
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Your coupon has been submitted successfully and is currently awaiting review by the KUPAN admin team. Once approved, it will become visible to customers in the KUPAN app.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF4B5563),
+                  fontFamily: 'Urbanist',
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFF59E0B)),
+                ),
+                child: const Text(
+                  'Status: Awaiting Kupan Approval',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF92400E),
+                    fontFamily: 'Urbanist',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A1A1A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    Get.back(); // close dialog
+                  },
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Urbanist',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
   Future<void> _createKupan() async {
     final outletId = dc.selectedOutletId.value;
     await dc.createKupan();
@@ -207,6 +302,8 @@ class _AddKupanViewState extends State<AddKupanView> {
       }
       final selectedOutlet =
           oc.outletsList.firstWhereOrNull((o) => o.id == outletId);
+
+      await _showApprovalPendingDialog();
       Get.back(result: selectedOutlet ?? true);
     } else {
       _showError(dc.errorMessageCreateKupan.value.isEmpty
@@ -250,15 +347,14 @@ class _AddKupanViewState extends State<AddKupanView> {
         kupanDays: selectedDays,
       );
 
-      _showSuccess(
-          'Edit sent for admin review. Your changes go live after approval.');
-
       final vendorId = dc.selectedOutletId.value;
       if (k is KupanData && vendorId.isNotEmpty) {
         await dc.getVendorKupans(vendorId: vendorId);
       } else if (k is RedemptionData && vendorId.isNotEmpty) {
         await dc.fetchAllRedemptionRanges(vendorId: vendorId);
       }
+
+      await _showApprovalPendingDialog();
       Get.back(result: true);
     } catch (e) {
       _showError('Failed to update coupon: ${e.toString()}');
@@ -272,14 +368,6 @@ class _AddKupanViewState extends State<AddKupanView> {
       content: Text(msg),
       backgroundColor: Colors.red,
       duration: const Duration(seconds: 3),
-    ));
-  }
-
-  void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: Colors.green,
-      duration: const Duration(seconds: 2),
     ));
   }
 
@@ -632,7 +720,10 @@ class _AddKupanViewState extends State<AddKupanView> {
   Widget _buildTitleField() {
     return TextFormField(
       controller: dc.titleController,
-      textCapitalization: TextCapitalization.sentences,
+      textCapitalization: TextCapitalization.characters,
+      inputFormatters: [
+        UpperCaseTextFormatter(),
+      ],
       style: TextStyle(fontSize: size(14), fontFamily: _font, color: _dark),
       decoration: _inputDecoration('Enter your offer title'),
       validator: (v) {

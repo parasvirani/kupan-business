@@ -88,18 +88,38 @@ class DashboardController extends GetxController {
   // Today's redemptions per kupanId (for daily limit display)
   RxMap<String, int> todayRedemptionsByKupan = <String, int>{}.obs;
 
+  // Unread notification count for badge
+  RxInt unreadNotificationCount = 0.obs;
+
   @override
   void onInit() {
     super.onInit();
     getUser();
     fetchCurrentLocation();
     _registerFcmToken();
+    fetchUnreadNotificationsCount();
     String vendorId = SecureStore.i.userId;
     if (vendorId.isNotEmpty) {
       getVendorKupans(vendorId: vendorId);
       fetchAllRedemptionRanges(vendorId: vendorId);
       fetchTodayRedemptionsByKupan(vendorId: vendorId);
     }
+  }
+
+  Future<void> fetchUnreadNotificationsCount() async {
+    try {
+      final response = await _apiService.getNotifications();
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final data = body['data'];
+        if (data != null && data is Map<String, dynamic>) {
+          unreadNotificationCount.value = (data['unreadCount'] as num?)?.toInt() ?? 0;
+        } else if (data != null && data['notifications'] != null) {
+          final list = data['notifications'] as List<dynamic>;
+          unreadNotificationCount.value = list.where((n) => n['isRead'] == false).length;
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _registerFcmToken() async {

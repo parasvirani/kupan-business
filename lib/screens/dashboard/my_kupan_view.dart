@@ -16,6 +16,7 @@ import '../../const/image_const.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
 import '../../utils/vendor_approval_helper.dart';
+import '../../widgets/notification_icon_button.dart';
 
 class MyKupanView extends StatefulWidget {
   const MyKupanView({super.key});
@@ -207,18 +208,8 @@ class _MyKupanViewState extends State<MyKupanView> {
           ],
         ),
       ),
-      actions: [
-        Padding(
-          padding: EdgeInsets.only(right: size(8)),
-          child: IconButton(
-            icon: SvgPicture.asset(
-              ImageConst.notification2,
-              colorFilter:
-                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
-            onPressed: () => Get.toNamed(AppRoutes.notification),
-          ),
-        ),
+      actions: const [
+        NotificationIconButton(),
       ],
     );
   }
@@ -331,9 +322,6 @@ class _MyKupanViewState extends State<MyKupanView> {
     final address =
         kupan.getOutletAddress() ?? _getAddressFromOutlets(kupan.businessId);
     final validDays = _formatValidDays(kupan.kupanDays);
-    final todayCount =
-        dashboardController.todayRedemptionsByKupan[kupan.id] ?? 0;
-    final dailyLimit = kupan.dailyLimit ?? 10;
 
     return Container(
       decoration: BoxDecoration(
@@ -465,40 +453,6 @@ class _MyKupanViewState extends State<MyKupanView> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              SizedBox(width: size(8)),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Daily limit',
-                    style: TextStyle(
-                      fontSize: size(11),
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF919191),
-                      fontFamily: 'Urbanist',
-                    ),
-                  ),
-                  SizedBox(width: size(4)),
-                  Container(
-                    height: size(24),
-                    padding: EdgeInsets.symmetric(
-                        horizontal: size(12), vertical: size(4)),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9F9F9),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      '$todayCount/$dailyLimit',
-                      style: TextStyle(
-                        fontSize: size(12),
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1A1A1A),
-                        fontFamily: 'Urbanist',
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

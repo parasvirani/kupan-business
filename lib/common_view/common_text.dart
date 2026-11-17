@@ -13,6 +13,7 @@ class CommonText extends StatefulWidget {
   TextAlign? textAlign;
   bool isLoading;
   int? maxLines;
+  TextOverflow? overflow;
 
   CommonText(
       {super.key,
@@ -23,7 +24,8 @@ class CommonText extends StatefulWidget {
       this.fontSize,
       this.textAlign,
       this.isLoading = false,
-      this.maxLines});
+      this.maxLines,
+      this.overflow = TextOverflow.ellipsis});
 
   @override
   State<CommonText> createState() => _CommonTextState();
@@ -47,6 +49,7 @@ class _CommonTextState extends State<CommonText> {
                   fontSize: widget.fontSize ?? size(14),
                 ),
                 maxLines: widget.maxLines,
+                overflow: widget.overflow,
                 textAlign: widget.textAlign ?? TextAlign.start,
               ),
             ),
@@ -58,7 +61,7 @@ class _CommonTextState extends State<CommonText> {
                 fontFamily: widget.fontFamily ?? "Inter",
                 fontWeight: widget.fontWeight ?? FontWeight.w500,
                 fontSize: widget.fontSize ?? size(14),
-                overflow: TextOverflow.ellipsis),
+                overflow: widget.overflow),
             maxLines: widget.maxLines,
             textAlign: widget.textAlign ?? TextAlign.start,
           );

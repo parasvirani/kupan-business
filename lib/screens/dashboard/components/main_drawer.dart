@@ -6,7 +6,9 @@ import 'package:kupan_business/common_view/common_text.dart';
 import 'package:kupan_business/const/color_const.dart';
 import 'package:kupan_business/const/image_const.dart';
 import 'package:kupan_business/controllers/dashboard_controller.dart';
+import 'package:kupan_business/utils/appRoutesStrings.dart';
 import 'package:kupan_business/utils/utils.dart';
+import 'help_and_support_sheet.dart';
 
 class MainDrawer extends StatefulWidget {
   Function() onTap;
@@ -141,15 +143,21 @@ class _MainDrawerState extends State<MainDrawer> {
             ),
           ),
           _menu(
-            text: "Invite friends",
-            onTap: () {},
+            text: "Help & Support",
+            onTap: () {
+              widget.onTap(); // close drawer
+              HelpAndSupportSheet.show(context);
+            },
           ),
           Divider(
             color: ColorConst.divider,
           ),
           _menu(
-            text: "Help & Support",
-            onTap: () {},
+            text: "Terms & Condition",
+            onTap: () {
+              widget.onTap(); // close drawer
+              Get.toNamed(AppRoutes.termsAndConditions);
+            },
           ),
           Divider(
             color: ColorConst.divider,

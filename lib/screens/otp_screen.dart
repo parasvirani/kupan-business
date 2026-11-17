@@ -139,14 +139,30 @@ class _OtpScreenState extends State<OtpScreen> {
         _pin.trim(),
         _verificationId,
       );
+
+      if (controller.errorOtpMessage.value.isNotEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _errorMessage = controller.errorOtpMessage.value;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage),
+            backgroundColor: _errorRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } catch (e) {
+      if (!mounted) return;
       // Show any unexpected errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
     } finally {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -339,9 +355,11 @@ class _OtpScreenState extends State<OtpScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Text(
           _errorMessage,
+          textAlign: TextAlign.center,
           style: const TextStyle(
             color: _errorRed,
             fontSize: 13,
+            fontWeight: FontWeight.w500,
             fontFamily: 'Inter',
           ),
         ),

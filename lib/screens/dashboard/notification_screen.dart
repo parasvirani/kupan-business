@@ -77,6 +77,144 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
+  Future<void> _markSingleRead(dynamic n) async {
+    final notifId = (n['_id'] ?? n['id'] ?? '').toString();
+    final isAlreadyRead = n['isRead'] as bool? ?? false;
+
+    print("DEBUG_NOTIF: tapped notifId=$notifId, isAlreadyRead=$isAlreadyRead, keys=${n is Map ? n.keys : 'not map'}");
+
+    // Optimistically mark as read in local state immediately so UI updates instantly
+    if (!isAlreadyRead) {
+      setState(() {
+        n['isRead'] = true;
+      });
+      if (notifId.isNotEmpty) {
+        try {
+          final res = await _apiService.markNotificationRead(notifId);
+          print("DEBUG_NOTIF: markNotificationRead status=${res.statusCode}, body=${res.body}");
+        } catch (e) {
+          print("DEBUG_NOTIF: error marking read=$e");
+        }
+      }
+    }
+  }
+
+  void _showNotificationDetail(dynamic n) {
+    _markSingleRead(n);
+
+    final type = n['type'] as String? ?? '';
+    final title = n['title'] as String? ?? 'Notification';
+    final message = n['message'] as String? ?? '';
+    final time = _formatTime(n['createdAt'] as String?);
+    final config = _notificationConfig(type);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: EdgeInsets.fromLTRB(size(20), size(12), size(20), size(32)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: size(40),
+                  height: size(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(size(2)),
+                  ),
+                ),
+              ),
+              SizedBox(height: size(20)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: size(48),
+                    height: size(48),
+                    decoration: BoxDecoration(
+                      color: config.bgColor,
+                      borderRadius: BorderRadius.circular(size(12)),
+                    ),
+                    child: Icon(config.icon, color: config.iconColor, size: size(24)),
+                  ),
+                  SizedBox(width: size(14)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CommonText(
+                          text: title,
+                          fontSize: size(16),
+                          fontWeight: FontWeight.w700,
+                          color: ColorConst.dark,
+                        ),
+                        if (time.isNotEmpty) ...[
+                          SizedBox(height: size(3)),
+                          CommonText(
+                            text: time,
+                            fontSize: size(12),
+                            color: Colors.grey[400]!,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: size(18)),
+              const Divider(height: 1, color: Color(0xFFF0F0F0)),
+              SizedBox(height: size(18)),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: size(14.5),
+                  color: const Color(0xFF333333),
+                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Urbanist',
+                  height: 1.5,
+                ),
+              ),
+              SizedBox(height: size(24)),
+              SizedBox(
+                width: double.infinity,
+                height: size(48),
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ColorConst.primary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(size(10)),
+                    ),
+                  ),
+                  child: Text(
+                    'Close',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: size(15),
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Urbanist',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _markAllRead() async {
     setState(() => _isMarkingRead = true);
     try {
@@ -216,28 +354,31 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     final config = _notificationConfig(type);
 
-    return Container(
-      padding: EdgeInsets.all(size(14)),
-      decoration: BoxDecoration(
-        color: isRead ? Colors.white : const Color(0xFFFFF5F2),
-        borderRadius: BorderRadius.circular(size(10)),
-        border: Border.all(
-          color: isRead
-              ? Colors.grey.shade100
-              : ColorConst.primary.withValues(alpha: 0.18),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+    return InkWell(
+      onTap: () => _showNotificationDetail(n),
+      borderRadius: BorderRadius.circular(size(10)),
+      child: Container(
+        padding: EdgeInsets.all(size(14)),
+        decoration: BoxDecoration(
+          color: isRead ? Colors.white : const Color(0xFFFFF5F2),
+          borderRadius: BorderRadius.circular(size(10)),
+          border: Border.all(
+            color: isRead
+                ? Colors.grey.shade100
+                : ColorConst.primary.withValues(alpha: 0.18),
+            width: 1,
           ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Icon badge
           Container(
             width: size(44),
@@ -317,8 +458,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   _NotifConfig _notificationConfig(String type) {
     switch (type) {

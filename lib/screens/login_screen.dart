@@ -18,9 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final LoginController controller = Get.put(LoginController());
   final TextEditingController _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  // final TextEditingController _phoneController = TextEditingController();
-  // final _formKey = GlobalKey<FormState>();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _termsAccepted = false;
 
   Future<void> _sendOTP() async {
     // setState(() => _isLoading = true);
@@ -272,52 +271,123 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
 
+                  const SizedBox(height: 16),
+
+                  // ── Terms & Conditions Checkbox ──────────────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: _termsAccepted,
+                          activeColor: const Color(0xFF111827),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          onChanged: (val) {
+                            setState(() {
+                              _termsAccepted = val ?? false;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _termsAccepted = !_termsAccepted;
+                            });
+                          },
+                          child: Text.rich(
+                            TextSpan(
+                              text: 'I have read and agree to the ',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF6B7280),
+                                height: 1.4,
+                              ),
+                              children: [
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.baseline,
+                                  baseline: TextBaseline.alphabetic,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Get.toNamed(AppRoutes.termsAndConditions);
+                                    },
+                                    child: const Text(
+                                      'KUPAN Partner Terms & Conditions',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF111827),
+                                        decoration: TextDecoration.underline,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(text: '.'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
                   const SizedBox(height: 20),
 
                   // ── Send OTP button ──────────────────────────────────────
                   Obx(
-                    () => SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: controller.isLoading.value
-                            ? null
-                            : () {
-                                if (_formKey.currentState!.validate()) {
-                                  _sendOTP();
+                    () {
+                      final bool canSubmit =
+                          !controller.isLoading.value && _termsAccepted;
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: canSubmit
+                              ? () {
+                                  if (_formKey.currentState!.validate()) {
+                                    _sendOTP();
+                                  }
                                 }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF111827),
-                          disabledBackgroundColor:
-                              const Color(0xFF111827).withOpacity(0.5),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF111827),
+                            disabledBackgroundColor:
+                                const Color(0xFF111827).withOpacity(0.35),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
+                          child: controller.isLoading.value
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const Text(
+                                  'Send Otp',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    fontFamily: 'Inter',
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
                         ),
-                        child: controller.isLoading.value
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : const Text(
-                                'Send Otp',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                  fontFamily: 'Inter',
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),

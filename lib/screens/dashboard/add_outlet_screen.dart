@@ -90,6 +90,9 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
   final TextEditingController _landmarkCtrl = TextEditingController();
   final TextEditingController _zipCtrl = TextEditingController();
   final TextEditingController _outletNameCtrl = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  AutovalidateMode _autoValidateMode = AutovalidateMode.disabled;
+  String _daysErrorMessage = '';
 
   @override
   void initState() {
@@ -180,8 +183,14 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
 
   // ── Validation ────────────────────────────────────────────────────────────
   bool _validate() {
-    bool ok = _formKey.currentState!.validate();
-    if (_selectedBusinessType == null) ok = false;
+    setState(() {
+      _autoValidateMode = AutovalidateMode.onUserInteraction;
+    });
+
+    bool ok = _formKey.currentState?.validate() ?? false;
+    if (_selectedBusinessType == null || _selectedBusinessType!.isEmpty) {
+      ok = false;
+    }
     final totalImages =
         (controller.images?.length ?? 0) + existingImageUrls.length;
     if (totalImages == 0) {
@@ -214,6 +223,18 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     } else {
       controller.cityErrorMessage('');
     }
+    if (selectedDays.isEmpty) {
+      setState(() {
+        _daysErrorMessage = 'Please select at least one open day';
+      });
+      ok = false;
+    } else {
+      setState(() {
+        _daysErrorMessage = '';
+      });
+    }
+
+    controller.update();
     return ok;
   }
 
@@ -398,7 +419,15 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
 
   // ── Submit ────────────────────────────────────────────────────────────────
   Future<void> _onGetStarted() async {
-    if (!_validate()) return;
+    if (!_validate()) {
+      _showNotification('Please fill in all required fields marked in red');
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+      return;
+    }
 
     try {
       controller.isLoadingOutlet.value = true;
@@ -444,74 +473,91 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
 
           if (isFirstTime) {
             // Show verification dialog informing vendor about 24-hour review
+            bool isNavigating = false;
             await Get.dialog(
-              Dialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.verified_user_outlined,
-                          color: Color(0xFFD97706),
-                          size: 36,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Outlet Submitted!',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Inter',
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Your outlet has been submitted successfully. Your account is under review and will be verified by the Kupan team within 24 hours.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF4B5563),
-                          fontFamily: 'Inter',
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1A1A1A),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+              StatefulBuilder(
+                builder: (context, setDialogState) => Dialog(
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFEF3C7),
+                            shape: BoxShape.circle,
                           ),
-                          onPressed: () {
-                            Get.back(); // close dialog
-                            Get.offAllNamed(AppRoutes.dashboard);
-                          },
-                          child: const Text(
-                            'Got it',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Inter',
-                            ),
+                          child: const Icon(
+                            Icons.verified_user_outlined,
+                            color: Color(0xFFD97706),
+                            size: 36,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Outlet Submitted!',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'Inter',
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Your outlet has been submitted successfully. Your account is under review and will be verified by the Kupan team within 24 hours.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF4B5563),
+                            fontFamily: 'Inter',
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1A1A1A),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: isNavigating
+                                ? null
+                                : () async {
+                                    setDialogState(() {
+                                      isNavigating = true;
+                                    });
+                                    Get.offAllNamed(AppRoutes.dashboard);
+                                  },
+                            child: isNavigating
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Got it',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Inter',
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -579,21 +625,23 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
         backgroundColor: _pageBg,
         appBar: _buildAppBar(),
         body: Form(
-        key: _formKey,
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              child: Column(
-                children: [
-                  _buildOutletInfoCard(),
-                  const SizedBox(height: 12),
-                  _buildOutletAddressCard(),
-                  const SizedBox(height: 12),
-                  _buildOpenDaysCard(),
-                ],
+          key: _formKey,
+          autovalidateMode: _autoValidateMode,
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                child: Column(
+                  children: [
+                    _buildOutletInfoCard(),
+                    const SizedBox(height: 12),
+                    _buildOutletAddressCard(),
+                    const SizedBox(height: 12),
+                    _buildOpenDaysCard(),
+                  ],
+                ),
               ),
-            ),
             // Sticky bottom button
             Positioned(
               left: 0,
@@ -613,6 +661,16 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     return AppBar(
       backgroundColor: _pageBg,
       elevation: 0,
+      centerTitle: true,
+      title: Text(
+        widget.isEditMode ? 'Edit Business' : 'Add Your Business',
+        style: const TextStyle(
+          color: _dark,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          fontFamily: _font,
+        ),
+      ),
       leading: GestureDetector(
         onTap: _handleBackNavigation,
         child: Container(
@@ -1061,14 +1119,14 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
               Expanded(
                 child: _buildLabeledField(
                   label: 'CITY',
-                  child: GetBuilder<DetailsController>(
-                    builder: (ctrl) => _DropdownTile(
-                      value: ctrl.selectedCity?.name,
+                  child: Obx(
+                    () => _DropdownTile(
+                      value: controller.selectedCity?.name,
                       hint: 'City',
-                      hasError: ctrl.cityErrorMessage.isNotEmpty,
-                      errorText: ctrl.cityErrorMessage.value,
+                      hasError: controller.cityErrorMessage.isNotEmpty,
+                      errorText: controller.cityErrorMessage.value,
                       onTap: () {
-                        if (ctrl.selectedState == null) {
+                        if (controller.selectedState == null) {
                           Get.snackbar('Error', 'Please select state first');
                           return;
                         }
@@ -1082,12 +1140,12 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
               Expanded(
                 child: _buildLabeledField(
                   label: 'STATE',
-                  child: GetBuilder<DetailsController>(
-                    builder: (ctrl) => _DropdownTile(
-                      value: ctrl.selectedState?.name,
+                  child: Obx(
+                    () => _DropdownTile(
+                      value: controller.selectedState?.name,
                       hint: 'State',
-                      hasError: ctrl.stateErrorMessage.isNotEmpty,
-                      errorText: ctrl.stateErrorMessage.value,
+                      hasError: controller.stateErrorMessage.isNotEmpty,
+                      errorText: controller.stateErrorMessage.value,
                       onTap: () => Get.bottomSheet(StateSheet()),
                     ),
                   ),
@@ -1200,35 +1258,49 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
 
           // Day chips
           _buildDayChips(),
+          if (_daysErrorMessage.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                _daysErrorMessage,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontSize: 12,
+                  fontFamily: _font,
+                ),
+              ),
+            ),
           const SizedBox(height: 20),
 
           // Start Time + End Time
-          Row(
-            children: [
-              Expanded(
-                child: _buildLabeledField(
-                  label: 'START TIME',
-                  child: _TimeTile(
-                    value: controller.openTime?.format(context),
-                    hint: 'Start Time',
-                    onTap: () => _pickTime(context, true),
-                    errorText: controller.startTimeErrorMessage.value,
+          Obx(
+            () => Row(
+              children: [
+                Expanded(
+                  child: _buildLabeledField(
+                    label: 'START TIME',
+                    child: _TimeTile(
+                      value: controller.openTime?.format(context),
+                      hint: 'Start Time',
+                      onTap: () => _pickTime(context, true),
+                      errorText: controller.startTimeErrorMessage.value,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildLabeledField(
-                  label: 'END TIME',
-                  child: _TimeTile(
-                    value: controller.closeTime?.format(context),
-                    hint: 'End Time',
-                    onTap: () => _pickTime(context, false),
-                    errorText: controller.endTimeErrorMessage.value,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildLabeledField(
+                    label: 'END TIME',
+                    child: _TimeTile(
+                      value: controller.closeTime?.format(context),
+                      hint: 'End Time',
+                      onTap: () => _pickTime(context, false),
+                      errorText: controller.endTimeErrorMessage.value,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1357,6 +1429,7 @@ class _AddOutletScreenState extends State<AddOutletScreen> {
     _address2Ctrl.dispose();
     _landmarkCtrl.dispose();
     _zipCtrl.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }

@@ -151,8 +151,14 @@ class LoginController extends GetxController {
         }
       }
     } on FirebaseAuthException catch (e) {
-      print("FirebaseAuthException:::$e");
-      errorOtpMessage.value = e.message ?? 'Wrong OTP';
+      print("FirebaseAuthException:::$e (code: ${e.code})");
+      if (e.code == 'invalid-verification-code' ||
+          e.code == 'session-expired' ||
+          e.code == 'invalid-verification-id') {
+        errorOtpMessage.value = 'Invalid OTP. Please check and enter the correct OTP.';
+      } else {
+        errorOtpMessage.value = e.message ?? 'Invalid OTP. Please try again.';
+      }
     } catch (e) {
       print("VerifyOtp:::$e");
       errorOtpMessage.value = mapError(e).userMessage;

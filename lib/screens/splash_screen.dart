@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 import '../const/image_const.dart';
-import '../controllers/approval_controller.dart';
 import '../utils/appRoutesStrings.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -32,21 +31,8 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Logged-in vendor: route by profile existence and approval status.
-    final approvalCtrl = ApprovalController();
-    final status = await approvalCtrl.checkStatus();
-    final bool hasProfile = approvalCtrl.hasVendorProfile.value;
-
-    if (!hasProfile) {
-      Get.offNamed(AppRoutes.details, arguments: {
-        "isEdit": false,
-        "mobile_number": "",
-      });
-      return;
-    }
-
-    // Once outlet is registered, vendor always accesses dashboard.
-    // Coupon creation is gated by approval status.
+    // Logged-in vendor: directly access dashboard.
+    // Dashboard displays 'Under Review' banner if pending/unapproved.
     Get.offNamed(AppRoutes.dashboard);
   }
 

@@ -105,6 +105,9 @@ class ApiService {
 
   Future<http.Response> getNotifications() => _api.get("/notifications");
 
+  Future<http.Response> markNotificationRead(String notifId) =>
+      _api.patch("/notifications/$notifId/read");
+
   Future<http.Response> markAllNotificationsRead() =>
       _api.patch("/notifications/read-all");
 

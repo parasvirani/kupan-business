@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:kupan_business/screens/dashboard/notification_screen.dart';
+import 'package:kupan_business/screens/dashboard/terms_and_conditions_screen.dart';
 import 'package:kupan_business/screens/dashboard/outlet_details_screen.dart';
 import 'package:kupan_business/screens/login_screen.dart';
 
@@ -88,6 +89,12 @@ class AppPage {
       preventDuplicates: true,
       name: AppRoutes.notification,
       page: () => const NotificationScreen(),
+      binding: null,
+    ),
+    GetPage(
+      preventDuplicates: true,
+      name: AppRoutes.termsAndConditions,
+      page: () => const TermsAndConditionsScreen(),
       binding: null,
     ),
   ];

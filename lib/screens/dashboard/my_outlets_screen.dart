@@ -12,6 +12,7 @@ import '../../controllers/my_outlets_controller.dart';
 import '../../models/user_businesses_res.dart';
 import '../../utils/appRoutesStrings.dart';
 import '../../utils/utils.dart';
+import '../../widgets/notification_icon_button.dart';
 import 'add_outlet_screen.dart';
 
 class MyOutletsScreen extends StatefulWidget {
@@ -233,18 +234,8 @@ class _MyOutletsScreenState extends State<MyOutletsScreen> {
           ],
         ),
       ),
-      actions: [
-        Padding(
-          padding: EdgeInsets.only(right: size(8)),
-          child: IconButton(
-            icon: SvgPicture.asset(
-              ImageConst.notification2,
-              colorFilter:
-                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
-            onPressed: () => Get.toNamed(AppRoutes.notification),
-          ),
-        ),
+      actions: const [
+        NotificationIconButton(),
       ],
     );
   }
